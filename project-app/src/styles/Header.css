@@ -11,7 +11,6 @@
   top: 0;
   backdrop-filter: blur(8px);
   z-index: 50;
-  /* 헤더 고정시 겹침 방지 */
 }
 
 /* 내부 컨텐츠 정렬 */
@@ -31,18 +30,31 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  cursor: pointer; /* 클릭 가능 표시 */
+}
+
+/* 로고 이미지 크기 (헤더 높이에 맞춤) */
+.header-logo-img {
+  display: block;
+  height: 28px;   /* 기본 높이 */
+  width: auto;
+}
+
+/* 큰 화면에서는 약간 더 키우기 */
+@media (min-width: 1280px) {
+  .header-logo-img {
+    height: 32px;
+  }
 }
 
 /* ----------------------------------------- */
 /* 내비게이션                                 */
 /* ----------------------------------------- */
 .header-nav {
-  display: none;
-  /* 모바일 숨김 */
+  display: none; /* 모바일 숨김 */
   align-items: center;
   gap: 32px;
 }
-
 
 /* Web부터는 보이게 */
 @media (min-width: 1280px) {
