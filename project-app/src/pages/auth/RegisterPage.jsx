@@ -1,16 +1,14 @@
 // src/pages/auth/RegisterPage.jsx
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import Input from "../../components/common/Input";
-import PasswordInput from "../../components/common/PasswordInput";
 import Button from "../../components/common/Button";
-import TodayWordCard from './../../components/common/TodayWordCard';
+import PasswordInput from "../../components/common/PasswordInput";
+import TodayWordCard from "../../components/common/TodayWordCard";
 import RegisterIllustration from "../../assets/images/login.svg";
 
-import "../../styles/pages/register.css";
-import { register as registerApi } from "../../api/authApi";
+import "./RegisterPage.css";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -22,9 +20,6 @@ export default function RegisterPage() {
     nickname: "",
     userName: "",
     userBirth: "",
-    preference: "",
-    goal: "",
-    dailyWordGoal: 20, // DAILY_WORD_GOAL 기본값 20
   });
 
   const [errors, setErrors] = useState({
@@ -34,18 +29,16 @@ export default function RegisterPage() {
     nickname: "",
     userName: "",
     userBirth: "",
-    dailyWordGoal: "",
   });
 
   const [globalError, setGlobalError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "dailyWordGoal" ? value.replace(/[^0-9]/g, "") : value,
+      [name]: value,
     }));
 
     setErrors((prev) => ({
@@ -55,7 +48,7 @@ export default function RegisterPage() {
     setGlobalError("");
   };
 
-  // 클라이언트 유효성 검사
+  // 1단계: 기본 정보만 유효성 검사
   const validate = () => {
     const nextErrors = {
       email: "",
@@ -64,7 +57,6 @@ export default function RegisterPage() {
       nickname: "",
       userName: "",
       userBirth: "",
-      dailyWordGoal: "",
     };
 
     // 이메일
@@ -95,24 +87,16 @@ export default function RegisterPage() {
       nextErrors.nickname = "닉네임은 100자 이내로 입력해 주세요.";
     }
 
-    // 유저 이름
+    // 이름
     if (!formData.userName) {
       nextErrors.userName = "이름을 입력해 주세요.";
     } else if (formData.userName.length > 50) {
       nextErrors.userName = "이름은 50자 이내로 입력해 주세요.";
     }
 
-    // 생년월일 (단순 YYYY-MM-DD 형식 체크)
+    // 생년월일
     if (!formData.userBirth) {
       nextErrors.userBirth = "생년월일을 입력해 주세요.";
-    }
-
-    // 하루 목표 단어 수 (선택이지만, 값이 있으면 유효성 체크)
-    if (formData.dailyWordGoal) {
-      const num = Number(formData.dailyWordGoal);
-      if (Number.isNaN(num) || num <= 0) {
-        nextErrors.dailyWordGoal = "하루 목표 단어 수는 1 이상의 숫자로 입력해 주세요.";
-      }
     }
 
     setErrors(nextErrors);
@@ -120,39 +104,24 @@ export default function RegisterPage() {
     return !hasError;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-     navigate("/auth/setup", { replace: true });
-
     setGlobalError("");
 
     if (!validate()) return;
 
-    setSubmitting(true);
-    try {
-      // DB 스키마에 맞춘 필드 전송 (DTO는 백엔드와 맞춰서 수정 필요)
-      await registerApi({
-        email: formData.email,                 // EMAIL
-        password: formData.password,          // USER_PW
-        nickname: formData.nickname,          // NICKNAME
-        userName: formData.userName,          // USER_NAME
-        userBirth: formData.userBirth,        // USER_BIRTH (예: "1990-01-01")
-        preference: formData.preference || null, // PREFERENCE (선호 분야)
-        goal: formData.goal || null,             // GOAL (학습 목표)
-        dailyWordGoal: formData.dailyWordGoal
-          ? Number(formData.dailyWordGoal)
-          : undefined, // DAILY_WORD_GOAL (없으면 기본값 20 사용)
-      });
-
-      navigate("/auth/login", { replace: true });
-    } catch (err) {
-      const message =
-        err?.response?.data?.message ||
-        "회원가입에 실패했습니다. 입력값을 다시 확인해 주세요.";
-      setGlobalError(message);
-    } finally {
-      setSubmitting(false);
-    }
+    // 유효성 통과 → setup 페이지로 기본 정보 전달
+    navigate("/auth/setup", {
+      state: {
+        basicInfo: {
+          email: formData.email,
+          password: formData.password,
+          nickname: formData.nickname,
+          userName: formData.userName,
+          userBirth: formData.userBirth,
+        },
+      },
+    });
   };
 
   return (
@@ -273,65 +242,17 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* 선호 분야 (옵션) */}
-            <div className="register-field">
-              <label className="register-label">선호 분야 (선택)</label>
-              <Input
-                type="text"
-                name="preference"
-                placeholder="예: 비즈니스 영어, 여행 영어 등"
-                value={formData.preference}
-                onChange={handleChange}
-                fullWidth
-              />
-            </div>
-
-            {/* 학습 목표 (옵션) */}
-            <div className="register-field">
-              <label className="register-label">학습 목표 (선택)</label>
-              <Input
-                type="text"
-                name="goal"
-                placeholder="예: 취업 준비, 해외 여행, 발표 준비 등"
-                value={formData.goal}
-                onChange={handleChange}
-                fullWidth
-              />
-            </div>
-
-            {/* 하루 목표 단어 수 (옵션, 숫자) */}
-            <div className="register-field">
-              <label className="register-label">하루 목표 단어 수 (선택)</label>
-              <Input
-                type="number"
-                name="dailyWordGoal"
-                placeholder="기본값 20"
-                value={formData.dailyWordGoal}
-                onChange={handleChange}
-                fullWidth
-              />
-              {errors.dailyWordGoal && (
-                <p className="register-error">{errors.dailyWordGoal}</p>
-              )}
-            </div>
-
-            {/* 전역 에러 메시지 */}
+            {/* 전역 에러 메시지 (필요하다면 유지) */}
             {globalError && (
               <p className="register-error register-error-global">
                 {globalError}
               </p>
             )}
 
-            {/* 회원가입 버튼 */}
+            {/* 다음 버튼 */}
             <div className="register-btn">
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                full
-                disabled={submitting}
-              >
-                {submitting ? "가입 처리 중..." : "회원가입"}
+              <Button type="submit" variant="primary" size="md" full>
+                다음 단계로 →
               </Button>
             </div>
 
@@ -339,11 +260,7 @@ export default function RegisterPage() {
             <div className="register-divider">OR</div>
 
             {/* 구글 로그인 (미연동 상태 가정) */}
-            <button
-              type="button"
-              className="google-btn"
-              disabled={submitting}
-            >
+            <button type="button" className="google-btn">
               <img
                 src="https://www.svgrepo.com/show/475656/google-color.svg"
                 alt="google"

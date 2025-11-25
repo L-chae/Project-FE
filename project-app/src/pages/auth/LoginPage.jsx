@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import "./LoginPage.css";
 
+import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import PasswordInput from "../../components/common/PasswordInput";
-import Button from "../../components/common/Button";
 import TodayWordCard from './../../components/common/TodayWordCard';
 import LoginIllustration from "../../assets/images/login.svg";
 
-import "../../styles/pages/login.css";
 import { login } from "../../api/authApi";
-
 const SAVE_ID_KEY = "storylex_login_id";
 
 export default function LoginPage() {

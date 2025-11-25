@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Input from "../../components/common/Input";
+import "./AccountFindPage.css";
 import Button from "../../components/common/Button";
-import "../../styles/pages/accountFind.css";
+import Input from "../../components/common/Input";
 
 export default function AccountFindPage() {
   const [tab, setTab] = useState("id"); // id 또는 pw

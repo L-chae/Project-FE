@@ -29,7 +29,6 @@ function App() {
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/auth/setup" element={<SetupPage />} />
         <Route path="/auth/register" element={<TodayWordCard />} />
-
          <Route path="/auth/find" element={<AccountFindPage />} />
 
          <Route path="/dashboard" element={<DashboardPage />} />

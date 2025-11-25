@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "../../styles/ui/todayWord.css";
+import "./TodayWordCard.css";
 
 const WORDS = [
   { word: "Serendipity", meaning: "뜻밖의 행운" },

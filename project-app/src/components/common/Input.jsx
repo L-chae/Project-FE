@@ -1,6 +1,4 @@
 // src/components/common/Input.jsx
-import "../../styles/ui/input.css";
-
 /**
  * 디자인 토큰 + input.css 기반 공통 인풋 컴포넌트
  *
@@ -13,7 +11,6 @@ import "../../styles/ui/input.css";
  * 이 컴포넌트는 "저수준" 공통 베이스로 두고,
  * SearchInput 같은 패턴 전용 컴포넌트에서 조합해서 사용합니다.
  */
-// src/components/common/Input.jsx
 
 export default function Input({
   size = "md",

@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 
-import "../../styles/Header.css";
 import Button from "../common/Button";
 import StoryLexLogo from "../../assets/images/StoryLex-logo.svg";
 
 import { getAccessToken } from "../../utils/storage";
 import { logout } from "../../api/authApi";
+import "./Header.css";
 
 export default function Header() {
     const navigate = useNavigate();
