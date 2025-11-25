@@ -1,4 +1,4 @@
-/* src/styles/ui/input.css */
+/* src/components/common/input.css */
 
 /* ─────────────────────────────── */
 /* 기본 인풋 스타일 (Base)        */
@@ -98,6 +98,71 @@
 }
 
 /* ─────────────────────────────── */
+/* Form Field / Label / Messages  */
+/* ─────────────────────────────── */
+
+/* 각 인풋 블록 래퍼 */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* label - input - message 간 간격 */
+  margin-bottom: var(--space-4); /* 기본 필드 간 간격 (16px) */
+}
+
+/* 마지막 요소에서만 margin 제거 */
+.form-field:last-child {
+  margin-bottom: 0;
+}
+
+/* 라벨 */
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--neutral-800);
+}
+
+/* 필수 필드 표시용 (선택) */
+.form-label--required::after {
+  content: " *";
+  color: var(--color-error);
+  margin-left: 2px;
+}
+
+/* 메시지 공통 (헬퍼/에러/경고/성공/정보) */
+.form-message,
+.form-helper,
+.form-error,
+.form-warning,
+.form-success,
+.form-info {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* 헬퍼 텍스트 (설명, 안내) */
+.form-helper {
+  color: var(--color-text-muted);
+}
+
+/* 에러 텍스트 */
+.form-error {
+  color: var(--color-error);
+}
+
+/* 경고/성공/정보 메시지 */
+.form-warning {
+  color: var(--color-warning);
+}
+
+.form-success {
+  color: var(--color-success);
+}
+
+.form-info {
+  color: var(--color-info);
+}
+
+/* ─────────────────────────────── */
 /* Size                            */
 /* ─────────────────────────────── */
 .input--sm {
@@ -123,8 +188,7 @@
 
 /* ─────────────────────────────── */
 /* Status: Error / Warning / Success / Info
-   - 기존 느낌 유지: 텍스트 색 기본, 
-     배경+테두리만 상태 색상 톤 적용      */
+   - 텍스트는 기본 색, 배경+테두리만 상태 색상 톤 적용 */
 /* ─────────────────────────────── */
 
 /* 에러 (폼 검증 실패 등) */
@@ -201,9 +265,11 @@
 
 /* ─────────────────────────────── */
 /* Icon Wrapper / Icon 스타일      */
-/* 인풋 + 아이콘을 감싸는 래퍼 */
+/* 인풋 + 아이콘을 감싸는 래퍼     */
+/* ─────────────────────────────── */
 .input-wrapper {
   position: relative;
+  width: 100%;
 }
 
 /* 공통 아이콘 스타일 (기본은 장식용) */
@@ -243,4 +309,20 @@
 
 .input-wrapper:focus-within .input-icon {
   color: var(--primary-500);
+}
+
+/* ─────────────────────────────── */
+/* 숫자 input 스핀 버튼 제거       */
+/* ─────────────────────────────── */
+
+/* WebKit (Chrome, Safari 등) */
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.input[type="number"] {
+  -moz-appearance: textfield;
 }

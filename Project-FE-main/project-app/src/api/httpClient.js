@@ -85,7 +85,7 @@ httpClient.interceptors.response.use(
       // 여기서부터는 refresh API 직접 호출
       isRefreshing = true;
 
-      const refreshResponse = await refreshClient.post("/auth/refresh");
+      const refreshResponse = await refreshClient.post("/api/auth/refresh");
       // 백엔드 응답 형식에 맞게 수정 (예: { accessToken: "..." })
       const newAccessToken = refreshResponse.data.accessToken;
 
@@ -103,7 +103,7 @@ httpClient.interceptors.response.use(
       clearTokens();
 
       // 전역 로그아웃 처리 (필요하면 커스텀 로직으로 교체)
-      window.location.href = "/auth/login";
+      window.location.href = "/api/auth/login";
 
       return Promise.reject(refreshError);
     }
