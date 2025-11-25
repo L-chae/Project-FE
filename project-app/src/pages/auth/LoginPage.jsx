@@ -12,61 +12,104 @@ import LoginIllustration from "../../assets/images/login.svg";
 
 import { login } from "../../api/authApi";
 
-const SAVE_ID_KEY = "storylex_login_id";
+// 이메일 저장용 키
+const SAVE_EMAIL_KEY = "storylex_login_email";
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    id: "",
+    email: "",
     password: "",
-    saveId: false,
+    saveEmail: false,
   });
 
-  const [error, setError] = useState("");
+  // 필드 단위 에러
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+  });
+
+  // 서버에서 내려오는 전역 에러
+  const [globalError, setGlobalError] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
 
-  // 아이디 저장 값 복원
+  // 이메일 저장 값 복원
   useEffect(() => {
-    const savedId = localStorage.getItem(SAVE_ID_KEY);
-    if (savedId) {
+    const savedEmail = localStorage.getItem(SAVE_EMAIL_KEY);
+    if (savedEmail) {
       setFormData((prev) => ({
         ...prev,
-        id: savedId,
-        saveId: true,
+        email: savedEmail,
+        saveEmail: true,
       }));
     }
   }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    // 해당 필드 에러만 초기화
+    if (name === "email" || name === "password") {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+
+    // 전역 에러도 함께 초기화
+    setGlobalError("");
+  };
+
+  // 필수값 + 이메일 형식 검증
+  const validate = () => {
+    const nextErrors = {
+      email: "",
+      password: "",
+    };
+
+    if (!formData.email) {
+      nextErrors.email = "이메일을 입력해 주세요.";
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      nextErrors.email = "이메일 형식이 올바르지 않습니다.";
+    }
+
+    if (!formData.password) {
+      nextErrors.password = "비밀번호를 입력해 주세요.";
+    }
+
+    setErrors(nextErrors);
+
+    const hasError = Object.values(nextErrors).some((msg) => !!msg);
+    return !hasError;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setGlobalError("");
 
-    if (!formData.id || !formData.password) {
-      setError("아이디와 비밀번호를 모두 입력해 주세요.");
-      return;
-    }
+    // 클라이언트 검증
+    if (!validate()) return;
 
     setSubmitting(true);
     try {
       await login({
-        id: formData.id,
+        // 기존 id 대신 email로 로그인
+        email: formData.email,
         password: formData.password,
       });
 
-      // 아이디 저장 처리
-      if (formData.saveId) {
-        localStorage.setItem(SAVE_ID_KEY, formData.id);
+      // 이메일 저장 처리
+      if (formData.saveEmail) {
+        localStorage.setItem(SAVE_EMAIL_KEY, formData.email);
       } else {
-        localStorage.removeItem(SAVE_ID_KEY);
+        localStorage.removeItem(SAVE_EMAIL_KEY);
       }
 
       // 로그인 성공 후 이동
@@ -74,8 +117,8 @@ export default function LoginPage() {
     } catch (err) {
       const message =
         err?.response?.data?.message ||
-        "로그인에 실패했습니다. 아이디와 비밀번호를 다시 확인해 주세요.";
-      setError(message);
+        "로그인에 실패했습니다. 이메일과 비밀번호를 다시 확인해 주세요.";
+      setGlobalError(message);
     } finally {
       setSubmitting(false);
     }
@@ -102,24 +145,25 @@ export default function LoginPage() {
           <h1 className="login-title">로그인</h1>
 
           <form onSubmit={handleSubmit} className="login-form">
-            {/* 아이디 */}
+            {/* 이메일 */}
             <div className="form-field">
               <label
                 className="form-label form-label--required"
-                htmlFor="login-id"
+                htmlFor="login-email"
               >
-                아이디
+                이메일
               </label>
               <Input
-                id="login-id"
-                type="text"
-                name="id"
-                placeholder="아이디를 입력하세요"
-                value={formData.id}
+                id="login-email"
+                type="email"
+                name="email"
+                placeholder="이메일을 입력하세요"
+                value={formData.email}
                 onChange={handleChange}
-                autoComplete="username"
+                autoComplete="email"
                 fullWidth
               />
+              {errors.email && <p className="form-error">{errors.email}</p>}
             </div>
 
             {/* 비밀번호 */}
@@ -139,25 +183,28 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 fullWidth
               />
+              {errors.password && (
+                <p className="form-error">{errors.password}</p>
+              )}
             </div>
 
-            {/* 에러 메시지 */}
-            {error && (
+            {/* 서버 전역 에러 메시지 */}
+            {globalError && (
               <p className="form-error login-error">
-                {error}
+                {globalError}
               </p>
             )}
 
-            {/* 아이디 저장 / 찾기 */}
+            {/* 이메일 저장 / 찾기 */}
             <div className="login-options">
               <label className="login-checkbox">
                 <input
                   type="checkbox"
-                  name="saveId"
-                  checked={formData.saveId}
+                  name="saveEmail"
+                  checked={formData.saveEmail}
                   onChange={handleChange}
                 />
-                <span>아이디 저장</span>
+                <span>이메일 저장</span>
               </label>
 
               <div className="login-links">

@@ -6,7 +6,6 @@ import LoginPage from "./pages/auth/LoginPage";
 import SetupPage from "./pages/auth/SetupPage";
 import AccountFindPage from "./pages/auth/AccountFindPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
-import TodayWordCard from "./components/common/TodayWordCard";
 
 function AppRouter() {
   return (
@@ -19,11 +18,14 @@ function AppRouter() {
           </div>
         }
       />
+
+      {/* Auth */}
       <Route path="/api/auth/login" element={<LoginPage />} />
       <Route path="/api/auth/signup" element={<SignupPage />} />
       <Route path="/api/auth/setup" element={<SetupPage />} />
-      <Route path="/api/auth/signup" element={<TodayWordCard />} />
       <Route path="/api/auth/find" element={<AccountFindPage />} />
+
+      {/* Dashboard */}
       <Route path="/dashboard" element={<DashboardPage />} />
     </Routes>
   );

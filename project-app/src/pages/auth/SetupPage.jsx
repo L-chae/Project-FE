@@ -9,7 +9,8 @@ import TodayWordCard from "../../components/common/TodayWordCard";
 import Illustration from "../../assets/images/login.svg";
 
 import "./SetupPage.css";
-import { register as registerApi } from "../../api/authApi";
+import { signup as signupApi } from "../../api/authApi";
+
 
 export default function SetupPage() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function SetupPage() {
   // 새로고침 / 직접 진입 방지
   useEffect(() => {
     if (!basicInfo) {
-      navigate("/api/auth/register", { replace: true });
+      navigate("/api/auth/signup", { replace: true });
     }
   }, [basicInfo, navigate]);
 
@@ -54,7 +55,7 @@ export default function SetupPage() {
     setError("");
 
     try {
-      await registerApi({
+      await signupApi({
         email: basicInfo.email,
         password: basicInfo.password,
         nickname: basicInfo.nickname,

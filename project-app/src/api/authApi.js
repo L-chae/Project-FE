@@ -1,23 +1,29 @@
 // src/api/authApi.js
 import httpClient from "./httpClient";
-import { setAccessToken, clearTokens } from "../utils/storage";
+import { 
+  setAccessToken, 
+  setRefreshToken,
+  clearTokens 
+} from "../utils/storage";
 
 const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === "true";
 
 // 임시 유저 데이터
 const MOCK_USERS = [
   {
-    id: "user",
-    email: "test@example.com",
+    email: "test@ex.com",
     password: "1111",
     nickname: "테스트유저",
   },
 ];
 
-export async function login({ id, password }) {
+/* ------------------------------
+ * 로그인
+ * ------------------------------ */
+export async function login({ email, password }) {
   if (USE_MOCK_AUTH) {
     const user = MOCK_USERS.find(
-      (u) => u.id === id && u.password === password
+      (u) => u.email === email && u.password === password
     );
 
     if (!user) {
@@ -29,62 +35,67 @@ export async function login({ id, password }) {
       throw error;
     }
 
-    const fakeAccessToken = `mock-access-token-${user.id}`;
+    const fakeAccessToken = `mock-access-token-${user.email}`;
     setAccessToken(fakeAccessToken);
 
     return { user };
   }
 
-  // 실제 서버 모드
-  const res = await httpClient.post("/api/auth/login", { id, password });
-  const { accessToken, user } = res.data;
+  // 실제 서버 호출
+  const res = await httpClient.post("/api/auth/login", {
+    email,
+    password,
+  });
+
+  const { accessToken, refreshToken, user } = res.data;
+
   setAccessToken(accessToken);
+  setRefreshToken(refreshToken);
+
   return { user };
 }
 
-export async function register({ id, email, password, nickname }) {
-  if (USE_MOCK_AUTH) {
-    // 간단히 중복 체크만 하는 목업
-    const exists = MOCK_USERS.some(
-      (u) => u.id === id || u.email === email
-    );
-
-    if (exists) {
-      const error = new Error("DUPLICATE");
-      error.response = {
-        status: 400,
-        data: { message: "이미 사용 중인 아이디 또는 이메일입니다." },
-      };
-      throw error;
-    }
-    MOCK_USERS.push({ id, email, password, nickname });
-    return { id, email, nickname };
-  }
-
-  // 실제 서버 모드
+/* ------------------------------
+ * 회원가입
+ * ------------------------------ */
+export async function signup({
+  email,
+  password,
+  nickname,
+  userName,
+  userBirth,
+  preference,
+  goal,
+  dailyWordGoal
+}) {
   const res = await httpClient.post("/api/auth/signup", {
     email,
-    password,      // → USER_PW
-    nickname,      // → NICKNAME
-    userName,      // → USER_NAME
-    userBirth,     // → USER_BIRTH
-    preference,    // → PREFERENCE
-    goal,          // → GOAL
-    dailyWordGoal, // → DAILY_WORD_GOAL
+    password,
+    nickname,
+    userName,
+    userBirth,
+    preference,
+    goal,
+    dailyWordGoal
   });
+
   return res.data;
 }
 
-// 로그아웃
-export async function logout() {
-  // 1) 클라이언트 상태는 먼저 정리
+/* ------------------------------
+ * 로그아웃
+ * ------------------------------ */
+export async function logout(email) {
+  // 1) 토큰 제거
   clearTokens();
+
+  // 2) 전역 이벤트 발생 (전역 상태 변경 감지)
   window.dispatchEvent(new Event("auth:logout"));
 
-  // 2) 서버 로그아웃은 백그라운드로 시도 
+  // 3) 서버 로그아웃 요청 (실패해도 무시)
   try {
-    await httpClient.post("/api/auth/logout");
-  } catch (e) {
-    // 실패해도 사용자 UX에는 영향 없으므로 무시
+    await httpClient.post("/api/auth/logout", { email });
+  } catch {
+    // 서버 응답 실패해도 클라이언트는 로그아웃 처리 완료 상태
   }
 }

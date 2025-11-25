@@ -1,4 +1,3 @@
-// src/components/common/PasswordInput.jsx
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -8,8 +7,10 @@ import { Eye, EyeOff } from "lucide-react";
  * - type=password ↔ type=text 토글
  */
 export default function PasswordInput({
+  value,
+  onChange,
   placeholder = "비밀번호",
-  size = "md",          // 'sm' | 'md' | 'lg'
+  size = "md",
   fullWidth = true,
   className = "",
   ...rest
@@ -38,13 +39,15 @@ export default function PasswordInput({
         type={visible ? "text" : "password"}
         className={inputClassName}
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         {...rest}
       />
+
       <button
         type="button"
         className="input-icon input-icon--right input-icon-button"
         onClick={toggleVisible}
-        aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"}
       >
         {visible ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>

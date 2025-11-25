@@ -1,15 +1,8 @@
 // src/components/common/Input.jsx
+import { useRef } from "react";
+
 /**
  * 디자인 토큰 + input.css 기반 공통 인풋 컴포넌트
- *
- * - size: 'sm' | 'md' | 'lg'
- * - status: 'error' | 'warning' | 'success' | 'info'
- * - search: true/false (검색 스타일 온오프)
- * - leftIcon / rightIcon: 아이콘 컴포넌트(예: SVG)
- * - fullWidth: true면 100% 폭
- *
- * 이 컴포넌트는 "저수준" 공통 베이스로 두고,
- * SearchInput 같은 패턴 전용 컴포넌트에서 조합해서 사용합니다.
  */
 
 export default function Input({
@@ -29,6 +22,9 @@ export default function Input({
   id,
   ...rest
 }) {
+  const inputRef = useRef(null);
+  const inputType = rest?.type;
+
   const sizeClass =
     size === "sm" ? "input--sm" : size === "lg" ? "input--lg" : "input--md";
 
@@ -60,19 +56,38 @@ export default function Input({
     .filter(Boolean)
     .join(" ");
 
+  // 왼쪽 아이콘 클릭 가능 여부 (date 타입이면 기본으로 클릭 가능하게)
+  const hasClickableLeftIcon = !!(onLeftIconClick || inputType === "date");
+
+  const handleLeftIconClick = () => {
+    if (onLeftIconClick) {
+      onLeftIconClick();
+      return;
+    }
+
+    // type="date"인 경우 브라우저 달력 열기
+    if (inputType === "date" && inputRef.current) {
+      if (typeof inputRef.current.showPicker === "function") {
+        inputRef.current.showPicker();
+      } else {
+        inputRef.current.focus();
+      }
+    }
+  };
+
   return (
     <div
       className={["input-wrapper", wrapperClassName]
         .filter(Boolean)
         .join(" ")}
     >
-      {/* 왼쪽 아이콘: 클릭 핸들러 있으면 버튼, 없으면 span */}
+      {/* 왼쪽 아이콘 */}
       {leftIcon &&
-        (onLeftIconClick ? (
+        (hasClickableLeftIcon ? (
           <button
             type="button"
             className="input-icon input-icon--left input-icon-button"
-            onClick={onLeftIconClick}
+            onClick={handleLeftIconClick}
           >
             {leftIcon}
           </button>
@@ -82,9 +97,11 @@ export default function Input({
 
       <input
         id={id}
+        ref={inputRef}
         className={inputClassName}
         readOnly={readOnly}
         disabled={disabled}
+        aria-invalid={status === "error" ? true : undefined}
         {...rest}
       />
 
