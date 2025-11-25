@@ -73,6 +73,10 @@ a:hover {
   box-shadow: var(--shadow-soft);
   padding: var(--space-4);
   border: 1px solid var(--border-subtle);
+  
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 /* ----------------------------------------- */
