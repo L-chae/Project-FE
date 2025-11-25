@@ -111,7 +111,7 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     // 유효성 통과 → setup 페이지로 기본 정보 전달
-    navigate("/auth/setup", {
+    navigate("api/auth/setup", {
       state: {
         basicInfo: {
           email: formData.email,

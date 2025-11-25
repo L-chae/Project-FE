@@ -50,3 +50,12 @@ img {
     max-width: 100%;
     display: block;
 }
+
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}

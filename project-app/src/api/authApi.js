@@ -36,7 +36,7 @@ export async function login({ id, password }) {
   }
 
   // 실제 서버 모드
-  const res = await httpClient.post("/auth/login", { id, password });
+  const res = await httpClient.post("/api/auth/login", { id, password });
   const { accessToken, user } = res.data;
   setAccessToken(accessToken);
   return { user };
@@ -62,7 +62,7 @@ export async function register({ id, email, password, nickname }) {
   }
 
   // 실제 서버 모드
-  const res = await httpClient.post("/auth/register", {
+  const res = await httpClient.post("/api/auth/signup", {
     email,
     password,      // → USER_PW
     nickname,      // → NICKNAME
@@ -83,7 +83,7 @@ export async function logout() {
 
   // 2) 서버 로그아웃은 백그라운드로 시도 
   try {
-    await httpClient.post("/auth/logout");
+    await httpClient.post("/api/auth/logout");
   } catch (e) {
     // 실패해도 사용자 UX에는 영향 없으므로 무시
   }
