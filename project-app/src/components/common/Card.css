@@ -1,6 +1,4 @@
 /* src/components/Card.css */
-/* tokens.css / index.css 에 정의된 CSS 변수 사용 */
-/* 카드가 링크/클릭 가능할 때 상태 */
 .card--interactive {
   cursor: pointer;
   transition:

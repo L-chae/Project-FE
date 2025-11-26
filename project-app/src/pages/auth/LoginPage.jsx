@@ -125,7 +125,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="page-container">
+    <main className="page-container no-select">
       <div className="login-card">
         {/* 왼쪽 비주얼 영역 */}
         <div className="login-visual">

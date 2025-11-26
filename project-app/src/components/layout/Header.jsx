@@ -14,14 +14,14 @@ import "./Header.css";
 const AUTH_NAV_ITEMS = [
   { to: "/dashboard", label: "대시보드" },
   { to: "/words", label: "단어장" },        // 단어 상세/검색 페이지
-  { to: "/story/ai", label: "AI 스토리" },  // AI 스토리 생성
+  { to: "/story/list", label: "AI 스토리" },  // AI 스토리 생성
   { to: "/relation", label: "단어 관계망" },
 ];
 
 // 비로그인 사용자 네비
 const GUEST_NAV_ITEMS = [
   { to: "/", label: "홈" },
-  { to: "/story/ai", label: "AI 스토리" },
+  { to: "/story/list", label: "AI 스토리" },
 ];
 
 const AUTH_HOME_PATH = "/dashboard";

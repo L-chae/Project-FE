@@ -6,6 +6,10 @@ import SetupPage from "./pages/auth/SetupPage";
 import AccountFindPage from "./pages/auth/AccountFindPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 
+import StoryListPage from "./pages/stories/StoryListPage";
+import StoryDetailPage from "./pages/stories/StoryDetailPage";
+import StoryCreatePage from "./pages/stories/StoryCreatePage";
+
 import ProfilePage from "./pages/account/ProfilePage";
 function AppRouter() {
   return (
@@ -25,7 +29,12 @@ function AppRouter() {
       {/* Dashboard */}
       <Route path="/dashboard" element={<DashboardPage />} />
 
-      <Route path="/account/profile" element={<ProfilePage/>}/>
+      {/* Story */}
+      <Route path="/story/list" element={<StoryListPage />} />
+      <Route path="/story/detail" element={<StoryDetailPage />} />
+      <Route path="/story/create" element={<StoryCreatePage />} />
+
+      <Route path="/account/profile" element={<ProfilePage />} />
 
     </Routes>
   );
