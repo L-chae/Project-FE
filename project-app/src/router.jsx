@@ -1,11 +1,12 @@
 import { Routes, Route } from "react-router-dom";
-
+import { AuthProvider } from "./context/AuthContext";
 import SignupPage from "./pages/auth/SignupPage";
 import LoginPage from "./pages/auth/LoginPage";
 import SetupPage from "./pages/auth/SetupPage";
 import AccountFindPage from "./pages/auth/AccountFindPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
-
+import WordListPage from "./pages/words/WordListPage";
+import WordDetailPage from "./pages/words/WordDetailPage";
 import StoryListPage from "./pages/stories/StoryListPage";
 import StoryDetailPage from "./pages/stories/StoryDetailPage";
 import StoryCreatePage from "./pages/stories/StoryCreatePage";
@@ -13,30 +14,36 @@ import StoryCreatePage from "./pages/stories/StoryCreatePage";
 import ProfilePage from "./pages/account/ProfilePage";
 function AppRouter() {
   return (
-    <Routes>
-      {/* 비회원 홈 */}
-      <Route path="/" element={
-        <div className="page-container">{/* 홈 내용 */}
-        </div>}
-      />
+    <AuthProvider>
+      <Routes>
+        {/* 비회원 홈 */}
+        <Route path="/" element={
+          <div className="page-container">{/* 홈 내용 */}
+          </div>}
+        />
 
-      {/* Auth 페이지 */}
-      <Route path="/auth/login" element={<LoginPage />} />
-      <Route path="/auth/signup" element={<SignupPage />} />
-      <Route path="/auth/setup" element={<SetupPage />} />
-      <Route path="/auth/find" element={<AccountFindPage />} />
+        {/* Auth 페이지 */}
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route path="/auth/signup" element={<SignupPage />} />
+        <Route path="/auth/setup" element={<SetupPage />} />
+        <Route path="/auth/find" element={<AccountFindPage />} />
 
-      {/* Dashboard */}
-      <Route path="/dashboard" element={<DashboardPage />} />
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<DashboardPage />} />
 
-      {/* Story */}
-      <Route path="/story/list" element={<StoryListPage />} />
-      <Route path="/story/detail" element={<StoryDetailPage />} />
-      <Route path="/story/create" element={<StoryCreatePage />} />
+        {/* 단어장 리스트 */}
+        <Route path="/words" element={<WordListPage />} />
+        <Route path="/words/:id" element={<WordDetailPage />} />
 
-      <Route path="/account/profile" element={<ProfilePage />} />
+        {/* Story */}
+        <Route path="/story/list" element={<StoryListPage />} />
+        <Route path="/story/:id" element={<StoryDetailPage />} />
+        <Route path="/story/create" element={<StoryCreatePage />} />
 
-    </Routes>
+        <Route path="/account/profile" element={<ProfilePage />} />
+
+      </Routes>
+    </AuthProvider>
   );
 }
 

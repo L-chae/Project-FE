@@ -10,6 +10,21 @@
   gap: var(--space-4);
 }
 
+/* 로딩 중 버튼 비활성화 스타일 */
+.story-create-generate-button.disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #9ca3af; /* 회색조 */
+}
+
+/* 아이콘 회전 애니메이션 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
 /* 상단 네비게이션 바 */
 .story-create-nav {
   display: flex;
