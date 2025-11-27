@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
-import TodayWordCard from "../../components/common/TodayWordCard";
+import TodayWordCard from "../words/components/TodayWordCard";
 import Illustration from "../../assets/images/login.svg";
 
 import "./SetupPage.css";

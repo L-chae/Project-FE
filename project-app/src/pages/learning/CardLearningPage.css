@@ -1,0 +1,160 @@
+.card-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-page--loading,
+.card-page--error {
+  max-width: 760px;
+  margin: 40px auto;
+  padding: 20px;
+  text-align: center;
+  color: #475569;
+}
+
+/* 헤더 */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.card-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.card-header__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.card-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+/* 본문 */
+.card-body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 푸터 버튼 */
+.card-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.card-footer button {
+  min-width: 110px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+/* "모르겠다"를 강조 */
+.card-footer button:first-child {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.card-footer button:last-child {
+  background-color: #ecfdf3;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.card-footer button:hover {
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.15);
+  transform: translateY(-1px);
+}
+
+/* 결과 */
+.card-result {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  text-align: center;
+}
+
+.card-result h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.card-result p {
+  margin: 4px 0;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.card-result__actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-result__actions button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.card-result__actions button:hover {
+  background-color: #0f172a;
+  color: #f9fafb;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+/* 반응형 */
+@media (max-width: 640px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-header__meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

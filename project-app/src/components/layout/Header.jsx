@@ -15,6 +15,7 @@ const AUTH_NAV_ITEMS = [
   { to: "/words", label: "단어장" },
   { to: "/story/list", label: "AI 스토리" },
   { to: "/relation", label: "단어 관계망" },
+  { to: "/learning", label: "학습하기" },
 ];
 
 // 비로그인 사용자 네비
