@@ -1,13 +1,13 @@
 // src/pages/auth/SignupPage.jsx
+import { Calendar } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar } from "lucide-react";
 
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import PasswordInput from "../../components/common/PasswordInput";
-import TodayWordCard from "../../components/common/TodayWordCard";
 import RegisterIllustration from "../../assets/images/login.svg";
+import Button from "../../components/common/Button";
+import Input from "../../components/common/Input";
+import PasswordInput from './components/PasswordInput';
+import TodayWordCard from "../words/components/TodayWordCard";
 
 import "./SignupPage.css";
 

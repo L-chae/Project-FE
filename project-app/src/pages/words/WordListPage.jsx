@@ -1,14 +1,14 @@
 // pages/word/WordListPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  getWordList,
   addFavorite,
+  getWordList,
   removeFavorite,
   toggleProgress,
 } from "../../api/wordApi";
 import "./WordListPage.css";
-import WordCard from "../../components/words/WordCard";
-import WordFilter from "../../components/words/WordFilter";
+import WordFilter from './components/WordFilter';
+import WordCard from "./components/WordCard";
 
 const FILTER_INITIAL = {
   category: "All", // 품사

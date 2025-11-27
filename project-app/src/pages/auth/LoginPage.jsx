@@ -5,8 +5,8 @@ import "./LoginPage.css";
 
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
-import PasswordInput from "../../components/common/PasswordInput";
-import TodayWordCard from "../../components/common/TodayWordCard";
+import PasswordInput from './components/PasswordInput';
+import TodayWordCard from "../words/components/TodayWordCard";
 import LoginIllustration from "../../assets/images/login.svg";
 
 import { useAuth } from "../../context/AuthContext";

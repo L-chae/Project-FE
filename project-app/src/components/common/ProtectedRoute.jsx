@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-
+// dashboard, words, learning, stories 등 모든 보호된 라우트에서 사용됨
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
 

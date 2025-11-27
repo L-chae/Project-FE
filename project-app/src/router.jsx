@@ -1,9 +1,10 @@
-import { Route, Routes,Navigate  } from "react-router-dom";
-import ProfilePage from "./pages/account/ProfilePage";
+import { Route, Routes } from "react-router-dom";
 import AccountFindPage from "./pages/auth/AccountFindPage";
 import LoginPage from "./pages/auth/LoginPage";
 import SetupPage from "./pages/auth/SetupPage";
 import SignupPage from "./pages/auth/SignupPage";
+// 대시보드
+import ProfilePage from "./pages/account/ProfilePage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 
 import StoryCreatePage from "./pages/stories/StoryCreatePage";
@@ -13,12 +14,12 @@ import StoryListPage from "./pages/stories/StoryListPage";
 import WordDetailPage from "./pages/words/WordDetailPage";
 import WordListPage from "./pages/words/WordListPage";
 
-import QuizPage from "./pages/learning/QuizPage";
 import CardLearningPage from "./pages/learning/CardLearningPage";
+import QuizPage from "./pages/learning/QuizPage";
 import WrongNotePage from "./pages/learning/WrongNotePage";
-import LearningHomePage from "./pages/learning/LearningHomePage";
 
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import LearningHomePage from './pages/learning/LearningHomePage';
 function AppRouter() {
   return (
     <Routes>
