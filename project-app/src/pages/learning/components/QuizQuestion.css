@@ -1,0 +1,134 @@
+.quiz-question {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 문제 텍스트 영역 */
+.quiz-question__stem {
+  margin-bottom: 4px;
+}
+
+.quiz-question__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.quiz-question__description {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+/* 보기 리스트 */
+.quiz-question__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.quiz-question__choice {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  background-color: #f8fafc;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.08s ease,
+    box-shadow 0.12s ease;
+}
+
+.quiz-question__choice:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5f5;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.quiz-question__choice:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.quiz-question__choice-label {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background-color: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.quiz-question__choice-text {
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+/* 선택 상태 / 정답/오답 상태 */
+.quiz-question__choice.choice--selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.quiz-question__choice.choice--correct {
+  border-color: #16a34a;
+  background-color: #ecfdf3;
+}
+
+.quiz-question__choice.choice--wrong {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+/* 피드백 영역 */
+.quiz-question__feedback {
+  min-height: 24px;
+  font-size: 0.95rem;
+}
+
+.quiz-question__feedback--correct {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.quiz-question__feedback--wrong {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* 해설 영역 */
+.quiz-question__explanation {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.93rem;
+  color: #334155;
+}
+
+.quiz-question__explanation h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}

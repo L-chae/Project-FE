@@ -1,0 +1,65 @@
+.flashcard-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 카드 flip 애니메이션 */
+.flashcard {
+  width: 100%;
+  max-width: 420px;
+  height: 240px;
+  position: relative;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flashcard__face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  backface-visibility: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  transition: transform 0.36s ease;
+}
+
+.flashcard__face--front {
+  background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+  color: #0f172a;
+  transform: rotateY(0deg);
+}
+
+.flashcard__face--back {
+  background: #ffffff;
+  color: #0f172a;
+  transform: rotateY(180deg);
+  border: 1px solid #e2e8f0;
+}
+
+.flashcard--flipped .flashcard__face--front {
+  transform: rotateY(-180deg);
+}
+
+.flashcard--flipped .flashcard__face--back {
+  transform: rotateY(0deg);
+}
+
+.flashcard__text {
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 힌트 텍스트 */
+.flashcard__hint {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}

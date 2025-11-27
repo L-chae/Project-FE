@@ -1,0 +1,228 @@
+.wrongnote-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 헤더 */
+.wrongnote-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.wrongnote-header__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* 필터 영역 */
+.wrongnote-filters {
+  margin-top: 8px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.wrongnote-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.wrongnote-filter-group label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  color: #64748b;
+  gap: 4px;
+}
+
+.wrongnote-filter-group input[type="date"],
+.wrongnote-filter-group select {
+  min-width: 140px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.wrongnote-filter-group button {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #0f172a;
+  color: #f9fafb;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.wrongnote-filter-group button:hover {
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+/* 상단 액션 버튼 */
+.wrongnote-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wrongnote-actions button {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.wrongnote-actions button:hover:not(:disabled) {
+  background-color: #0f172a;
+  color: #f9fafb;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.wrongnote-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* 리스트 */
+.wrongnote-list {
+  margin-top: 4px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.wrongnote-list__loading,
+.wrongnote-list__error,
+.wrongnote-list__empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+/* 테이블 */
+.wrongnote-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.wrongnote-table thead {
+  background-color: #f8fafc;
+}
+
+.wrongnote-table th,
+.wrongnote-table td {
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.wrongnote-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wrongnote-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 페이지네이션 */
+.wrongnote-pagination {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.86rem;
+  color: #64748b;
+  border-top: 1px solid #e2e8f0;
+}
+
+.wrongnote-pagination button {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.wrongnote-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wrongnote-pagination button:not(:disabled):hover {
+  background-color: #0f172a;
+  color: #f9fafb;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .wrongnote-filter-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wrongnote-table thead {
+    display: none;
+  }
+
+  .wrongnote-table,
+  .wrongnote-table tbody,
+  .wrongnote-table tr,
+  .wrongnote-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .wrongnote-table tr {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .wrongnote-table td {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+
+  .wrongnote-table td:first-child {
+    padding-top: 10px;
+  }
+}

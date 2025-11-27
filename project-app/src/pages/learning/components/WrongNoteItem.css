@@ -1,0 +1,36 @@
+.wrongnote-item td {
+  padding: 8px 10px;
+  font-size: 0.92rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wrongnote-item:hover {
+  background-color: #f8fafc;
+}
+
+.wrongnote-item td:first-child {
+  width: 40px;
+}
+
+/* badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.badge--used {
+  color: #166534;
+  background-color: #ecfdf3;
+  border-color: #bbf7d0;
+}
+
+.badge--unused {
+  color: #92400e;
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+}
