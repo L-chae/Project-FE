@@ -1,60 +1,120 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+// src/context/AuthContext.jsx
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+} from "react";
+import { login as loginApi, logout as logoutApi } from "../api/authApi";
+import {
+  getAccessToken,
+  setAccessToken,
+  setRefreshToken,
+  clearTokens,
+} from "../utils/storage";
 
-// 1. Context 생성 (데이터를 담을 공간)
-const AuthContext = createContext();
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
+
+const AuthContext = createContext({
+  user: null,
+  login: async () => {},
+  logout: async () => {},
+  updateProfileState: () => {},   // ✅ 기본값 추가
+  loading: false,
+});
 
 export function AuthProvider({ children }) {
-  // 로그인 상태 (초기값은 null)
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // 깜빡임 방지용 로딩
+  const [loading, setLoading] = useState(true);
 
-  // 2. 앱이 켜질 때(새로고침 시) 딱 한 번 실행
+  // 최초 로드 시 토큰 + userInfo로 세션 복원
   useEffect(() => {
     const checkLogin = async () => {
-      // 금고(localStorage)에서 토큰과 내 정보를 꺼내봄
-      const storedToken = localStorage.getItem("accessToken");
-      const storedUser = localStorage.getItem("userInfo");
+      try {
+        const token = getAccessToken();
+        const storedUser = localStorage.getItem("userInfo");
 
-      if (storedToken && storedUser) {
-        // 토큰이 있으면 -> 로그인 상태 복구!
-        setUser(JSON.parse(storedUser));
-        
-        // (심화: 여기서 백엔드에 토큰이 유효한지 검사하는 API를 찌르기도 함)
+        if (token && storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false); // 검사 끝났으니 화면 보여줌
     };
 
     checkLogin();
   }, []);
 
-  // 3. 로그인 함수 (LoginPage에서 호출)
-  const login = (token, userData) => {
-    // 상태 업데이트
+  // 공통 로그인 함수 (MOCK + REAL)
+  const login = async (email, password) => {
+    if (USE_MOCK) {
+      const mockUser = {
+        email,
+        nickname: "Mock User",
+      };
+
+      setAccessToken("mock_access_token");
+      setRefreshToken("mock_refresh_token");
+      localStorage.setItem("userInfo", JSON.stringify(mockUser));
+      setUser(mockUser);
+
+      return mockUser;
+    }
+
+    const { user: userData } = await loginApi({ email, password });
+
     setUser(userData);
-    
-    // 금고에 저장 (영구 보관)
-    localStorage.setItem("accessToken", token);
     localStorage.setItem("userInfo", JSON.stringify(userData));
+    return userData;
   };
 
-  // 4. 로그아웃 함수 (Dashboard나 Navbar에서 호출)
-  const logout = () => {
+  // ✅ 프로필 수정 시 user / localStorage 동기화
+  const updateProfileState = (patch) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const nextUser = { ...prev, ...patch };
+      localStorage.setItem("userInfo", JSON.stringify(nextUser));
+      return nextUser;
+    });
+  };
+
+  const logout = async () => {
+    const storedUser = localStorage.getItem("userInfo");
+    let email;
+
+    try {
+      email =
+        user?.email ||
+        (storedUser ? JSON.parse(storedUser).email : undefined);
+    } catch {
+      email = undefined;
+    }
+
     setUser(null);
-    localStorage.removeItem("accessToken");
     localStorage.removeItem("userInfo");
-    // 필요하다면 메인으로 이동
-    window.location.href = "/login";
+    clearTokens();
+
+    // MOCK 모드에서는 서버 로그아웃 안 쏴도 됨
+    if (!USE_MOCK && email) {
+      try {
+        await logoutApi(email);
+      } catch {
+        // 서버 에러는 무시
+      }
+    }
+
+    window.location.href = "/auth/login";
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {/* 로딩 중일 땐 하얀 화면 유지 (로그인 풀린 것처럼 보이는 것 방지) */}
+    <AuthContext.Provider
+      value={{ user, login, logout, updateProfileState, loading }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
 }
 
-// 5. 편하게 쓰기 위한 커스텀 훅
 export function useAuth() {
   return useContext(AuthContext);
 }
