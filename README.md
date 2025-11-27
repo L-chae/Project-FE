@@ -177,7 +177,3 @@ Authorization: Bearer {accessToken}
 ```
 
 > **협의 사항**: 만약 토글 방식이 아닌 명시적 값 전달을 원할 경우, Body에 `{"isCompleted": true}`를 실어 보내도록 프론트 로직 수정이 가능합니다.
-
-
-1.  **TypeScript 인터페이스 생성**: 위 JSON 응답 구조를 바탕으로 `interface Word {...}` 타입을 바로 만들어 드릴까요?
-2.  **Mock Data 생성**: 백엔드 API가 완성되기 전, 프론트에서 테스트할 수 있는 더미 데이터(JSON) 세트를 만들어 드릴까요?
