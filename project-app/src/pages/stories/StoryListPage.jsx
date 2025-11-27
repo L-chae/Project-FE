@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import Input from "../../components/common/Input";
 import "./StoryListPage.css";
 
-// 기본 목업 스토리 1개 (stories props 안 들어오면 이 데이터 사용)
+// 기본 목업 스토리 (stories props 안 들어오면 이 데이터 사용)
 const MOCK_STORIES = [
   {
     id: 1,
@@ -30,7 +30,7 @@ const MOCK_STORIES = [
     excerpt:
       "On the first snowy morning, I finally used every word I had studied this week.",
     date: "2025-11-26",
-    readTime: "5 min read",
+    readTime: "4 min read",
     words: ["snow", "memory", "whisper", "lantern"],
     content: `...`,
     translation: `...`,
@@ -40,8 +40,8 @@ const MOCK_STORIES = [
     title: "First Snow in Seoul 3",
     excerpt:
       "On the first snowy morning, I finally used every word I had studied this week.",
-    date: "2025-11-26",
-    readTime: "5 min read",
+    date: "2025-11-25",
+    readTime: "6 min read",
     words: ["snow", "memory", "whisper", "lantern"],
     content: `...`,
     translation: `...`,
@@ -52,18 +52,21 @@ const StoryListPage = ({ stories = [] }) => {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
 
+  // 디테일 페이지 라우팅을 /story/:id 방식으로 통일
   const handleSelectStory = (story) => {
-    navigate("/story/detail", {
-      state: { story },
-    });
+    navigate(`/story/${story.id}`);
   };
 
   const handleCreateNew = () => {
     navigate("/story/create");
   };
 
-  const sourceStories = stories.length > 0 ? stories : MOCK_STORIES;
+  // 최신 날짜 기준 내림차순 정렬
+  const sourceStories = (stories.length > 0 ? stories : MOCK_STORIES)
+    .slice()
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // 제목 + 요약 + 태그(단어) 검색
   const filteredStories =
     searchValue.trim().length === 0
       ? sourceStories
@@ -71,7 +74,8 @@ const StoryListPage = ({ stories = [] }) => {
           const q = searchValue.toLowerCase();
           return (
             story.title?.toLowerCase().includes(q) ||
-            story.excerpt?.toLowerCase().includes(q)
+            story.excerpt?.toLowerCase().includes(q) ||
+            (story.words || []).some((w) => w.toLowerCase().includes(q))
           );
         });
 
@@ -82,24 +86,15 @@ const StoryListPage = ({ stories = [] }) => {
     <div className="page-container story-list-page">
       {/* Header Section */}
       <header className="story-list-header">
-        <div className="story-list-header-left">
+        <div className="story-list-header-main">
           <h1 className="story-list-title">AI 스토리</h1>
           <p className="story-list-subtitle">
             내가 학습한 단어로 만든 스토리 컬렉션입니다.
           </p>
-
-          {/* 메인 CTA 버튼: 왼쪽 영역, 제목 아래 */}
-          <button
-            type="button"
-            className="story-new-button"
-            onClick={handleCreateNew}
-          >
-            <BookOpen className="icon-sm" />
-            <span>스토리 생성</span>
-          </button>
         </div>
 
-        <div className="story-list-header-right">
+        {/* 검색 + 생성 버튼 액션 영역 */}
+        <div className="story-list-header-actions">
           <Input
             type="text"
             size="sm"
@@ -110,11 +105,20 @@ const StoryListPage = ({ stories = [] }) => {
             leftIcon={<Search className="icon-sm" />}
             wrapperClassName="story-search-wrapper"
           />
+
+          <button
+            type="button"
+            className="story-new-button"
+            onClick={handleCreateNew}
+          >
+            <BookOpen className="icon-sm" />
+            <span>스토리 생성</span>
+          </button>
         </div>
       </header>
-
       {/* Story Grid */}
       <section className="story-grid">
+        {/* 1) 스토리 있고, 검색 결과도 있을 때 */}
         {hasAnyStories &&
           hasFilteredStories &&
           filteredStories.map((story) => (
@@ -133,7 +137,6 @@ const StoryListPage = ({ stories = [] }) => {
                     )}
                   </div>
                 </div>
-                {/* 상단 날짜 메타는 제거 */}
               </div>
 
               {/* 카드 본문 (구분선 + 태그) */}
@@ -152,7 +155,7 @@ const StoryListPage = ({ stories = [] }) => {
                 )}
               </div>
 
-              {/* 카드 푸터: 좌측 달력+날짜, 우측 스토리 읽기 버튼 */}
+              {/* 카드 푸터: 날짜 + 읽기시간 메타, 우측 스토리 읽기 버튼 */}
               <div className="story-card-footer">
                 <div className="story-card-footer-meta">
                   <span className="story-card-date">{story.date}</span>

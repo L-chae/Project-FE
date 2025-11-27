@@ -1,136 +1,165 @@
-import { Wand2 } from "lucide-react";
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom"; 
-import { createAiStory } from "../../api/storyApi"; 
-import Input from "../../components/common/Input";
-import "./StoryCreatePage.css";
+import React, { useState } from 'react';
+import './StoryCreatePage.css';
 
 const StoryCreatePage = () => {
-  const location = useLocation();
-  const navigate = useNavigate(); // 페이지 이동 훅
+// Mock Data: 오답 노트 데이터 (예시)
+  const [mistakePool, setMistakePool] = useState([
+    { id: 1, word: 'ambiguous', meaning: '애매모호한', type: 'adj' },
+    { id: 2, word: 'mitigate', meaning: '완화하다', type: 'verb' },
+    { id: 3, word: 'scrutinize', meaning: '세밀히 조사하다', type: 'verb' },
+    { id: 4, word: 'fluctuate', meaning: '변동하다', type: 'verb' },
+    { id: 5, word: 'paradigm', meaning: '패러다임', type: 'noun' },
+    { id: 6, word: 'eloquent', meaning: '웅변을 잘하는', type: 'adj' },
+    { id: 7, word: 'bias', meaning: '편견', type: 'noun' },
+  ]);
 
-  // 퀴즈/단어장에서 넘겨준 단어들
-  const baseWords = location.state?.baseWords || [];
-
-  const [title, setTitle] = useState("");
-  const [selectedWords, setSelectedWords] = useState(baseWords);
-  const [prompt, setPrompt] = useState("");
-  
-  // 🔧 로딩 상태 추가
+  const [selectedWords, setSelectedWords] = useState([]);
+  const [customInput, setCustomInput] = useState('');
+  const [options, setOptions] = useState({ difficulty: 'intermediate', style: 'narrative' });
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleToggleWord = (word) => {
-    setSelectedWords((prev) =>
-      prev.includes(word)
-        ? prev.filter((w) => w !== word)
-        : [...prev, word]
-    );
+  // --- Actions ---
+
+  // 1. 오답 노트에서 단어 선택 (Left -> Right)
+  const selectWord = (wordObj) => {
+    if (selectedWords.length >= 5) return alert("단어는 최대 5개까지만 선택할 수 있어요.");
+    if (selectedWords.find((w) => w.text === wordObj.word)) return;
+
+    setSelectedWords([...selectedWords, { text: wordObj.word, source: 'mistake' }]);
   };
 
-  const handleGenerate = async () => {
-    // 1. 유효성 검사 (제목과 프롬프트 필수)
-    if (!title.trim() || !prompt.trim()) {
-      alert("스토리 제목과 프롬프트를 모두 입력해주세요!");
-      return;
-    }
+  // 2. 선택된 단어 제거 (Right -> X)
+  const removeWord = (textToRemove) => {
+    setSelectedWords(selectedWords.filter((w) => w.text !== textToRemove));
+  };
 
-    try {
-      setIsGenerating(true); // 로딩 시작 (버튼 비활성화)
-
-      // 2. API 호출
-      const requestData = {
-        title: title,
-        prompt: prompt,
-        keywords: selectedWords
-      };
-
-      const res = await createAiStory(requestData);
+  // 3. 직접 입력 추가 (Input -> Right)
+  const handleCustomInput = (e) => {
+    if (e.key === 'Enter' && customInput.trim()) {
+      if (selectedWords.length >= 5) return alert("단어는 최대 5개까지만 선택할 수 있어요.");
       
-      console.log("생성 완료:", res);
-      // 3. 생성된 스토리 상세 페이지로 이동
-      navigate(`/story/${res.storyId}`);
-
-    } catch (err) {
-      console.error(err);
-      alert("스토리 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
-    } finally {
-      setIsGenerating(false); // 로딩 끝
+      const newWord = customInput.trim();
+      if (!selectedWords.find((w) => w.text === newWord)) {
+        setSelectedWords([...selectedWords, { text: newWord, source: 'custom' }]);
+        setCustomInput('');
+      }
     }
+  };
+
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    // API 호출 로직 시뮬레이션
+    setTimeout(() => setIsGenerating(false), 2000);
   };
 
   return (
-    <div className="story-create-page">
-      <header className="story-create-header">
-        <div>
-          <h1 className="story-create-title">새 스토리 만들기</h1>
-          <p className="story-create-subtitle">
-            선택한 단어와 간단한 프롬프트로 AI가 이야기를 만들어 줍니다.
-          </p>
-        </div>
+    <div className="workbench-container">
+      <header className="wb-header">
+        <h2>AI 스토리 스튜디오</h2>
+        <p>복습할 단어를 골라 나만의 영어 문맥을 만들어보세요.</p>
       </header>
 
-      <main className="story-create-main">
-        <section className="story-create-form">
-          {/* 제목 입력 */}
-          <Input
-            label="스토리 제목"
-            placeholder="예: First Snow in My City"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+      <div className="wb-grid">
+        {/* --- LEFT PANEL: 오답 노트 (Source) --- */}
+        <section className="panel source-panel">
+          <div className="panel-header">
+            <h3>📂 나의 오답 노트</h3>
+            <span className="count-badge">{mistakePool.length}개</span>
+          </div>
+          <div className="word-list">
+            {mistakePool.map((item) => {
+              const isSelected = selectedWords.find(w => w.text === item.word);
+              return (
+                <div 
+                  key={item.id} 
+                  className={`word-card ${isSelected ? 'disabled' : ''}`}
+                  onClick={() => !isSelected && selectWord(item)}
+                >
+                  <div className="word-info">
+                    <span className="word-text">{item.word}</span>
+                    <span className="word-meaning">{item.meaning}</span>
+                  </div>
+                  {/* 선택됨 표시 (한글) */}
+                  {isSelected && <div className="selected-overlay">선택됨</div>}
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-          {/* 프롬프트 입력 */}
-          <div className="story-create-field">
-            <label className="story-create-label">프롬프트 / 상황 설명</label>
-            <textarea
-              className="story-create-textarea"
-              placeholder="예: 겨울 방학 첫날, 친구들과 눈사람을 만드는 이야기로 만들어줘."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
+        {/* --- RIGHT PANEL: 작업 공간 (Builder) --- */}
+        <section className="panel builder-panel">
+          <div className="panel-header">
+            <h3>✨ 스토리 구성하기</h3>
+            <span className={`limit-badge ${selectedWords.length === 5 ? 'full' : ''}`}>
+              {selectedWords.length} / 5
+            </span>
           </div>
 
-          {/* 단어 선택 칩 (데이터가 있을 때만 표시) */}
-          {baseWords.length > 0 && (
-            <div className="story-create-field">
-              <label className="story-create-label">
-                사용할 단어 선택 (오답/학습 단어)
-              </label>
-              <div className="story-create-word-chips">
-                {baseWords.map((word) => {
-                  const active = selectedWords.includes(word);
-                  return (
-                    <button
-                      key={word}
-                      type="button"
-                      className={
-                        "story-create-chip" +
-                        (active ? " story-create-chip--active" : "")
-                      }
-                      onClick={() => handleToggleWord(word)}
-                    >
-                      {word}
-                    </button>
-                  );
-                })}
+          {/* 1. 선택된 단어 영역 */}
+          <div className="selected-area">
+            {selectedWords.length === 0 ? (
+              <div className="empty-state">
+                <p>좌측 오답 노트에서 단어를 클릭하거나<br/>아래 입력창에 직접 추가해보세요.</p>
+              </div>
+            ) : (
+              <div className="chips-wrapper">
+                {selectedWords.map((item, idx) => (
+                  <span key={idx} className={`chip ${item.source}`}>
+                    {item.text}
+                    <button onClick={() => removeWord(item.text)}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. 직접 입력 및 옵션 */}
+          <div className="controls-area">
+            <div className="input-group">
+              <label>단어 직접 추가</label>
+              <input
+                type="text"
+                placeholder="단어 입력 후 엔터 (예: sustainability)"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={handleCustomInput}
+                disabled={selectedWords.length >= 5}
+              />
+            </div>
+
+            <div className="options-grid">
+              <div className="input-group">
+                <label>난이도</label>
+                <select onChange={(e) => setOptions({...options, difficulty: e.target.value})}>
+                  <option value="beginner">초급 (Beginner)</option>
+                  <option value="intermediate">중급 (Intermediate)</option>
+                  <option value="advanced">고급 (Advanced)</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label>글 스타일</label>
+                <select onChange={(e) => setOptions({...options, style: e.target.value})}>
+                  <option value="narrative">📖 소설/동화</option>
+                  <option value="news">📰 뉴스 기사</option>
+                  <option value="conversation">💬 일상 대화</option>
+                  <option value="business">💼 비즈니스</option>
+                </select>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* 생성 버튼 (로딩 중일 때 스타일 변경) */}
-          <button
-            type="button"
-            className={`story-create-generate-button ${isGenerating ? 'disabled' : ''}`}
+          {/* 3. Action Button */}
+          <button 
+            className="generate-full-btn"
+            disabled={selectedWords.length === 0 || isGenerating}
             onClick={handleGenerate}
-            disabled={isGenerating} // 로딩 중 클릭 방지
           >
-            <Wand2 className={`icon-sm ${isGenerating ? 'spin-animation' : ''}`} />
-            <span>{isGenerating ? "AI가 이야기를 쓰는 중..." : "AI로 스토리 생성"}</span>
+            {isGenerating ? 'AI가 스토리를 쓰고 있어요...' : '스토리 생성하기 🚀'}
           </button>
         </section>
-      </main>
+      </div>
     </div>
   );
 };
-
 export default StoryCreatePage;

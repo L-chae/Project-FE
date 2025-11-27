@@ -6,42 +6,45 @@
   font-family: var(--font-family-base);
 }
 
-/* 헤더 영역 */
+/* 헤더 영역: 생성 페이지와 동일하게 중앙 정렬 */
 .story-list-header {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
+  text-align: center;
 }
 
-/* 제목/서브타이틀 + 메인 버튼 (왼쪽 영역) */
+/* 제목/서브타이틀 + 메인 버튼 */
 .story-list-header-left {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 제목/서브타이틀 중앙 정렬 */
+  align-items: center;
   gap: var(--space-2);
-  text-align: center; /* 텍스트 중앙 정렬 */
 }
 
 .story-list-title {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 2rem;         /* 생성 페이지 헤더와 통일 */
   font-weight: 700;
   color: var(--neutral-900);
 }
 
 .story-list-subtitle {
   margin: 0;
-  font-size: 0.95rem;
+  margin-top: 4px;
+  font-size: 1rem;
   color: var(--color-text-muted);
 }
 
-/* 헤더 오른쪽 (검색만) */
+/* 헤더 오른쪽 (검색) */
 .story-list-header-right {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-3);
+  width: 100%;
 }
 
 /* 공통 Input 래퍼 폭만 제한 */
@@ -50,7 +53,7 @@
   max-width: 320px;
 }
 
-/* 새 스토리 버튼 (문구: 스토리 생성) */
+/* 새 스토리 버튼: 중앙 배치, 생성 페이지 스타일과 맞춤 */
 .story-new-button {
   display: inline-flex;
   align-items: center;
@@ -76,8 +79,7 @@
     box-shadow 0.15s ease,
     filter 0.15s ease;
 
-  /* 제목/서브타이틀은 가운데 정렬, 버튼은 그 안에서 왼쪽 정렬 */
-  align-self: flex-start;
+  align-self: center; /* 생성 페이지와 동일하게 중앙 정렬 */
 }
 
 .story-new-button:hover {
@@ -94,7 +96,7 @@
 /* 카드 그리드 */
 .story-grid {
   display: grid;
-  grid-template-columns: 1fr; /* 기본: 모바일 1열 */
+  grid-template-columns: 1fr;
   gap: var(--space-4);
 }
 
@@ -110,12 +112,14 @@
   cursor: pointer;
   transition:
     transform 0.12s ease,
-    box-shadow 0.12s ease;
+    box-shadow 0.12s ease,
+    background-color 0.12s ease;
 }
 
 .story-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  background-color: #f9fafb;
 }
 
 /* 헤더 영역 */
@@ -153,17 +157,21 @@
   color: #6b7280;
 }
 
-/* 날짜 */
-.story-card-header-meta {
+/* 날짜 메타 */
+.story-card-header-meta,
+.story-card-footer-meta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 0.85rem;
   color: #9ca3af;
-  white-space: nowrap;
 }
 
 .story-card-date {
+  letter-spacing: 0.01em;
+}
+
+.story-card-readtime {
   letter-spacing: 0.01em;
 }
 
@@ -181,16 +189,16 @@
   opacity: 0.9;
 }
 
-/* 해시태그 영역: 간격 UX 개선 */
+/* 해시태그 영역 */
 .story-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 10px; /* 세로/가로 간격 분리 */
+  gap: 6px 10px;
 }
 
 /* 해시태그 pill */
 .story-card-tag {
-  padding: 4px 12px; /* 컴팩트한 pill */
+  padding: 4px 12px;
   border-radius: 999px;
   background: #f3f4f6;
   font-size: 0.8rem;
@@ -207,26 +215,30 @@
   margin-top: 16px;
 }
 
-.story-card-footer-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
-
 /* Read 버튼 */
 .story-card-readmore {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0;
-  border: none;
-  background: transparent;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: #f9fafb;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #6366f1;
+  color: var(--primary-500);
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.12s ease;
+}
+
+.story-card-readmore:hover {
+  background-color: #eef2ff;
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.3);
 }
 
 .story-card-readmore .icon-sm {
@@ -238,6 +250,10 @@
 .story-card-empty {
   grid-column: 1 / -1;
   text-align: center;
+  padding: 18px 20px 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
 .story-card-empty-body {
@@ -260,7 +276,7 @@
   color: var(--color-text-muted);
 }
 
-/* 새 스토리 추가 카드 (이 페이지 전용) */
+/* 새 스토리 추가 카드 */
 .story-card-add {
   display: flex;
   flex-direction: column;
@@ -271,6 +287,20 @@
   border-color: var(--border-subtle);
   background-color: var(--neutral-50);
   color: var(--color-text-muted);
+  padding: 20px 18px 18px;
+  border-radius: 20px;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.story-card-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  background-color: #f3f4ff;
+  border-color: var(--primary-200);
 }
 
 .story-card-add-icon-wrapper {
@@ -296,25 +326,25 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--neutral-800);
+  margin: 0 0 4px;
 }
 
 .story-card-add-text {
   font-size: 0.875rem;
   color: var(--color-text-muted);
+  margin: 0;
 }
 
 /* ─────────────────────────────── */
-/* 카드 열 수만 반응형 레이아웃 적용 */
+/* 반응형: 카드 열만 조정 (헤더는 계속 중앙 정렬) */
 /* ─────────────────────────────── */
 
-/* Tablet 이상: 2열 (>= --bp-tablet: 768px) */
 @media (min-width: 768px) {
   .story-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-/* Web 이상: 3열 (>= --bp-web: 1280px) */
 @media (min-width: 1280px) {
   .story-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

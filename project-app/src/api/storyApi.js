@@ -56,7 +56,13 @@ The world was covered in a white blanket. She decided to make a snowman with her
       
       translation: "추운 겨울 아침이었습니다. 창밖에는 눈이 소리 없이 내리고 있었습니다. 사라는 따뜻한 코트를 입고 밖으로 나갔습니다. \"완벽해,\" 그녀가 속삭였습니다.\n\n세상은 하얀 담요로 덮여 있었습니다. 그녀는 친구들과 눈사람을 만들기로 결심했습니다. 그들은 해가 질 때까지 웃고 떠들며 놀았습니다. 정말 마법 같은 하루였습니다.",
       
-      words: ["winter", "silent", "whisper", "blanket", "magical"] // 사이드바에 표시할 단어들
+      words: [
+        { text: "winter",   pos: "n.",  meaning: "겨울" },
+        { text: "silent",   pos: "adj.", meaning: "조용한, 고요한" },
+        { text: "whisper",  pos: "v.",  meaning: "속삭이다" },
+        { text: "blanket",  pos: "n.",  meaning: "담요, 덮개" },
+        { text: "magical",  pos: "adj.", meaning: "마법 같은, 황홀한" },
+      ],
     };
   }
 
