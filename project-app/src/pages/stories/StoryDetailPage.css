@@ -1,3 +1,4 @@
+/* src/pages/stories/StoryDetailPage.css */
 @import "../../styles/tokens.css";
 
 /* 기본 레이아웃 */
@@ -6,10 +7,21 @@
   margin: 0 auto;
   padding: 32px var(--outer-margin-mobile) 40px;
   font-family: var(--font-family-base);
-
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+/* 로딩 상태 */
+.story-detail-loading {
+  min-height: 60vh;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-detail-loading-text {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
 }
 
 /* 상단 네비게이션 */
@@ -20,22 +32,19 @@
   gap: var(--space-3);
 }
 
-/* Back 버튼 (StoryCreate와 톤 통일) */
+/* Back 버튼 */
 .back-button {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-1);
-
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--neutral-700);
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -77,36 +86,31 @@
 .badge-original {
   padding: 4px 10px;
   border-radius: 999px;
-
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-
   background: var(--primary-50);
   color: var(--primary-600);
 }
 
-/* 메인 레이아웃: 좌(어휘) / 우(스토리) */
+/* 메인 레이아웃 (기본: 모바일 세로) */
 .story-detail-layout {
   display: flex;
-  flex-direction: column; /* 모바일: 수직 */
+  flex-direction: column;
   gap: var(--space-4);
 }
 
-/* 좌측: 단어 리스트 사이드바 */
+/* 왼쪽 패널: 단어 목록 */
 .vocab-sidebar {
   padding: 16px 14px 18px;
   border-radius: 16px;
-
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-
   min-height: 0;
 }
 
@@ -120,11 +124,9 @@
   width: 32px;
   height: 32px;
   border-radius: 999px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: var(--primary-50);
   color: var(--primary-600);
 }
@@ -142,22 +144,28 @@
   color: var(--color-text-muted);
 }
 
-/* 단어 리스트 */
+/* 단어 리스트: 패널 높이에 맞춰 늘어나고 내부만 스크롤 */
 .word-list {
   margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-
-  max-height: 260px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
+.word-list-empty {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* 단어 카드 */
 .word-card {
   border-radius: 10px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-1);
-
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -165,13 +173,39 @@
     box-shadow 0.15s ease,
     transform 0.08s ease;
 }
-
 .word-card-inner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: 4px;
   padding: 8px 10px;
+}
+
+.word-card-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.word-card-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--neutral-900);
+}
+
+.word-pos-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.word-meaning {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
 .word-card:hover {
@@ -196,98 +230,17 @@
   color: var(--color-text-muted);
 }
 
-/* 단어 복습 카드 */
-.review-card {
-  position: relative;
-  margin-top: 12px;
-  padding: 14px 12px;
-  border-radius: 14px;
-  overflow: hidden;
-
-  background: radial-gradient(circle at 0 0, #bfdbfe, #4f46e5);
-  color: #ffffff;
-
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.review-card-overlay {
-  position: absolute;
-  inset: 0;
-  opacity: 0.2;
-  background-image: radial-gradient(
-    circle at 20% 0,
-    rgba(255, 255, 255, 0.7),
-    transparent 60%
-  );
-  pointer-events: none;
-}
-
-.review-card-title {
-  position: relative;
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.review-card-desc {
-  position: relative;
-  margin: 0;
-  font-size: 0.8rem;
-  opacity: 0.9;
-}
-
-.review-card-button {
-  position: relative;
-  margin-top: 6px;
-  align-self: flex-start;
-
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: none;
-  font-size: 0.8rem;
-  font-weight: 600;
-
-  background: rgba(15, 23, 42, 0.9);
-  color: #ffffff;
-  cursor: pointer;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  transition:
-    background 0.15s ease,
-    transform 0.08s ease,
-    box-shadow 0.15s ease;
-}
-
-.review-card-button:hover {
-  background: rgba(15, 23, 42, 1);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.5);
-  transform: translateY(-1px);
-}
-
-.review-card-button:active {
-  transform: translateY(0);
-  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.5);
-}
-
-/* 우측: 스토리 패널 */
+/* 오른쪽 패널: 스토리 */
 .story-panel {
   padding: 20px 18px 24px;
   border-radius: 16px;
-
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08),
     0 8px 10px -6px rgba(15, 23, 42, 0.06);
-
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-
   position: relative;
   overflow: hidden;
 }
@@ -359,14 +312,16 @@
   white-space: pre-wrap;
 }
 
+.story-content-empty {
+  color: var(--color-text-muted);
+}
+
 /* 번역 카드 */
 .translation-card {
   padding: 12px 14px;
   border-radius: 14px;
-
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
-
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -376,12 +331,10 @@
   align-self: flex-start;
   padding: 4px 10px;
   border-radius: 999px;
-
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-
   background: var(--neutral-900);
   color: #ffffff;
 }
@@ -408,11 +361,9 @@
   width: 100%;
   padding: 20px 18px;
   border-radius: 16px;
-
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
   text-align: center;
-
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -429,16 +380,14 @@
   padding: 8px 16px;
   border-radius: 999px;
   border: none;
-
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-
   background: var(--primary-500);
   color: var(--neutral-50);
 }
 
-/* 공통 아이콘 사이즈 */
+/* 아이콘 사이즈 */
 .icon-16 {
   width: 16px;
   height: 16px;
@@ -455,22 +404,21 @@
 }
 
 /* ─────────────────────────────── */
-/* 반응형: 레이아웃(열 배치)만 조정 */
+/* 데스크톱: 좌/우 높이 맞추기 (grid) */
 /* ─────────────────────────────── */
-
-/* Tablet 이상: 좌/우 2컬럼 (StoryCreate와 통일) */
 @media (min-width: 768px) {
   .story-detail-layout {
-    flex-direction: row;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: stretch;
+    gap: var(--space-4);
   }
 
   .vocab-sidebar {
-    width: 280px;
-    flex-shrink: 0;
+    height: 100%;
   }
 
   .story-panel {
-    flex: 1;
+    height: 100%;
   }
 }

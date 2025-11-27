@@ -150,6 +150,7 @@ export default function Header() {
                   aria-expanded={isAccountMenuOpen}
                   aria-label="계정 메뉴 열기"
                 >
+                  {/* 오른쪽 사용자 계정 아이콘 svg */}
                   <CircleUser
                     className="header-profile-icon"
                     strokeWidth={2.4}
