@@ -6,15 +6,14 @@ import { CircleUser } from "lucide-react";
 import Button from "../common/Button";
 import StoryLexLogo from "../../assets/images/StoryLex-logo.svg";
 
-import { getAccessToken } from "../../utils/storage";
-import { logout } from "../../api/authApi";
 import "./Header.css";
+import { useAuth } from "../../context/AuthContext";
 
 // 로그인 사용자 네비
 const AUTH_NAV_ITEMS = [
   { to: "/dashboard", label: "대시보드" },
-  { to: "/words", label: "단어장" },        // 단어 상세/검색 페이지
-  { to: "/story/list", label: "AI 스토리" },  // AI 스토리 생성
+  { to: "/words", label: "단어장" },
+  { to: "/story/list", label: "AI 스토리" },
   { to: "/relation", label: "단어 관계망" },
 ];
 
@@ -33,14 +32,15 @@ const getNavClass = ({ isActive }) =>
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth(); // AuthContext 사용
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountRef = useRef(null);
 
-  // 라우트 변경 시 인증 여부 갱신
+  const isAuthenticated = !!user;
+
+  // 라우트 변경 시 계정 메뉴 닫기
   useEffect(() => {
-    setIsAuthenticated(!!getAccessToken());
     setIsAccountMenuOpen(false);
   }, [location.pathname]);
 
@@ -66,16 +66,14 @@ export default function Header() {
     else navigate(GUEST_HOME_PATH);
   };
 
- // src/components/layout/Header.jsx
-
-const handleLogoutClick = () => {
-  setIsAuthenticated(false);
-  setIsAccountMenuOpen(false);
-  navigate("/auth/login");
-  logout().catch(() => {
-  });
-};
-
+  const handleLogoutClick = async () => {
+    setIsAccountMenuOpen(false);
+    try {
+      await logout(); // AuthContext.logout 안에서 토큰 제거 + 서버 로그아웃 + /auth/login 이동
+    } catch {
+      // 추가 처리 필요 없으면 비워두면 됨
+    }
+  };
 
   const handleProfileClick = () => {
     setIsAccountMenuOpen((prev) => !prev);

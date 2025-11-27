@@ -1,4 +1,4 @@
-// src/pages/profile/ProfilePage.jsx (경로 확인)
+// src/pages/account/ProfilePage.jsx 
 import React, { useState, useEffect } from "react";
 import { getMyInfo, updateUserInfo, changePassword } from "../../api/userApi";
 import { useAuth } from "../../context/AuthContext"; // 1. Context 가져오기

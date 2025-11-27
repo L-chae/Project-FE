@@ -1,6 +1,7 @@
+// src/App.jsx
 import Header from "./components/layout/Header";
-
 import AppRouter from "./router";
+
 function App() {
   return (
     <>
