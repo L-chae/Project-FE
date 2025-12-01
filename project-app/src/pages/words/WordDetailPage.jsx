@@ -18,6 +18,23 @@ function WordDetailPage() {
   const [favLoading, setFavLoading] = useState(false);
   const [progressLoading, setProgressLoading] = useState(false);
 
+  // --- 연관 단어 클러스터 상태 ---
+const [clusterTab, setClusterTab] = useState("전체");
+
+const clusterData = {
+  similar: [
+    { text: "Drink", level: 1, inMyList: false },
+    { text: "Beverage", level: 2, inMyList: false },
+    { text: "Espresso", level: 3, inMyList: true },
+  ],
+  opposite: [
+    { text: "Refuse", level: 3, inMyList: false },
+    { text: "Reject", level: 2, inMyList: false },
+  ],
+};
+
+
+
   // API 호출
   useEffect(() => {
     if (!id) return;
@@ -38,6 +55,24 @@ function WordDetailPage() {
         if (!cancelled) setLoading(false);
       }
     };
+const handleAddClusterWord = async (targetWord) => {
+  try {
+    alert(`${targetWord} 단어를 단어장에 추가했습니다!`);
+    // 실제 API가 생기면 여기에 API 연결
+  } catch (err) {
+    console.error(err);
+    alert("단어 추가 실패!");
+  }
+};
+
+const handleAddAll = (group) => {
+  clusterData[group].forEach((w) => {
+    if (!w.inMyList) handleAddClusterWord(w.text);
+  });
+};
+
+
+
 
     fetchWord();
     return () => { cancelled = true; };
@@ -101,7 +136,7 @@ function WordDetailPage() {
   } = word;
 
   return (
-    <div className="page-container detail-page-container">
+    <div className="detail-page-container">
       {/* 1. 상단 네비게이션 */}
       <div className="detail-nav">
         <button onClick={handleBack} className="back-btn">
@@ -175,68 +210,83 @@ function WordDetailPage() {
             <div className="cluster-header">
               <h3 className="section-title">연관 단어 클러스터</h3>
               <div className="cluster-tabs">
-                <span className="tab active">전체</span>
-                <span className="tab">의미 비슷</span>
-                <span className="tab">반대 의미</span>
+                <span 
+                  className={`tab ${clusterTab === "전체" ? "active" : ""}`} 
+                  onClick={() => setClusterTab("전체")}
+                >전체</span>
+
+                <span 
+                  className={`tab ${clusterTab === "similar" ? "active" : ""}`} 
+                  onClick={() => setClusterTab("similar")}
+                >의미 비슷</span>
+
+                <span 
+                  className={`tab ${clusterTab === "opposite" ? "active" : ""}`} 
+                  onClick={() => setClusterTab("opposite")}
+                >반대 의미</span>
               </div>
             </div>
 
             {/* 그룹 1: 의미가 비슷한 단어 */}
+           {(clusterTab === "전체" || clusterTab === "similar") && (
             <div className="cluster-group">
               <div className="group-header">
                 <h4>의미가 비슷한 단어</h4>
-                <span className="add-all">모두 추가 ▸</span>
+                <span className="add-all" onClick={() => handleAddAll("similar")}>
+                  모두 추가 ▸
+                </span>
               </div>
+
               <p className="group-desc">비슷한 의미로 같이 외우면 좋은 단어</p>
-              
+
               <div className="chip-list">
-                <div className="word-chip">
-                  <span className="chip-text">Drink</span>
-                  <span className="chip-level">Lv.1</span>
-                  <span className="chip-status">내 단어장</span>
-                </div>
-                <div className="word-chip">
-                  <span className="chip-text">Beverage</span>
-                  <span className="chip-level">Lv.2</span>
-                  <span className="chip-add">+ 추가</span>
-                </div>
-                <div className="word-chip">
-                  <span className="chip-text">Espresso</span>
-                  <span className="chip-level">Lv.3</span>
-                  <span className="chip-add">+ 추가</span>
-                </div>
+                {clusterData.similar.map((item) => (
+                  <div className="word-chip" key={item.text}>
+                    <span className="chip-text">{item.text}</span>
+                    <span className="chip-level">Lv.{item.level}</span>
+
+                    {item.inMyList ? (
+                      <span className="chip-status">내 단어장</span>
+                    ) : (
+                      <span className="chip-add" onClick={() => handleAddClusterWord(item.text)}>
+                        + 추가
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="divider"></div>
-
-            {/* 그룹 2: 같은 주제 단어 */}
+          )}
+          {/* 그룹 1: 의미가 반대인 단어 */}
+           {(clusterTab === "전체" || clusterTab === "opposite") && (
             <div className="cluster-group">
               <div className="group-header">
-                <h4>같은 주제 단어</h4>
-                <span className="add-all">모두 추가 ▸</span>
+                <h4>반대 의미 단어</h4>
+                <span className="add-all" onClick={() => handleAddAll("opposite")}>
+                  모두 추가 ▸
+                </span>
               </div>
-              <p className="group-desc">카페/음료와 관련된 단어</p>
-              
+
+              <p className="group-desc">반대 의미로 함께 외우면 좋은 단어</p>
+
               <div className="chip-list">
-                <div className="word-chip">
-                  <span className="chip-text">Tea</span>
-                  <span className="chip-level">Lv.1</span>
-                  <span className="chip-status">내 단어장</span>
-                </div>
-                <div className="word-chip">
-                  <span className="chip-text">Barista</span>
-                  <span className="chip-level">Lv.3</span>
-                  <span className="chip-add">+ 추가</span>
-                </div>
-                <div className="word-chip">
-                  <span className="chip-text">Bakery</span>
-                  <span className="chip-level">Lv.2</span>
-                  <span className="chip-add">+ 추가</span>
-                </div>
+                {clusterData.opposite.map((item) => (
+                  <div className="word-chip" key={item.text}>
+                    <span className="chip-text">{item.text}</span>
+                    <span className="chip-level">Lv.{item.level}</span>
+
+                    {item.inMyList ? (
+                      <span className="chip-status">내 단어장</span>
+                    ) : (
+                      <span className="chip-add" onClick={() => handleAddClusterWord(item.text)}>
+                        + 추가
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-
+          )}
           </section>
         </div>
       </div>
