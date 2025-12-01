@@ -6,6 +6,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 기본 타이포/배경 */
 html {
   font-size: 100%;
 }
@@ -23,8 +24,13 @@ a:hover {
 }
 
 /* ----------------------------------------- */
-/* 페이지 컨테이너 (모든 구간에서 중앙 정렬)  */
+/* 페이지 컨테이너 (헤더/본문 공통)          */
 /* ----------------------------------------- */
+/* 원칙:
+   - 항상 중앙 정렬
+   - 모바일/태블릿: 양쪽 padding = outer-margin-*
+   - Web 이상: container-width + “디자인 기준” outer-margin 구조를 유지
+*/
 
 .page-container {
   width: 100%;
@@ -32,40 +38,52 @@ a:hover {
   margin-right: auto;
   padding-left: var(--outer-margin-mobile);
   padding-right: var(--outer-margin-mobile);
-/* ▼ [추가] 기본적으로 드래그 방지 */
-  user-select: none; 
-  -webkit-user-select: none; /* 사파리/크롬 호환성 */
 }
 
-/* -------- Tablet (768px~1279px) -------- */
-@media (min-width: 768px) and (max-width: 1279.98px) {
+/* Tablet (>= 768px) */
+@media (min-width: 768px) {
   .page-container {
-    max-width: var(--container-tablet-width);
     padding-left: var(--outer-margin-tablet);
     padding-right: var(--outer-margin-tablet);
+    /* tablet은 굳이 고정 container 없이 fluid로 사용 */
   }
 }
 
-/* -------- Web (1280px~1439px) -------- */
-@media (min-width: 1280px) and (max-width: 1439.98px) {
+/* Web (>= 1280px) */
+/* 1280px: container 1120 + margin 80 기준 */
+@media (min-width: 1280px) {
   .page-container {
-    max-width: var(--container-web-width); /* 1120px */
-    padding-left: 0;
-    padding-right: 0;
+    max-width: calc(
+      var(--container-web-width) + var(--outer-margin-web) * 2
+    );
+    padding-left: var(--outer-margin-web);
+    padding-right: var(--outer-margin-web);
   }
 }
 
-/* -------- Wide Web (1440px 이상) -------- */
+/* Wide Web (>= 1440px) */
+/* 1440px: container 1200 + margin 120 기준 */
 @media (min-width: 1440px) {
   .page-container {
-    max-width: var(--container-web-wide-width); /* 1200px */
-    padding-left: 0;
-    padding-right: 0;
+    max-width: calc(
+      var(--container-web-wide-width) + var(--outer-margin-web-wide) * 2
+    );
+    padding-left: var(--outer-margin-web-wide);
+    padding-right: var(--outer-margin-web-wide);
   }
 }
 
 /* ----------------------------------------- */
-/* 카드 (공통 구성요소) */
+/* 선택 불가 유틸리티 (필요한 곳에만 사용)  */
+/* ----------------------------------------- */
+
+.no-select {
+  user-select: none;
+  -webkit-user-select: none; /* Safari/Chrome */
+}
+
+/* ----------------------------------------- */
+/* 카드 (공통 구성요소)                     */
 /* ----------------------------------------- */
 
 .card {
@@ -74,15 +92,16 @@ a:hover {
   box-shadow: var(--shadow-soft);
   padding: var(--space-4);
   border: 1px solid var(--border-subtle);
-  
+
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
 /* ----------------------------------------- */
-/* Utility Spacing */
+/* Utility Spacing                           */
 /* ----------------------------------------- */
+
 .mt-12 {
   margin-top: 12px;
 }

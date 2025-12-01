@@ -161,7 +161,7 @@ const mockDelay = (result, ms = 200) =>
 // ----------------------
 export const getWordList = async (page = 0, size = 100) => {
   if (USE_MOCK) {
-    const start = (page - 1) * size;
+    const start = page * size;
     const end = start + size;
     const content = mockWordList.slice(start, end);
 

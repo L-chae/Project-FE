@@ -53,7 +53,7 @@ const StoryCreatePage = () => {
   };
 
   return (
-    <div className="workbench-container">
+    <div className="page-container">
       <header className="wb-header">
         <h2>AI 스토리 스튜디오</h2>
         <p>복습할 단어를 골라 나만의 영어 문맥을 만들어보세요.</p>

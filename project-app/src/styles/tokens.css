@@ -114,7 +114,7 @@
   --font-family-base: "Inter", "Segoe UI", sans-serif;
   --font-size-base: 16px;
   --line-height-base: 1.6;
-
+ --font-size-page-title: 1.5rem; /* 약 24px */
   /* ──────────────────────── */
   /*  레이아웃/브레이크포인트 */
   /* ──────────────────────── */

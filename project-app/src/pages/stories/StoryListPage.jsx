@@ -1,50 +1,32 @@
-// src/pages/stories/StoryListPage.jsx
-import {
-  BookOpen,
-  ChevronRight,
-  Plus,
-  Search
-} from "lucide-react";
+import { BookOpen, ChevronRight, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import Input from "../../components/common/Input";
+// 공통 컴포넌트 (이전 단계에서 만든 헤더 사용)
+import PageHeader from "../../components/common/PageHeader"; 
 import "./StoryListPage.css";
 
-// 기본 목업 스토리 (stories props 안 들어오면 이 데이터 사용)
 const MOCK_STORIES = [
   {
     id: 1,
     title: "First Snow in Seoul",
-    excerpt:
-      "On the first snowy morning, I finally used every word I had studied this week.",
+    excerpt: "On the first snowy morning, I finally used every word I had studied this week.",
     date: "2025-11-26",
-    readTime: "5 min read",
     words: ["snow", "memory", "whisper", "lantern"],
-    content: `...`,
-    translation: `...`,
   },
   {
     id: 2,
-    title: "First Snow in Seoul 2",
-    excerpt:
-      "On the first snowy morning, I finally used every word I had studied this week.",
+    title: "The Coffee Shop",
+    excerpt: "The aroma of roasted beans filled the air as I waited for my order.",
     date: "2025-11-26",
-    readTime: "4 min read",
-    words: ["snow", "memory", "whisper", "lantern"],
-    content: `...`,
-    translation: `...`,
+    words: ["aroma", "roasted", "wait", "order"],
   },
   {
     id: 3,
-    title: "First Snow in Seoul 3",
-    excerpt:
-      "On the first snowy morning, I finally used every word I had studied this week.",
+    title: "Midnight Study",
+    excerpt: "It was quiet, only the sound of turning pages could be heard.",
     date: "2025-11-25",
-    readTime: "6 min read",
-    words: ["snow", "memory", "whisper", "lantern"],
-    content: `...`,
-    translation: `...`,
+    words: ["quiet", "sound", "turn", "page", "focus"],
   },
 ];
 
@@ -52,21 +34,13 @@ const StoryListPage = ({ stories = [] }) => {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
 
-  // 디테일 페이지 라우팅을 /story/:id 방식으로 통일
-  const handleSelectStory = (story) => {
-    navigate(`/story/${story.id}`);
-  };
+  const handleSelectStory = (story) => navigate(`/story/${story.id}`);
+  const handleCreateNew = () => navigate("/story/create");
 
-  const handleCreateNew = () => {
-    navigate("/story/create");
-  };
-
-  // 최신 날짜 기준 내림차순 정렬
   const sourceStories = (stories.length > 0 ? stories : MOCK_STORIES)
     .slice()
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // 제목 + 요약 + 태그(단어) 검색
   const filteredStories =
     searchValue.trim().length === 0
       ? sourceStories
@@ -83,138 +57,95 @@ const StoryListPage = ({ stories = [] }) => {
   const hasFilteredStories = filteredStories.length > 0;
 
   return (
-    <div className="page-container story-list-page">
-      {/* Header Section */}
-      <header className="story-list-header">
-        <div className="story-list-header-main">
-          <h1 className="story-list-title">AI 스토리</h1>
-          <p className="story-list-subtitle">
-            내가 학습한 단어로 만든 스토리 컬렉션입니다.
-          </p>
-        </div>
+    <div className="page-container">
+      <div className="story-list-page">
+            {/* 1. 공통 헤더 컴포넌트 적용 */}
+      <PageHeader 
+        title="AI" 
+        highlight="스토리" 
+        description="내가 학습한 단어로 만든 나만의 이야기입니다." 
+      />
 
-        {/* 검색 + 생성 버튼 액션 영역 */}
-        <div className="story-list-header-actions">
-          <Input
-            type="text"
-            size="sm"
-            search
+      {/* 2. 컨트롤 영역: 검색(좌) + 생성버튼(우) */}
+      <section className="story-controls">
+        <div className="search-wrapper">
+          <Search className="search-icon" />
+          <input
+            className="search-input"
             placeholder="스토리 검색..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            leftIcon={<Search className="icon-sm" />}
-            wrapperClassName="story-search-wrapper"
           />
-
-          <button
-            type="button"
-            className="story-new-button"
-            onClick={handleCreateNew}
-          >
-            <BookOpen className="icon-sm" />
-            <span>스토리 생성</span>
-          </button>
         </div>
-      </header>
-      {/* Story Grid */}
+
+        <button className="create-story-btn" onClick={handleCreateNew}>
+          <BookOpen size={18} />
+          <span>새 스토리 만들기</span>
+        </button>
+      </section>
+
+      {/* 3. 스토리 그리드 */}
       <section className="story-grid">
-        {/* 1) 스토리 있고, 검색 결과도 있을 때 */}
-        {hasAnyStories &&
-          hasFilteredStories &&
+        {/* (1) 검색 결과 없음 */}
+        {hasAnyStories && !hasFilteredStories && (
+          <div className="empty-msg">
+            <p>검색 결과가 없습니다. 🍂</p>
+          </div>
+        )}
+
+        {/* (2) 데이터 없음 (초기 상태) */}
+        {!hasAnyStories && (
+          <article 
+            className="story-card add-card"
+            onClick={handleCreateNew}
+            role="button" 
+            tabIndex={0}
+          >
+            <div className="add-icon-wrapper">
+              <Plus size={32} />
+            </div>
+            <h3 className="add-card-title">첫 번째 스토리 만들기</h3>
+            <p className="add-card-desc">학습한 단어를 활용해 문장을 만들어보세요.</p>
+          </article>
+        )}
+
+        {/* (3) 리스트 렌더링 */}
+        {hasFilteredStories &&
           filteredStories.map((story) => (
             <article
               key={story.id}
-              className="card story-card"
+              className="story-card"
               onClick={() => handleSelectStory(story)}
+              role="button"
+              tabIndex={0}
             >
-              {/* 카드 헤더 */}
-              <div className="story-card-header">
-                <div className="story-card-header-main">
-                  <div className="story-card-title-block">
-                    <h3 className="story-card-title">{story.title}</h3>
-                    {story.excerpt && (
-                      <p className="story-card-excerpt">{story.excerpt}</p>
-                    )}
-                  </div>
-                </div>
+              {/* 상단: 제목 & 요약 */}
+              <div className="story-card-top">
+                <h3 className="story-title">{story.title}</h3>
+                <p className="story-excerpt">{story.excerpt}</p>
               </div>
 
-              {/* 카드 본문 (구분선 + 태그) */}
-              <div className="story-card-body">
-                {story.words && story.words.length > 0 && (
-                  <>
-                    <div className="story-card-divider" />
-                    <div className="story-card-tags">
-                      {story.words.map((word, idx) => (
-                        <span key={idx} className="story-card-tag">
-                          #{word}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* 카드 푸터: 날짜 + 읽기시간 메타, 우측 스토리 읽기 버튼 */}
-              <div className="story-card-footer">
-                <div className="story-card-footer-meta">
-                  <span className="story-card-date">{story.date}</span>
+              {/* 중단: 단어 태그 */}
+              {story.words && story.words.length > 0 && (
+                <div className="story-tags">
+                  {story.words.slice(0, 4).map((word, idx) => (
+                    <span key={idx} className="story-tag">#{word}</span>
+                  ))}
+                  {story.words.length > 4 && <span className="story-tag">...</span>}
                 </div>
+              )}
 
-                <button
-                  type="button"
-                  className="story-card-readmore"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSelectStory(story);
-                  }}
-                >
-                  스토리 읽기
-                  <ChevronRight className="icon-sm" />
-                </button>
+              {/* 하단: 날짜 & 읽기 버튼 */}
+              <div className="story-card-bottom">
+                <span className="story-date">{story.date}</span>
+                <div className="read-more">
+                  Read Story <ChevronRight size={14} />
+                </div>
               </div>
             </article>
           ))}
-
-        {/* 2) 스토리는 있지만, 검색 결과만 없을 때 -> 검색 결과 없음 카드 */}
-        {hasAnyStories && !hasFilteredStories && (
-          <article className="card card--compact story-card-empty">
-            <div className="story-card-empty-body">
-              <p className="story-card-empty-title">검색 결과가 없습니다.</p>
-              <p className="story-card-empty-text">
-                다른 키워드로 검색해 보거나, 새로운 스토리를 작성해 보세요.
-              </p>
-            </div>
-          </article>
-        )}
-
-        {/* 3) 스토리가 아예 하나도 없을 때 -> Create New 카드로 빈 상태 */}
-        {!hasAnyStories && (
-          <article
-            className="card card--interactive card--compact story-card-add story-card-add--empty"
-            onClick={handleCreateNew}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleCreateNew();
-              }
-            }}
-          >
-            <div className="story-card-add-icon-wrapper">
-              <Plus className="icon-lg story-card-add-icon" />
-            </div>
-            <div className="card-body story-card-add-body">
-              <h3 className="card-title story-card-add-title">Create New</h3>
-              <p className="card-subtitle story-card-add-text">
-                Write a story with your words
-              </p>
-            </div>
-          </article>
-        )}
       </section>
-    </div>
+    </div></div>  
   );
 };
 

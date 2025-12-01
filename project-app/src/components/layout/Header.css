@@ -1,60 +1,66 @@
 /* src/components/layout/Header.css */
 
-/* ─ 공통 헤더 ─ */
+/* ─ Root Header ─ */
 .header {
   position: sticky;
   top: 0;
   z-index: 40;
 
-  /* 페이지 배경(#F8F7FC) 위에서 분리되도록 불투명 배경 + 보더/섀도우 */
   background-color: var(--neutral-50);
+  backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(130, 130, 154, 0.12);
   box-shadow: 0 8px 20px rgba(108, 92, 231, 0.04);
 }
 
+/* 데스크톱: [로고][네비][액션] 3열 그리드 */
 .header-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "logo nav actions";
+
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
   min-height: 64px;
+  gap: var(--space-4);
   padding-block: var(--space-2);
 }
 
-/* 로고 */
+/* ─ Logo ─ */
 .header-logo {
-  display: flex;
+  grid-area: logo;
+
+  display: inline-flex;
   align-items: center;
   flex-shrink: 0;
 
   padding: 0;
-  border: none;
+  border: 0;
   background: none;
   cursor: pointer;
 }
 
 .header-logo-img {
-  height: 28px;
+  height: 34px;
 }
 
-/* 네비게이션 영역 */
+/* ─ Navigation ─ */
 .header-nav {
-  flex: 1;
+  grid-area: nav;
+
   display: flex;
   justify-content: center;
   min-width: 0;
 }
 
-/* 가로 텍스트 네비 */
+/* pill 컨테이너 */
 .header-nav-group {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 4px;
 
-  padding: 0;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  padding: 4px;
+  background-color: var(--neutral-100);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(197, 197, 217, 0.55);
 
   max-width: 100%;
   overflow-x: auto;
@@ -65,84 +71,91 @@
   display: none;
 }
 
-/* 각 탭 링크 – 텍스트 + 밑줄 스타일 */
+/* pill 링크 */
 .header-nav-link {
-  position: relative;
   flex: 0 0 auto;
   white-space: nowrap;
 
-  padding-block: 6px;
-  padding-inline: 4px;
+  padding: 8px 20px;
 
-  font-size: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-color: transparent;
+
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
 
   color: var(--neutral-500);
+  cursor: pointer;
+
   transition:
+    background-color 0.18s ease,
     color 0.18s ease,
-    transform 0.16s ease;
+    box-shadow 0.18s ease,
+    transform 0.12s ease,
+    border-color 0.18s ease;
 }
 
-/* hover: 색만 살짝 진하게 + 약간 위로 */
+/* hover */
 .header-nav-link:hover {
-  color: var(--neutral-700);
-  transform: translateY(-1px);
-}
-
-/* 밑줄 베이스 */
-.header-nav-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-
-  height: 2px;
-  border-radius: 999px;
-  background: var(--primary-400);
-
-  transform: scaleX(0);
-  transform-origin: center;
-  opacity: 0;
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-
-/* 활성 탭 */
-.header-nav-link--active {
+  background-color: var(--surface-1);
   color: var(--primary-500);
+  border-color: rgba(130, 130, 154, 0.2);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
   transform: translateY(-1px);
 }
 
-.header-nav-link--active::after {
-  opacity: 1;
-  transform: scaleX(1);
+/* active */
+.header-nav-link--active {
+  background-color: var(--surface-1);
+  color: var(--neutral-900);
+  border-color: rgba(76, 68, 184, 0.7);
+  box-shadow: 0 10px 30px -6px rgba(108, 92, 231, 0.4);
+  transform: translateY(-1px);
 }
 
-/* 우측 액션 영역 */
+.header-nav-link--active:hover {
+  background-color: var(--surface-1);
+  color: var(--neutral-900);
+}
+
+/* focus-visible */
+.header-nav-link:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--focus-ring-color),
+    0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+/* ─ Right actions (buttons / profile) ─ */
 .header-actions {
+  grid-area: actions;
+
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
-/* 프로필 + 계정 메뉴 래퍼 */
+/* 계정 영역 */
 .header-account {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-/* 프로필 아이콘 버튼 – 사이트 톤에 맞는 보라 아이콘 */
+/* 프로필 버튼 */
 .header-profile {
-  border-radius: 50%;
-  border: 1px solid rgba(76, 68, 184, 0.12);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(76, 68, 184, 0.12);
+  background-color: #ffffff;
   cursor: pointer;
   flex-shrink: 0;
 
@@ -173,19 +186,19 @@
   box-shadow: 0 0 0 3px var(--focus-ring-color);
 }
 
-/* 계정 드롭다운 메뉴 */
+/* 계정 드롭다운 */
 .header-account-menu {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
 
-  min-width: 160px;
+  min-width: 180px;
   padding: 6px;
 
   background-color: var(--surface-1);
   border-radius: var(--radius-md);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
   border: 1px solid var(--border-subtle);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
 
   display: flex;
   flex-direction: column;
@@ -196,8 +209,9 @@
 .header-account-menu-item {
   width: 100%;
   padding: 8px 10px;
+
   border-radius: var(--radius-sm);
-  border: none;
+  border: 0;
   background: none;
 
   font-size: 0.875rem;
@@ -222,29 +236,59 @@
   background-color: var(--danger-50);
 }
 
-/* ─ 반응형 ─ */
-@media (max-width: 960px) {
+/* ─ Responsive ─ */
+
+/* 태블릿/작은 웹: 2줄 레이아웃 (1줄: 로고+액션, 2줄: 네비 전체폭) */
+@media (max-width: 1024px) {
   .header-inner {
-    gap: var(--space-3);
-    min-height: 56px;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      "logo actions"
+      "nav   nav";
+    row-gap: 8px;
+    min-height: auto;
   }
 
   .header-nav {
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .header-nav-group {
-    gap: var(--space-3);
+    width: 100%;
+    justify-content: center;
   }
 
   .header-nav-link {
     font-size: 0.82rem;
-    padding-inline: 6px;
+    padding: 6px 14px;
   }
 
-  .header-profile {
-    width: 36px;
-    height: 36px;
+  .header-profile-icon {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* 모바일 사이즈 튜닝 */
+@media (max-width: 640px) {
+  .header-inner {
+    gap: var(--space-2);
+    padding-block: 6px;
   }
 
+  .header-logo-img {
+    height: 24px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .header-nav-group {
+    padding: 3px;
+  }
+
+  .header-nav-link {
+    padding: 6px 10px;
+  }
 }

@@ -1,424 +1,262 @@
-/* src/pages/stories/StoryDetailPage.css */
-@import "../../styles/tokens.css";
-
-/* 기본 레이아웃 */
-.story-detail-container {
-  max-width: var(--container-web-width);
+/* =========================================
+   1. 페이지 레이아웃 & 네비게이션
+   ========================================= */
+.story-detail-page {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-10);
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 32px var(--outer-margin-mobile) 40px;
-  font-family: var(--font-family-base);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }
 
-/* 로딩 상태 */
+/* 로딩 화면 */
 .story-detail-loading {
   min-height: 60vh;
+  display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--neutral-500);
 }
 
-.story-detail-loading-text {
-  font-size: 0.95rem;
-  color: var(--color-text-muted);
-}
-
-/* 상단 네비게이션 */
-.story-detail-nav {
+/* 네비게이션 바 */
+.story-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
-/* Back 버튼 */
-.back-button {
-  display: inline-flex;
+.nav-back-btn {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--neutral-600);
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color 0.2s;
+}
+.nav-back-btn:hover { color: var(--primary-600); }
+
+.nav-badge {
+  background-color: var(--primary-100);
+  color: var(--primary-600);
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--neutral-700);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.08s ease;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
-.back-button:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-}
 
-.back-button:active {
-  transform: translateY(1px);
-  box-shadow: none;
-}
-
-.back-button-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface-2);
-}
-
-.back-button-text {
-  white-space: nowrap;
-}
-
-/* 우측 배지 */
-.story-detail-nav-right {
-  display: flex;
-  align-items: center;
-}
-
-.badge-original {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: var(--primary-50);
-  color: var(--primary-600);
-}
-
-/* 메인 레이아웃 (기본: 모바일 세로) */
-.story-detail-layout {
+/* =========================================
+   2. 메인 레이아웃 (Grid 시스템)
+   ========================================= */
+.story-layout {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 24px;
 }
 
-/* 왼쪽 패널: 단어 목록 */
+@media (min-width: 900px) {
+  .story-layout {
+    display: grid;
+    /* 사이드바 고정 너비, 본문 나머지 채움 */
+    grid-template-columns: 280px 1fr; 
+    align-items: start;
+  }
+}
+
+
+/* =========================================
+   3. 좌측 사이드바 (단어장)
+   ========================================= */
 .vocab-sidebar {
-  padding: 16px 14px 18px;
-  border-radius: 16px;
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  border-radius: 20px;
+  padding: 20px;
+  /* 데스크탑에서 스크롤 따라오게 하려면 아래 주석 해제 */
+  /* position: sticky; top: 20px; */
+  height: fit-content;
+  max-height: 80vh; 
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  min-height: 0;
 }
 
 .vocab-header {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.vocab-header-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary-50);
-  color: var(--primary-600);
-}
-
-.vocab-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--neutral-900);
-}
-
-.vocab-subtitle {
-  margin: 2px 0 0;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-/* 단어 리스트: 패널 높이에 맞춰 늘어나고 내부만 스크롤 */
-.word-list {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.word-list-empty {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-/* 단어 카드 */
-.word-card {
-  border-radius: 10px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.08s ease;
-}
-.word-card-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-}
-
-.word-card-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.word-card-text {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--neutral-900);
-}
-
-.word-pos-badge {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.word-meaning {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.word-card:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-}
-
-.word-card:active {
-  transform: translateY(1px);
-  box-shadow: none;
-}
-
-.word-card-text {
-  font-size: 0.9rem;
-  color: var(--neutral-800);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.word-card-chevron {
-  color: var(--color-text-muted);
-}
-
-/* 오른쪽 패널: 스토리 */
-.story-panel {
-  padding: 20px 18px 24px;
-  border-radius: 16px;
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08),
-    0 8px 10px -6px rgba(15, 23, 42, 0.06);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  position: relative;
-  overflow: hidden;
-}
-
-/* 큰 Quote 아이콘 */
-.story-panel-quote {
-  position: absolute;
-  top: -18px;
-  right: -8px;
-  opacity: 0.08;
-  pointer-events: none;
-}
-
-/* 헤더: 제목 + 메타 */
-.story-header {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.story-title {
-  margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--neutral-900);
-}
-
-.story-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-}
-
-.story-meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.story-meta-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--border-strong);
-}
-
-/* 본문 전체 */
-.story-body {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-/* 영어 스토리 */
-.story-content {
-  padding: 12px 0;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.story-content-text {
-  margin: 0;
-  font-size: 0.98rem;
-  line-height: 1.8;
-  color: var(--neutral-800);
-  white-space: pre-wrap;
+.vocab-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--primary-100);
+  color: var(--primary-600);
+  display: flex; align-items: center; justify-content: center;
 }
 
-.story-content-empty {
-  color: var(--color-text-muted);
+.vocab-title-wrap h3 {
+  font-size: 1rem; font-weight: 700; color: var(--neutral-900); margin: 0;
+}
+.vocab-title-wrap p {
+  font-size: 0.8rem; color: var(--neutral-500); margin: 2px 0 0 0;
 }
 
-/* 번역 카드 */
-.translation-card {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-subtle);
+/* 단어 리스트 (스크롤) */
+.vocab-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 4px; /* 스크롤바 공간 */
 }
 
-.translation-label {
-  align-self: flex-start;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: var(--neutral-900);
-  color: #ffffff;
+/* 미니 단어 카드 스타일 */
+.mini-word-card {
+  background: #f8f9fa;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: all 0.2s;
+}
+.mini-word-card:hover {
+  background: white;
+  border-color: var(--primary-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transform: translateX(2px);
 }
 
-.translation-text {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.8;
-  color: var(--neutral-800);
-  white-space: pre-wrap;
+.mini-word-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px;
+}
+.mini-word-text {
+  font-size: 0.95rem; font-weight: 700; color: var(--neutral-800);
+}
+.mini-word-pos {
+  font-size: 0.65rem; font-weight: 600;
+  background: #dcd6ff; color: #5f3dc4;
+  padding: 2px 6px; border-radius: 4px;
+}
+.mini-word-meaning {
+  font-size: 0.85rem; color: var(--neutral-600); margin: 0;
+  line-height: 1.4;
 }
 
-/* 빈 상태 */
-.story-detail-empty {
-  min-height: 60vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px var(--outer-margin-mobile);
+.vocab-empty {
+  text-align: center; color: var(--neutral-400); font-size: 0.9rem; margin-top: 20px;
 }
 
-.story-detail-empty-inner {
-  max-width: 360px;
-  width: 100%;
-  padding: 20px 18px;
-  border-radius: 16px;
+
+/* =========================================
+   4. 우측 메인 (스토리 본문)
+   ========================================= */
+.story-main {
   background: var(--surface-1);
+  border-radius: 24px;
   border: 1px solid var(--border-subtle);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  padding: 40px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
-.story-detail-empty-inner p {
-  margin: 0;
-  font-size: 0.95rem;
+/* 배경 장식 아이콘 */
+.bg-quote-icon {
+  position: absolute;
+  top: 30px; right: 30px;
+  width: 80px; height: 80px;
+  color: var(--neutral-100);
+  pointer-events: none;
+}
+
+.story-main-header {
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.story-main-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--neutral-900);
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+}
+
+.story-meta-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.9rem; color: var(--neutral-500);
+}
+.meta-item { display: flex; align-items: center; gap: 6px; }
+.meta-divider { font-weight: 700; color: var(--neutral-300); }
+
+/* 본문 텍스트 */
+.story-article {
+  font-family: 'Inter', sans-serif; /* 영문 가독성 */
+}
+
+.en-paragraph {
+  font-size: 1.15rem;
+  line-height: 1.8;
   color: var(--neutral-800);
+  margin-bottom: 20px;
 }
 
-.story-detail-empty-button {
-  align-self: center;
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: var(--primary-500);
-  color: var(--neutral-50);
+/* --- [하이라이트 효과] --- */
+.highlighted-word {
+  background-color: rgba(108, 92, 231, 0.15); /* 연한 보라색 배경 */
+  color: var(--primary-600); /* 글자색 강조 */
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.2s ease;
+}
+.highlighted-word:hover {
+  background-color: rgba(108, 92, 231, 0.25);
+  cursor: text;
 }
 
-/* 아이콘 사이즈 */
-.icon-16 {
-  width: 16px;
-  height: 16px;
+/* 구분선 */
+.story-divider {
+  border: 0;
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 40px 0;
 }
 
-.icon-20 {
-  width: 20px;
-  height: 20px;
+/* 한국어 번역 섹션 */
+.story-korean {
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 24px;
 }
 
-.icon-96 {
-  width: 96px;
-  height: 96px;
+.ko-label {
+  font-size: 0.8rem; font-weight: 700; color: var(--primary-600);
+  text-transform: uppercase; margin-bottom: 8px;
 }
 
-/* ─────────────────────────────── */
-/* 데스크톱: 좌/우 높이 맞추기 (grid) */
-/* ─────────────────────────────── */
-@media (min-width: 768px) {
-  .story-detail-layout {
-    display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
-    align-items: stretch;
-    gap: var(--space-4);
-  }
+.ko-paragraph {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--neutral-600);
+  margin: 0;
+  white-space: pre-wrap;
+}
 
-  .vocab-sidebar {
-    height: 100%;
-  }
-
-  .story-panel {
-    height: 100%;
-  }
+/* 모바일 대응 */
+@media (max-width: 640px) {
+  .story-main { padding: 24px 20px; }
+  .story-main-title { font-size: 1.6rem; }
+  .en-paragraph { font-size: 1.05rem; }
+  .vocab-sidebar { max-height: 300px; } /* 모바일에선 사이드바 높이 제한 */
 }
