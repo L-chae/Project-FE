@@ -193,13 +193,30 @@
   gap: 8px;
 }
 
-.word-card-title { 
-  font-size: 1.5rem; /* 크기 약간 축소 (1.6 -> 1.5) */
-  font-weight: 700;  /* 800 -> 700으로 두께 조정 */
-  color: var(--neutral-900); 
-  margin: 0; 
-  line-height: 1.2; 
-  word-break: break-all; /* 긴 단어 줄바꿈 */
+.word-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--neutral-900);
+  margin: 0;
+  line-height: 1.2;
+
+  /* 단어가 줄 중간에서 부서지지 않도록 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+
+  /* 뒤에서 small-title 클래스 적용될 때 대비 */
+  display: inline-block;
+  max-width: 100%;
+}
+
+/* 긴 단어일 때 자동으로 줄어든 폰트 */
+.word-card-title.small-title {
+  font-size: 1.35rem;
+}
+
+
+.word-card-title.small-title {
+  font-size: 1.25rem; /* 긴 단어일 때 줄어든 사이즈 */
 }
 
 .word-card-actions { 
@@ -264,6 +281,8 @@
   
   /* 공간 부족 시 줄바꿈 허용 (레이아웃 깨짐 방지) */
   flex-wrap: wrap; 
+   margin-top: 16px;   /* ← 태그와 간격 확보 */
+  padding-bottom: 4px; /* ← 카드 아래쪽 숨 쉬게 */
 }
 .word-tags { 
   display: flex; 
@@ -289,6 +308,15 @@
 .tag-domain { background-color: #dfe6e9; color: #55556c; } /* 텍스트 색상 가독성 조정 */
 .tag-level { background-color: #74b9ff; color: white; } 
 
+/* 태그 간격 문제 해결 */
+.word-tags-row {
+  display: flex;
+  gap: 4px;        /* ← 태그 사이 여백 */
+  flex-wrap: wrap; /* 줄바꿈 허용 */
+  margin-bottom: 8px; /* 단어와 뜻 사이 여백 */
+}
+
+
 /* 자세히 보기 버튼 */
 .view-detail {
   font-size: 0.8rem; 
@@ -301,6 +329,24 @@
   /* 줄바꿈 방지 및 우측 정렬 고정 */
   white-space: nowrap; 
   margin-left: auto; /* 태그가 줄바꿈 되어도 버튼은 항상 우측 끝으로 이동 */
+}
+
+.status-icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--neutral-400);
+  transition: color 0.2s ease;
+}
+
+.status-icon-btn.learning { color: var(--primary-400); }
+.status-icon-btn.done     { color: var(--success-500); }
+
+.status-icon-btn:hover {
+  transform: scale(1.05);
 }
 
 .view-detail .arrow { font-size: 0.7rem; transition: transform 0.2s; }

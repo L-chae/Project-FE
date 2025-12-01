@@ -9,6 +9,10 @@ import {
 } from "../../api/wordApi";
 import PageHeader from "../../components/common/PageHeader"; // 경로에 맞게 수정해주세요
 import "./WordListPage.css";
+import { CheckCircle, Clock } from "lucide-react";
+import Pagination from "../../components/common/Pagination";
+
+
 
 // --- 아이콘 자원 (SVG) ---
 const Icons = {
@@ -191,6 +195,29 @@ function WordListPage() {
   }, [words, mode, filter, search, sortKey]);
 
   const isEmptyAll = !loading && !error && words.length === 0;
+// =======================
+// 페이지네이션 계산 로직
+// =======================
+const PAGE_SIZE = 12; // 3열 × 4줄 = 12개
+
+const totalPages = Math.max(1, Math.ceil(filteredAndSortedWords.length / PAGE_SIZE));
+
+const [searchParams, setSearchParams] = useState(new URLSearchParams());
+const currentPageIndex = Number(searchParams.get("page") || 0);
+const safeIndex = Math.min(Math.max(currentPageIndex, 0), totalPages - 1);
+
+const startIdx = safeIndex * PAGE_SIZE;
+const endIdx = startIdx + PAGE_SIZE;
+
+const pagedWords = filteredAndSortedWords.slice(startIdx, endIdx);
+
+const handlePageChange = (nextIndex) => {
+  const params = new URLSearchParams(searchParams);
+  params.set("page", String(nextIndex));
+  setSearchParams(params);
+  window.scrollTo(0, 0);
+};
+
 
   return (
     <div className="page-container wordlist-page">
@@ -329,7 +356,7 @@ function WordListPage() {
           <>
              {filteredAndSortedWords.length > 0 ? (
               <div className="wordlist-grid">
-                {filteredAndSortedWords.map((w) => {
+                {pagedWords.map((w) => {
                   const meaningPreview = w.meaning ? String(w.meaning).slice(0, 80) : "";
                   
                   return (
@@ -342,15 +369,20 @@ function WordListPage() {
                     >
                       {/* 1. 상단: 영단어 + 우측(배지/별) */}
                       <div className="word-card-top">
-                        <h3 className="word-card-title">{w.word}</h3>
+                        <h3 className={`word-card-title ${w.word.length > 12 ? "small-title" : ""}`}>{w.word}</h3>
                         <div className="word-card-actions">
-                          <button
+                         <button
                             type="button"
-                            className={`status-badge no-select ${w.isCompleted ? "status-completed" : "status-scheduled"}`}
+                            className={`status-icon-btn no-select ${w.isCompleted ? "done" : "learning"}`}
                             onClick={(e) => handleToggleComplete(w.wordId, e)}
                           >
-                            {w.isCompleted ? "학습완료" : "학습예정"}
+                            {w.isCompleted ? (
+                              <CheckCircle size={18} strokeWidth={2.5} />
+                            ) : (
+                              <Clock size={18} strokeWidth={2.5} />
+                            )}
                           </button>
+
                           <button
                             type="button"
                             className={`star-btn no-select ${w.isFavorite ? "active" : ""}`}
@@ -392,6 +424,14 @@ function WordListPage() {
           </>
         )}
       </section>
+      {!loading && !error && filteredAndSortedWords.length > 0 && (
+        <Pagination
+          page={safeIndex}
+          totalPages={totalPages}
+          onChange={handlePageChange}
+        />
+)}
+
     </div>
   );
 }
