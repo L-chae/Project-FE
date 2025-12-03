@@ -70,7 +70,7 @@
 .fade-in-up {
   opacity: 0;
   transform: translateY(12px) rotate(-3deg);
-  animation: fadeUp 0.8s ease-out forwards;
+  animation: fadeUp 0.6s ease-out forwards;
 }
 
 @keyframes fadeUp {

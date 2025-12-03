@@ -108,7 +108,6 @@ export default function Header() {
 
   return (
     <header className="header">
-      <div className="page-container">
         <div className="header-inner">
           {/* 로고 */}
           <button
@@ -201,7 +200,6 @@ export default function Header() {
             )}
           </div>
         </div>
-      </div>
     </header>
   );
 }

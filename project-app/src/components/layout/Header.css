@@ -5,6 +5,7 @@
   position: sticky;
   top: 0;
   z-index: 40;
+  padding: 0px 30px;
 
   background-color: var(--neutral-50);
   backdrop-filter: blur(12px);
@@ -172,12 +173,12 @@
 
 .header-profile:hover {
   filter: brightness(1.03);
-  box-shadow: 0 10px 22px rgba(108, 92, 231, 0.3);
+  box-shadow: 0 10px 12px rgba(108, 92, 231, 0.3);
 }
 
 .header-profile:active {
   transform: translateY(1px);
-  box-shadow: 0 4px 10px rgba(108, 92, 231, 0.18);
+  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.18);
 }
 
 .header-profile:focus-visible {
