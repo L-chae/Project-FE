@@ -337,24 +337,6 @@
   color: #fff;
 }
 
-.start-btn {
-  background-color: var(--primary-500);
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  padding: 14px 20px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  width: 100%;
-  transition: background-color 0.2s;
-  box-shadow: 0 4px 10px rgba(108, 92, 231, 0.25);
-}
-
-.start-btn:hover {
-  background-color: var(--primary-600);
-}
-
 /* --------------------------------------------------------
    7. Wrong Ranking Card
    -------------------------------------------------------- */
@@ -412,23 +394,4 @@
   height: 1px;
   background-color: var(--neutral-200);
   margin: 24px 0;
-}
-
-.wrong-review-btn {
-  width: 100%;
-  background-color: var(--warning-500, #f59e0b);
-  color: white;
-  border: none;
-  padding: 14px;
-  border-radius: 30px;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
-  margin-top: auto;
-}
-
-.wrong-review-btn:hover {
-  background-color: var(--warning-600, #d97706);
 }

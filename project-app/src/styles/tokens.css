@@ -3,7 +3,7 @@
 /* ───── Color Tokens ───── */
 :root {
   /* Primary (브랜드 보라) */
-  --primary-600: #4c44b8; /* pressed/active */
+  --primary-600: #4c44b8; /* pressed/active/hover */
   --primary-500: #6c5ce7; /* main */
   --primary-400: #7e6df0;
   --primary-300: #9380f7;
@@ -23,6 +23,7 @@
   --neutral-700: #3a3a4f; /* 본문 텍스트 */
   --neutral-600: #55556c;
   --neutral-500: #82829a; /* 서브 텍스트 */
+  --neutral-400: #a0a0b5; 
   --neutral-300: #c7c7d9;
   --neutral-200: #e5e5f0; /* disabled BG */
   --neutral-100: #f7f7fc; /* 메인 페이지 BG */

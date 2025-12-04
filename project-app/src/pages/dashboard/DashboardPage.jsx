@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../../components/common/Spinner";
-
+import Button from "../../components/common/Button";
+import { ArrowRight } from "lucide-react";
 import {
   getDailyGoal,
   getDashboardStats,
@@ -59,6 +60,8 @@ const DashboardPage = () => {
           { id: 1, word: "Coffee", meaning: "커피", count: 5 },
           { id: 2, word: "Resilience", meaning: "회복탄력성", count: 4 },
           { id: 3, word: "Ambiguous", meaning: "모호한", count: 3 },
+          { id: 4, word: "Ambiguous", meaning: "모호한", count: 3 },
+          { id: 5, word: "Ambiguous", meaning: "모호한", count: 3 },
         ]);
         setLoading(false);
       }, 500);
@@ -68,7 +71,7 @@ const DashboardPage = () => {
     if (!realUser) return;
     setCurrentUser(realUser);
     setLoading(true);
-   Promise.all([getDailyGoal(), getDashboardStats(), getWeeklyStudy()])
+    Promise.all([getDailyGoal(), getDashboardStats(), getWeeklyStudy()])
       .then(([dailyGoalObj, statsObj, weeklyArr]) => {
         // 세 개 모두 이미 정규화된 값
         setDailyGoalData(dailyGoalObj);
@@ -79,22 +82,22 @@ const DashboardPage = () => {
         setWrongWordsList([
           { id: 1, word: "Vocabulary", meaning: "어휘", count: 3 },
           { id: 2, word: "React", meaning: "반응하다", count: 2 },
-          { id: 2, word: "React", meaning: "반응하다", count: 2 },
-          { id: 2, word: "React", meaning: "반응하다", count: 2 },
-          { id: 2, word: "React", meaning: "반응하다", count: 2 },
+          { id: 3, word: "React", meaning: "반응하다", count: 2 },
+          { id: 4, word: "React", meaning: "반응하다", count: 2 },
+          { id: 5, word: "React", meaning: "반응하다", count: 2 },
         ]);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, [realUser]);
   if (loading || !currentUser || !dailyGoalData) {
-  return (
-    <Spinner
-      fullHeight={true}
-      message="대시보드를 불러오는 중입니다..."
-    />
-  );
-}
+    return (
+      <Spinner
+        fullHeight={true}
+        message="대시보드를 불러오는 중입니다..."
+      />
+    );
+  }
 
 
   const goal = dailyGoalData.dailyGoal || 50;
@@ -104,7 +107,7 @@ const DashboardPage = () => {
   const streak = statsData?.streakDays ?? 0;
   const wrongTotalCount = statsData?.wrongWords ?? 0;
   const maxVal = Math.max(...weeklyData.map(d => Math.max(d.learnedCount, d.wrongCount)), 10);
-  
+
   const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const attendance = [true, true, true, false, true, true, false];
 
@@ -117,10 +120,10 @@ const DashboardPage = () => {
       </header>
 
       <div className="dashboard-layout">
-        
+
         {/* === Left Column === */}
         <div className="column-left">
-          
+
           {/* A. Status Overview */}
           {/* [변경] card -> dashboard-card */}
           <section className="dashboard-card status-overview-card">
@@ -183,16 +186,16 @@ const DashboardPage = () => {
                   );
                 })}
               </div>
-              
+
               <div className="chart-summary">
-                 <div className="summary-row">
-                    <span>최근 7일 오답</span>
-                    <strong>{wrongTotalCount}</strong>
-                 </div>
-                 <div className="summary-row">
-                    <span>최근 7일 학습</span>
-                    <strong>{weeklyData.reduce((acc, cur) => acc + cur.learnedCount, 0)}</strong>
-                 </div>
+                <div className="summary-row">
+                  <span>최근 7일 오답</span>
+                  <strong>{wrongTotalCount}</strong>
+                </div>
+                <div className="summary-row">
+                  <span>최근 7일 학습</span>
+                  <strong>{weeklyData.reduce((acc, cur) => acc + cur.learnedCount, 0)}</strong>
+                </div>
               </div>
             </div>
           </section>
@@ -200,7 +203,7 @@ const DashboardPage = () => {
 
         {/* === Right Column === */}
         <div className="column-right">
-          
+
           {/* C. Action */}
           {/* [변경] card -> dashboard-card, action-card -> dashboard-action-card */}
           <section className="dashboard-card dashboard-action-card">
@@ -208,7 +211,7 @@ const DashboardPage = () => {
               <h3>학습하기</h3>
               <p>오늘의 학습을 시작하세요.</p>
             </div>
-            
+
             <div className="mini-calendar">
               {weekDays.map((day, i) => (
                 <div key={i} className={`calendar-day ${attendance[i] ? 'checked' : ''}`}>
@@ -217,9 +220,11 @@ const DashboardPage = () => {
               ))}
             </div>
 
-            <button className="start-btn" onClick={() => navigate("/learning/quiz?source=quiz")}>
-              학습 시작하기 →
-            </button>
+            <Button variant="primary" size="lg" full onClick={() => navigate("/learning/quiz?source=quiz")}>
+              학습 시작하기
+              <ArrowRight size={16} className="btn__icon btn__icon--right" />
+            </Button>
+
           </section>
 
           {/* D. Ranking */}
@@ -228,7 +233,7 @@ const DashboardPage = () => {
             <h3>오답 단어 Top 5</h3>
             <ul className="ranking-list">
               {wrongWordsList.length === 0 ? (
-                 <li className="empty-li">오답 데이터가 없습니다.</li>
+                <li className="empty-li">오답 데이터가 없습니다.</li>
               ) : (
                 wrongWordsList.map((item, index) => (
                   <li key={index} className="ranking-item">
@@ -242,9 +247,11 @@ const DashboardPage = () => {
               )}
             </ul>
             <div className="divider-line"></div>
-            <button className="wrong-review-btn" onClick={() => navigate("/learning/quiz?source=wrong-note")}>
-              오답 복습({wrongTotalCount}) →
-            </button>
+            <Button variant="warning" size="lg" full onClick={() => navigate("/learning/quiz?source=wrong-note")}>
+              오답 복습({wrongTotalCount})
+              <ArrowRight size={16} className="btn__icon btn__icon--right" />
+            </Button>
+
           </section>
 
         </div>

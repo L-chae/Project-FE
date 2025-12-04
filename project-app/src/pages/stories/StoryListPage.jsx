@@ -2,7 +2,8 @@
 import { ChevronRight, Search, FileQuestion } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
+import Input from "../../components/common/Input";
+import Spinner from "../../components/common/Spinner";
 import PageHeader from "../../components/common/PageHeader";
 import Pagination from "../../components/common/Pagination";
 import "./StoryListPage.css";
@@ -82,9 +83,8 @@ const StoryListPage = ({ stories = [] }) => {
     () => filteredStories.slice(startIdx, endIdx),
     [filteredStories, startIdx, endIdx]
   );
-
-  const hasAnyStories = sourceStories.length > 0;
-  const hasFilteredStories = filteredStories.length > 0;
+const hasAnyStories = !loading && sourceStories.length > 0;
+  const hasFilteredStories = !loading && filteredStories.length > 0;
 
   // 페이지 변경
   const handlePageChange = (nextIndex) => {
@@ -114,25 +114,32 @@ const StoryListPage = ({ stories = [] }) => {
           description="내가 학습한 단어로 만든 나만의 이야기입니다."
         />
 
-        <section className="story-controls">
-          <div className="search-wrapper">
-            <Search className="search-icon" />
-            <input
-              className="search-input"
-              placeholder="스토리 검색..."
-              value={searchValue}
-              onChange={handleSearchChange}
-            />
-          </div>
-        </section>
-
+     {/* 스토리가 있을 때만 검색창 노출 */}
+        {hasAnyStories && (
+          <section className="story-controls">
+            <div className="search-wrapper">
+              <Search className="search-icon" />
+            <Input
+            search
+            size="md"
+            wrapperClassName="search-wrapper" // 기존 정렬/폭 스타일 유지용
+            leftIcon={<Search size={18} />}
+            placeholder="스토리 검색..."
+            value={searchValue}
+            onChange={handleSearchChange}
+          />
+            </div>
+          </section>
+        )}
         <section className="story-grid">
-          {loading && (
-            <div className="empty-msg">
-              <p>스토리를 불러오는 중입니다... ⏳</p>
+         {loading && (
+            <div className="status-msg loading">
+              <Spinner
+                fullHeight={false}
+                message="스토리를 불러오는 중입니다..."
+              />
             </div>
           )}
-
           {/* 데이터는 있지만 검색 결과가 없을 때 */}
           {hasAnyStories && !hasFilteredStories && !loading && (
             <div className="empty-msg">

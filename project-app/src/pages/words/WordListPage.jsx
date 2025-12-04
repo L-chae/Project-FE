@@ -20,6 +20,7 @@ import {
 import PageHeader from "../../components/common/PageHeader";
 import Pagination from "../../components/common/Pagination";
 import Card from "../../components/common/Card";
+import Input from "../../components/common/Input";
 import Spinner from "../../components/common/Spinner";
 import "./WordListPage.css";
 
@@ -364,11 +365,14 @@ function WordListPage() {
         <div className="controls-right">
           <div className="search-wrapper">
             <Search className="search-icon" size={18} />
-            <input
-              className="search-input"
+            <Input
+              size="md"
+              search
+              fullWidth
               placeholder="단어 검색..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="단어 검색"
             />
           </div>
         </div>

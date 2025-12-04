@@ -1,9 +1,6 @@
-// src/components/common/Input.jsx
+// 상단에 추가
+import { Search as SearchIcon } from "lucide-react";
 import { useRef } from "react";
-
-/**
- * 디자인 토큰 + input.css 기반 공통 인풋 컴포넌트
- */
 
 export default function Input({
   size = "md",
@@ -25,6 +22,10 @@ export default function Input({
   const inputRef = useRef(null);
   const inputType = rest?.type;
 
+  // search=true 이고 leftIcon 안 넘겼으면 기본 검색 아이콘 사용
+  const effectiveLeftIcon =
+    leftIcon || (search ? <SearchIcon size={18} /> : null);
+
   const sizeClass =
     size === "sm" ? "input--sm" : size === "lg" ? "input--lg" : "input--md";
 
@@ -37,7 +38,7 @@ export default function Input({
       : "";
 
   const searchClass = search ? "input--search" : "";
-  const leftClass = leftIcon ? "input--with-left" : "";
+  const leftClass = effectiveLeftIcon ? "input--with-left" : "";
   const rightClass = rightIcon ? "input--with-right" : "";
   const fullClass = fullWidth ? "input--full" : "";
   const readonlyClass = readOnly ? "input--readonly" : "";
@@ -82,17 +83,19 @@ export default function Input({
         .join(" ")}
     >
       {/* 왼쪽 아이콘 */}
-      {leftIcon &&
+      {effectiveLeftIcon &&
         (hasClickableLeftIcon ? (
           <button
             type="button"
             className="input-icon input-icon--left input-icon-button"
             onClick={handleLeftIconClick}
           >
-            {leftIcon}
+            {effectiveLeftIcon}
           </button>
         ) : (
-          <span className="input-icon input-icon--left">{leftIcon}</span>
+          <span className="input-icon input-icon--left">
+            {effectiveLeftIcon}
+          </span>
         ))}
 
       <input
@@ -120,10 +123,7 @@ export default function Input({
         ))}
 
       {helperText && (
-        <p
-          className="mt-1 text-xs"
-          style={{ color: getHelperColor(status) }}
-        >
+        <p className="mt-1 text-xs" style={{ color: getHelperColor(status) }}>
           {helperText}
         </p>
       )}

@@ -87,3 +87,32 @@
 .btn--outline:hover:not(:disabled) {
   background: var(--primary-100);
 }
+
+/* ───── Warning ───── */
+.btn--warning {
+  background: var(--warning-500, #f59e0b);
+  color: var(--neutral-50);
+}
+.btn--warning:hover:not(:disabled) {
+  background: var(--warning-600, #d97706);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+/* ───── Button Arrow Icon (공통) ───── */
+.btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 오른쪽 화살표용 */
+.btn__icon--right {
+  margin-left: 6px;          /* 텍스트와 간격 */
+  transition: transform 0.2s ease;
+}
+
+/* 버튼 hover 시 아이콘 살짝 이동 */
+.btn:hover .btn__icon--right {
+  transform: translateX(3px);
+}
