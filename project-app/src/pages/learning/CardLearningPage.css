@@ -355,3 +355,10 @@
 .card-page .card-result {
   margin-top: 80px;
 }
+.card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* 가로 중앙 정렬 */
+  text-align: center;    /* 텍스트 중앙 */
+  width: 100%;
+}
