@@ -80,7 +80,7 @@
 }
 
 .dropdown-item.active {
-  background: var(--primary-50);
-  color: var(--primary-700);
+  background: var(--primary-100);
+  color: var(--primary-600);
   font-weight: 600;
 }

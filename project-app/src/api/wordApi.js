@@ -651,3 +651,44 @@ export const getWordCount = async () => {
   const res = await httpClient.get("/api/words/test-count");
   return res.data;
 };
+
+// =====================================================
+// 9. 연관 단어(클러스터)에서 단어장에 추가 (Mock 전용)
+// =====================================================
+export const addWordFromCluster = async ({ text, level = 1 }) => {
+  if (USE_MOCK) {
+    // 1) 이미 있는 단어면 그대로 반환
+    const exists = mockWordList.find(
+      (w) => String(w.word).toLowerCase() === String(text).toLowerCase()
+    );
+    if (exists) {
+      return mockDelay(mapWordFromApi(exists));
+    }
+
+    // 2) 새 단어 mockWordList에 push
+    const lastId = mockWordList[mockWordList.length - 1]?.wordId || 0;
+    const newId = lastId + 1;
+
+    const newWord = {
+      wordId: newId,
+      word: text,
+      meaning: `${text} (mock)`,
+      partOfSpeech: "Noun",
+      domain: "Daily Life",
+      category: "Daily Life",
+      level,
+      isFavorite: false,
+      isCompleted: false,
+      exampleSentenceEn: "",
+      exampleSentenceKo: "",
+    };
+
+    mockWordList = [...mockWordList, newWord];
+
+    return mockDelay(mapWordFromApi(newWord));
+  }
+
+  // 실서버 모드는 추후 백엔드 연동 시 구현
+  console.warn("addWordFromCluster: 실서버 모드에서는 아직 미구현입니다.");
+  throw new Error("addWordFromCluster is not implemented on real server yet.");
+};

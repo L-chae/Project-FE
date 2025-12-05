@@ -81,19 +81,17 @@ function LearningHomePage() {
   return (
     <div className="page-container">
       <main className="learning-home-page" aria-label="학습하기">
+       <header className="learning-header">
         <PageHeader
-          title="학습하기"
+          title="오늘의"
+          highlight="학습하기"
           description="오늘의 목표를 달성하고 실력을 키워보세요."
         />
+      </header>
 
         {/* 1. 통합 설정 바 */}
         <section className="learning-settings-bar" aria-label="학습 옵션 설정">
           <div className="learning-settings-main">
-            <div className="setting-label">
-              <Settings2 size={20} aria-hidden="true" />
-              <span>학습 옵션 설정</span>
-            </div>
-
             <div className="setting-controls">
               {/* 문항 수 - 라벨 스타일을 필터와 통일 */}
               <div className="control-group">

@@ -16,7 +16,7 @@ export function WrongNoteItem({ item, selected, onToggleSelect, onClick }) {
     if (lv == null) return "-";
 
     const n = Number(lv);
-    if (Number.isNaN(n)) return lv; // 문자열(EASY/HARD 등)은 그대로
+    if (Number.isNaN(n)) return lv; // "EASY" / "HARD" 등은 그대로
 
     if (n <= 1) return "초급";
     if (n === 2) return "중급";
@@ -34,10 +34,8 @@ export function WrongNoteItem({ item, selected, onToggleSelect, onClick }) {
   if (rawLastWrongAt) {
     const d = new Date(rawLastWrongAt);
     if (!Number.isNaN(d.getTime())) {
-      // 리스트에는 날짜만
-      lastWrongAtDate = d.toLocaleDateString("ko-KR"); // 예: 2025. 12. 2.
-      // 툴팁/타이틀로 전체 일시
-      lastWrongAtFull = d.toLocaleString("ko-KR");
+      lastWrongAtDate = d.toLocaleDateString("ko-KR");   // 예: 2025. 12. 2.
+      lastWrongAtFull = d.toLocaleString("ko-KR");        // 툴팁용 전체 일시
     } else {
       lastWrongAtDate = rawLastWrongAt;
       lastWrongAtFull = rawLastWrongAt;
@@ -57,7 +55,12 @@ export function WrongNoteItem({ item, selected, onToggleSelect, onClick }) {
   return (
     <tr className="wrongnote-item" onClick={onClick}>
       <td>
-        <input type="checkbox" className="sl-checkbox" checked={selected} onChange={onToggleSelect} />
+        <input
+          type="checkbox"
+          className="sl-checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+        />
       </td>
       <td>{word}</td>
       <td>{meaning}</td>

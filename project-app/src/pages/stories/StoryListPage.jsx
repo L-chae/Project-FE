@@ -2,20 +2,22 @@
 import { ChevronRight, Search, FileQuestion } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
 import Input from "../../components/common/Input";
 import Spinner from "../../components/common/Spinner";
 import PageHeader from "../../components/common/PageHeader";
 import Pagination from "../../components/common/Pagination";
-import "./StoryListPage.css";
 import { getStoryList } from "../../api/storyApi";
+
+import "./StoryListPage.css";
 
 const PAGE_SIZE = 6;
 
 const StoryListPage = ({ stories = [] }) => {
   const navigate = useNavigate();
-  const [searchValue, setSearchValue] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const [searchValue, setSearchValue] = useState("");
   const [serverStories, setServerStories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +35,6 @@ const StoryListPage = ({ stories = [] }) => {
     const fetchStories = async () => {
       try {
         const res = await getStoryList();
-        // 응답 데이터 매핑
         const mapped = (res || []).map((item) => ({
           id: item.storyId,
           title: item.title,
@@ -52,7 +53,7 @@ const StoryListPage = ({ stories = [] }) => {
     fetchStories();
   }, []);
 
-  // 전체 데이터 준비 (서버 데이터 우선, 없으면 props 사용)
+  // 전체 데이터 (서버 데이터 우선, 없으면 props 사용)
   const sourceStories = useMemo(() => {
     const base = serverStories.length > 0 ? serverStories : stories;
     return [...base].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -83,7 +84,8 @@ const StoryListPage = ({ stories = [] }) => {
     () => filteredStories.slice(startIdx, endIdx),
     [filteredStories, startIdx, endIdx]
   );
-const hasAnyStories = !loading && sourceStories.length > 0;
+
+  const hasAnyStories = !loading && sourceStories.length > 0;
   const hasFilteredStories = !loading && filteredStories.length > 0;
 
   // 페이지 변경
@@ -96,8 +98,19 @@ const hasAnyStories = !loading && sourceStories.length > 0;
     window.scrollTo(0, 0);
   };
 
+  // 검색 변경
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.set("page", "0");
+      return params;
+    });
+  };
+
+  // 검색 초기화
+  const handleResetSearch = () => {
+    setSearchValue("");
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       params.set("page", "0");
@@ -114,25 +127,27 @@ const hasAnyStories = !loading && sourceStories.length > 0;
           description="내가 학습한 단어로 만든 나만의 이야기입니다."
         />
 
-     {/* 스토리가 있을 때만 검색창 노출 */}
+        {/* 스토리가 있을 때만 검색창 노출 */}
         {hasAnyStories && (
           <section className="story-controls">
             <div className="search-wrapper">
-              <Search className="search-icon" />
-            <Input
-            search
-            size="md"
-            wrapperClassName="search-wrapper" // 기존 정렬/폭 스타일 유지용
-            leftIcon={<Search size={18} />}
-            placeholder="스토리 검색..."
-            value={searchValue}
-            onChange={handleSearchChange}
-          />
+              <Search className="search-icon" size={18} />
+              <Input
+                search
+                size="md"
+                fullWidth
+                placeholder="스토리 검색..."
+                value={searchValue}
+                onChange={handleSearchChange}
+                aria-label="스토리 검색"
+              />
             </div>
           </section>
         )}
+
         <section className="story-grid">
-         {loading && (
+          {/* 로딩 상태 */}
+          {loading && (
             <div className="status-msg loading">
               <Spinner
                 fullHeight={false}
@@ -140,33 +155,45 @@ const hasAnyStories = !loading && sourceStories.length > 0;
               />
             </div>
           )}
-          {/* 데이터는 있지만 검색 결과가 없을 때 */}
-          {hasAnyStories && !hasFilteredStories && !loading && (
-            <div className="empty-msg">
-              <p>검색 결과가 없습니다. 🍂</p>
+
+          {/* 1) 스토리가 아예 없거나, 2) 검색 결과가 없을 때 */}
+          {!loading && (!hasAnyStories || !hasFilteredStories) && (
+            <div className="status-msg empty-search">
+              <div className="empty-icon-wrapper">
+                <FileQuestion size={64} strokeWidth={1.5} />
+              </div>
+
+              <p className="empty-title">
+                {!hasAnyStories
+                  ? "AI 스토리가 아직 없습니다."
+                  : "조건에 맞는 AI 스토리가 없습니다."}
+              </p>
+
+              <p className="empty-desc">
+                {!hasAnyStories
+                  ? "학습하기에서 퀴즈를 풀고, 나온 오답 단어들로 AI 스토리를 만들어 보세요."
+                  : "검색어를 변경하거나, 검색어를 지우고 전체 스토리를 확인해 보세요."}
+              </p>
+
+              {!hasAnyStories ? (
+                <button
+                  type="button"
+                  className="reset-text-btn"
+                  onClick={handleGoLearning}
+                >
+                  학습하러 가기
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="reset-text-btn"
+                  onClick={handleResetSearch}
+                >
+                  검색 초기화
+                </button>
+              )}
             </div>
           )}
-
-        {/* 데이터가 아예 없을 때: 학습하기 유도 */}
-{!hasAnyStories && !loading && (
-  <div className="status-msg empty-search">
-    <div className="empty-icon-wrapper">
-      <FileQuestion size={64} strokeWidth={1.5} />
-    </div>
-    <p className="empty-title">AI 스토리가 아직 없습니다.</p>
-    <p className="empty-desc">
-      학습하기에서 퀴즈를 풀고, 나온 오답 단어들로 AI 스토리를 만들어 보세요.
-    </p>
-    <button
-      type="button"
-      className="reset-text-btn"
-      onClick={handleGoLearning}
-    >
-      학습하러 가기
-    </button>
-  </div>
-)}
-
 
           {/* 목록 렌더링 */}
           {hasFilteredStories &&

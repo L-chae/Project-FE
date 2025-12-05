@@ -76,7 +76,6 @@
   border-radius: 24px; 
   padding: 32px;
 
-  min-height: 640px;
   max-height: 80vh;
 
   display: flex;
@@ -232,7 +231,6 @@
   padding: 32px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 
-  min-height: 640px;
 
   display: flex;
   flex-direction: column;
@@ -411,7 +409,11 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
-
+.builder-footer {
+  margin-top: auto;                 /* 위쪽 내용이 얼마나 길어져도 항상 맨 아래로 */
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
 /* =========================================
    7. 모바일
    ========================================= */
@@ -433,4 +435,75 @@
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* =========================================
+   8. 스토리 생성 로딩 오버레이
+   ========================================= */
+.story-generate-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-scrim); /* tokens.css: 어두운 스크림 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+}
+
+.story-generate-modal {
+  width: min(420px, 90vw);
+  background: var(--surface-1);
+  border-radius: 24px;
+  padding: 28px 32px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+  text-align: center;
+}
+
+.story-generate-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-100);
+  border-top-color: var(--primary-500);
+  animation: story-generate-spin 0.9s linear infinite;
+}
+
+@keyframes story-generate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.story-generate-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--neutral-900);
+}
+
+.story-generate-desc {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: var(--neutral-500);
+  line-height: 1.6;
+}
+
+/* 선택된 단어 리스트 (선택된 칩들을 같이 보여주는 영역) */
+.story-generate-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.story-generate-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--primary-50);
+  color: var(--primary-600);
+  border: 1px solid var(--primary-200);
 }

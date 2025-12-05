@@ -6,13 +6,13 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import Button from "../../components/common/Button";
 import "./StoryCreatePage.css";
 
-import { generateAiStory, saveStory } from "../../api/aiStoryApi";
+import { generateAiStory } from "../../api/aiStoryApi";
+import { saveStory } from "../../api/storyApi";      // ← 저장은 storyApi 사용
 import { getUnusedWrongLogs } from "../../api/wrongApi";
 
 const MAX_SELECTED_WORDS = 5;
 const MAX_VISIBLE_MISTAKES = 15;
 
-// UI에서는 선택 안 하지만, 백엔드에 넘길 기본 값
 const DEFAULT_DIFFICULTY = "intermediate";
 const DEFAULT_STYLE = "narrative";
 
@@ -25,10 +25,11 @@ const StoryCreatePage = () => {
   const [mistakePool, setMistakePool] = useState([]);
   const [loadingMistakes, setLoadingMistakes] = useState(true);
 
+  // 선택된 단어
   const [selectedWords, setSelectedWords] = useState([]);
-  const [isGenerating, setIsGenerating] = useState(false);
 
-  // URL/state 기반 자동선택 처리 여부
+  // 상태
+  const [isGenerating, setIsGenerating] = useState(false);
   const [initializedFromParams, setInitializedFromParams] = useState(false);
 
   const handleBack = () => {
@@ -44,7 +45,7 @@ const StoryCreatePage = () => {
     const fetchMistakes = async () => {
       try {
         const res = await getUnusedWrongLogs();
-        // [{ wrongWordId, word, meaning }, ...]
+        // [{ wrongWordId, word, meaning }, ...] → 내부 공통 포맷
         const mapped = (res || []).map((item) => ({
           id: item.wrongWordId,
           word: item.word,
@@ -61,19 +62,21 @@ const StoryCreatePage = () => {
     fetchMistakes();
   }, []);
 
-  // 2) 퀴즈/오답 노트에서 넘어온 단어 자동 선택
+  // 2) Quiz / WrongNote 에서 넘어온 단어 자동 선택
+  //    - wrongWords: location.state.wrongWords[]
+  //    - wrongWordIds: ?wrongWordIds=1,2,3
   useEffect(() => {
-    if (initializedFromParams) return;
+    // 이미 한 번 초기화 했거나, 아직 오답 목록 로딩 중이면 실행하지 않음
+    if (initializedFromParams || loadingMistakes) return;
 
     const state = location.state || {};
-
     const wrongWordsFromState = Array.isArray(state.wrongWords)
       ? state.wrongWords
       : [];
 
     const initialSelected = [];
 
-    // (1) QuizPage 에서 온 wrongWords 자동 선택 (정규/오답 공통)
+    // (1) QuizPage 에서 온 wrongWords
     if (wrongWordsFromState.length > 0) {
       wrongWordsFromState.forEach((item) => {
         if (initialSelected.length >= MAX_SELECTED_WORDS) return;
@@ -129,9 +132,15 @@ const StoryCreatePage = () => {
     }
 
     setInitializedFromParams(true);
-  }, [location.state, searchParams, mistakePool, initializedFromParams]);
+  }, [
+    location.state,
+    searchParams,
+    mistakePool,
+    loadingMistakes,
+    initializedFromParams,
+  ]);
 
-  // 좌측 카드: 단어 토글 선택
+  // 단어 토글 선택
   const toggleSelectWord = (wordText, source = "mistake", wrongLogId = null) => {
     const normalized = wordText.trim();
     if (!normalized) return;
@@ -139,21 +148,23 @@ const StoryCreatePage = () => {
     const lower = normalized.toLowerCase();
     const exists = selectedWords.some((w) => w.text.toLowerCase() === lower);
 
-    // 이미 선택된 단어면 → 해제
     if (exists) {
+      // 이미 선택 → 해제
       setSelectedWords((prev) =>
         prev.filter((w) => w.text.toLowerCase() !== lower)
       );
       return;
     }
 
-    // 새로 선택
     if (selectedWords.length >= MAX_SELECTED_WORDS) {
       alert(`단어는 최대 ${MAX_SELECTED_WORDS}개까지만 선택할 수 있어요.`);
       return;
     }
 
-    setSelectedWords((prev) => [...prev, { text: normalized, source, wrongLogId }]);
+    setSelectedWords((prev) => [
+      ...prev,
+      { text: normalized, source, wrongLogId },
+    ]);
   };
 
   const selectWord = (wordObj) => {
@@ -171,7 +182,7 @@ const StoryCreatePage = () => {
   };
 
   const handleOpenMistakePage = () => {
-    // 실제 라우트에 맞춰서 사용 (예: /wrong-note 또는 /learning/wrong-notes)
+    // 실제 라우트에 맞게 조정
     navigate("/learning/wrong-notes");
   };
 
@@ -181,6 +192,7 @@ const StoryCreatePage = () => {
   const visibleMistakes = mistakePool.slice(0, MAX_VISIBLE_MISTAKES);
   const hasMoreMistakes = mistakePool.length > MAX_VISIBLE_MISTAKES;
 
+  // 스토리 생성 플로우
   const handleGenerate = async () => {
     if (selectedWords.length === 0 || isGenerating) return;
 
@@ -192,7 +204,7 @@ const StoryCreatePage = () => {
         .filter((w) => w.source === "mistake" && w.wrongLogId)
         .map((w) => w.wrongLogId);
 
-      // 1) AI 스토리 생성
+      // 1) AI 스토리 생성 (목업/실서버는 aiStoryApi에서 처리)
       const aiResult = await generateAiStory({
         words,
         difficulty: DEFAULT_DIFFICULTY,
@@ -203,7 +215,7 @@ const StoryCreatePage = () => {
         throw new Error("AI 스토리 생성 결과가 올바르지 않습니다.");
       }
 
-      // 2) 스토리 저장
+      // 2) 스토리 저장 (목업일 때는 storyApi.js에서 mockStories에 push)
       const title =
         words.length > 0 ? `Story with ${words.join(", ")}` : "AI Story";
 
@@ -238,7 +250,6 @@ const StoryCreatePage = () => {
     }
   };
 
-  // 퀴즈에서 온 단어가 있었는지 여부 (UI 안내 문구용)
   const state = location.state || {};
   const hasQuizWords =
     Array.isArray(state.wrongWords) && state.wrongWords.length > 0;
@@ -268,13 +279,13 @@ const StoryCreatePage = () => {
               </span>
             </div>
 
-            <p className="mistake-desc">
-              최근 퀴즈에서 실수한 단어들입니다.
-            </p>
+            <p className="mistake-desc">최근 퀴즈에서 실수한 단어들입니다.</p>
 
             <div className="mistake-list">
               {loadingMistakes && (
-                <p className="mistake-loading">오답 단어를 불러오는 중입니다...</p>
+                <p className="mistake-loading">
+                  오답 단어를 불러오는 중입니다...
+                </p>
               )}
 
               {!loadingMistakes &&
@@ -285,12 +296,16 @@ const StoryCreatePage = () => {
                   return (
                     <div
                       key={item.id}
-                      className={`mistake-card ${isSelected ? "is-selected" : ""}`}
+                      className={`mistake-card ${
+                        isSelected ? "is-selected" : ""
+                      }`}
                       onClick={() => selectWord(item)}
                     >
                       <div className="card-top">
                         <span className="card-word">{item.word}</span>
-                        {isSelected && <span className="selected-mark">선택됨</span>}
+                        {isSelected && (
+                          <span className="selected-mark">선택됨</span>
+                        )}
                       </div>
                       <div className="card-meaning">{item.meaning}</div>
                     </div>
@@ -394,7 +409,31 @@ const StoryCreatePage = () => {
               </Button>
             </div>
           </main>
+
         </div>
+          {isGenerating && (
+          <div className="story-generate-overlay">
+            <div className="story-generate-modal">
+              <div className="story-generate-spinner" />
+              <p className="story-generate-title">AI가 스토리를 만드는 중입니다</p>
+              <p className="story-generate-desc">
+                선택한 단어들을 자연스러운 문맥 속에 녹이고 있어요.
+                <br />
+                잠시만 기다려 주세요.
+              </p>
+
+              {selectedWords.length > 0 && (
+                <div className="story-generate-words">
+                  {selectedWords.map((w) => (
+                    <span key={w.text} className="story-generate-chip">
+                      {w.text}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
