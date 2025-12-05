@@ -7,8 +7,6 @@ import {
   Search,
   Star,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   addFavorite,
   getCompletedList,
@@ -16,15 +14,21 @@ import {
   getWordList,
   removeFavorite,
 } from "../../api/wordApi";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import PageHeader from "../../components/common/PageHeader";
 import Pagination from "../../components/common/Pagination";
 import Spinner from "../../components/common/Spinner";
 import FilterDropdown from "../../components/common/FilterDropdown";
+import EmptyState from "../../components/common/EmptyState";
 import "./WordListPage.css";
 
-// --- 필터 옵션 ---
+// =========================================
+// 필터 옵션
+// =========================================
+
 // 품사 필터
 const CATEGORY_OPTIONS = [
   { label: "전체 품사", value: "All" },
@@ -63,23 +67,28 @@ function WordListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // --- 상태 관리 ---
+  // =========================================
+  // 상태 관리
+  // =========================================
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [mode, setMode] = useState("all"); // all / favorite
+  const [mode, setMode] = useState("all"); // all | favorite
   const [filter, setFilter] = useState(FILTER_INITIAL);
-  const [sortKey, setSortKey] = useState("default"); // default / alphabet / level
+  const [sortKey, setSortKey] = useState("default"); // default | alphabet | level
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  // --- 데이터 로딩 ---
+  // =========================================
+  // 데이터 로딩
+  // =========================================
   useEffect(() => {
     let cancelled = false;
 
     const fetchData = async () => {
       try {
         setLoading(true);
+
         const [wordRes, favoriteRes, completedRes] = await Promise.all([
           getWordList(0, 100),
           getFavoriteList().catch(() => []),
@@ -125,14 +134,18 @@ function WordListPage() {
     };
   }, []);
 
-  // --- 핸들러 ---
+  // =========================================
+  // 이벤트 핸들러
+  // =========================================
   const handleCardClick = (wordId) => navigate(`/words/${wordId}`);
 
   const handleToggleFavorite = async (word, e) => {
     e.stopPropagation();
+
     const originalWords = [...words];
     const currentStatus = word.isFavorite;
 
+    // 낙관적 업데이트
     setWords((prev) =>
       prev.map((w) =>
         w.wordId === word.wordId ? { ...w, isFavorite: !currentStatus } : w
@@ -140,9 +153,11 @@ function WordListPage() {
     );
 
     try {
-      currentStatus
-        ? await removeFavorite(word.wordId)
-        : await addFavorite(word.wordId);
+      if (currentStatus) {
+        await removeFavorite(word.wordId);
+      } else {
+        await addFavorite(word.wordId);
+      }
     } catch (err) {
       console.error("즐겨찾기 실패", err);
       setWords(originalWords);
@@ -175,6 +190,9 @@ function WordListPage() {
     setSearchParams({ page: "0" });
   };
 
+  // =========================================
+  // 파생 값
+  // =========================================
   const isFilterActive =
     filter.category !== "All" ||
     filter.domain !== "All" ||
@@ -214,7 +232,7 @@ function WordListPage() {
     },
   ];
 
-  // --- 필터 + 정렬 ---
+  // 필터 + 정렬 적용
   const filteredAndSortedWords = useMemo(() => {
     let result = words.filter((w) => {
       if (mode === "favorite" && !w.isFavorite) return false;
@@ -227,14 +245,10 @@ function WordListPage() {
         return false;
 
       // 분야 필터: filter.domain 값은 category 컬럼과 동일하게 사용
-      if (filter.domain !== "All" && w.category !== filter.domain)
-        return false;
+      if (filter.domain !== "All" && w.category !== filter.domain) return false;
 
       // 난이도 필터
-      if (
-        filter.level !== "All" &&
-        Number(w.level) !== Number(filter.level)
-      )
+      if (filter.level !== "All" && Number(w.level) !== Number(filter.level))
         return false;
 
       // 검색어
@@ -250,7 +264,7 @@ function WordListPage() {
       return true;
     });
 
-    // 정렬
+    // 정렬 (현재 UI에서 sortKey 변경은 없지만, 확장 대비)
     if (sortKey === "alphabet") {
       result.sort((a, b) => (a.word || "").localeCompare(b.word || ""));
     } else if (sortKey === "level") {
@@ -260,7 +274,9 @@ function WordListPage() {
     return result;
   }, [words, mode, filter, search, sortKey]);
 
-  // --- 페이지네이션 ---
+  // =========================================
+  // 페이지네이션
+  // =========================================
   const PAGE_SIZE = 12;
   const totalPages = Math.max(
     1,
@@ -279,19 +295,24 @@ function WordListPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // 완전히 비어있는 단어장 여부
   const isEmptyAll = !loading && !error && words.length === 0;
 
-  // --- 렌더링 ---
+  // =========================================
+  // 렌더링
+  // =========================================
   return (
     <div className="page-container wordlist-page">
-      {/* 1. 헤더 영역 */}
-      <header className="wordlist-header">
-        <PageHeader
-          title="나의"
-          highlight="단어장"
-          description="오늘의 학습을 시작하세요."
-        />
+   {/* 1. 헤더 영역 */}
+    <header className="wordlist-header">
+      <PageHeader
+        title="나의"
+        highlight="단어장"
+        description="오늘의 학습을 시작하세요."
+      />
 
+      {/* 단어가 있을 때만 카테고리(전체 단어 / 즐겨찾기) 버튼 노출 */}
+      {!isEmptyAll && (
         <div className="wordlist-stats-wrapper">
           <nav className="word-stats" aria-label="학습 현황 필터">
             <div className="word-stats-list">
@@ -316,60 +337,64 @@ function WordListPage() {
             </div>
           </nav>
         </div>
-      </header>
+      )}
+    </header>
 
-      {/* 2. 컨트롤 영역 */}
-      <section className="wordlist-controls">
-        <div className="controls-left">
-          <div className="filter-container">
-            {[
-              { id: "category", label: "품사", options: CATEGORY_OPTIONS },
-              { id: "domain", label: "분야", options: DOMAIN_OPTIONS },
-              { id: "level", label: "난이도", options: LEVEL_OPTIONS },
-            ].map(({ id, label, options }) => (
-              <FilterDropdown
-                key={id}
-                id={id}
-                label={label}
-                options={options}
-                value={filter[id]}
-                isOpen={openDropdown === id}
-                onToggle={toggleDropdown}     // (id) => ...
-                onChange={selectFilterOption} // (id, value) => ...
+      {/* 2. 컨트롤 영역 (단어가 하나도 없을 때는 숨김) */}
+      {!isEmptyAll && (
+        <section className="wordlist-controls">
+          <div className="controls-left">
+            <div className="filter-container">
+              {[
+                { id: "category", label: "품사", options: CATEGORY_OPTIONS },
+                { id: "domain", label: "분야", options: DOMAIN_OPTIONS },
+                { id: "level", label: "난이도", options: LEVEL_OPTIONS },
+              ].map(({ id, label, options }) => (
+                <FilterDropdown
+                  key={id}
+                  id={id}
+                  label={label}
+                  options={options}
+                  value={filter[id]}
+                  isOpen={openDropdown === id}
+                  onToggle={toggleDropdown}
+                  onChange={selectFilterOption}
+                />
+              ))}
+
+              {isFilterActive && (
+                <button
+                  type="button"
+                  onClick={handleFilterReset}
+                  className="filter-reset-btn"
+                  title="필터 초기화"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="controls-right">
+            <div className="search-wrapper">
+              <Search className="search-icon" size={18} />
+              <Input
+                size="md"
+                search
+                fullWidth
+                placeholder="단어 검색..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="단어 검색"
               />
-            ))}
-
-            {isFilterActive && (
-              <button
-                type="button"
-                onClick={handleFilterReset}
-                className="filter-reset-btn"
-                title="필터 초기화"
-              >
-                <RotateCcw size={16} />
-              </button>
-            )}
+            </div>
           </div>
-        </div>
-
-        <div className="controls-right">
-          <div className="search-wrapper">
-            <Search className="search-icon" size={18} />
-            <Input
-              size="md"
-              search
-              fullWidth
-              placeholder="단어 검색..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="단어 검색"
-            />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 3. 리스트 영역 */}
       <section className="wordlist-content">
+        {/* 로딩 상태 */}
         {loading && (
           <div className="status-msg loading">
             <Spinner
@@ -379,6 +404,7 @@ function WordListPage() {
           </div>
         )}
 
+        {/* 에러 상태 */}
         {!loading && error && (
           <div className="status-msg error">
             <p>{error}</p>
@@ -391,16 +417,17 @@ function WordListPage() {
           </div>
         )}
 
-        {/* 단어장에 단어가 없는 경우 */}
+        {/* 단어장에 단어가 아예 없는 경우 */}
         {!loading && !error && isEmptyAll && (
-          <div className="status-msg empty">
-            <p>저장된 단어가 없습니다. 📭</p>
-            <span className="sub-text">
-              새로운 단어를 학습하고 추가해보세요!
-            </span>
-          </div>
+          <EmptyState
+            icon={FileQuestion}
+            title="저장된 단어가 없습니다."
+            description="새로운 단어를 학습하고 단어장에 추가해 보세요."
+            variant="page"
+          />
         )}
 
+        {/* 단어는 있는데, 필터/검색 조건으로 0개인 경우 포함 */}
         {!loading && !error && !isEmptyAll && (
           <>
             {filteredAndSortedWords.length > 0 ? (
@@ -470,18 +497,14 @@ function WordListPage() {
                 })}
               </div>
             ) : (
-              <div className="status-msg empty-search">
-                <div className="empty-icon-wrapper">
-                  <FileQuestion size={64} strokeWidth={1.5} />
-                </div>
-                <p className="empty-title">조건에 맞는 단어가 없습니다.</p>
-                <p className="empty-desc">
-                  검색어나 필터를 변경하여 다시 시도해 보세요.
-                </p>
-                <button className="reset-text-btn" onClick={resetFilters}>
-                  필터 초기화
-                </button>
-              </div>
+              <EmptyState
+                icon={FileQuestion}
+                title="조건에 맞는 단어가 없습니다."
+                description="검색어나 필터를 변경하여 다시 시도해 보세요."
+                actionLabel="필터 초기화"
+                onAction={resetFilters}
+                variant="page"
+              />
             )}
           </>
         )}

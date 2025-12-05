@@ -10,7 +10,7 @@ export const getDailyGoal = async () => {
   const data = res.data || {};
 
   return {
-    nickname: data.nickname ?? null, 
+    nickname: data.nickname ?? null,
     dailyGoal: data.dailyGoal ?? 0,
     todayProgress: data.todayProgress ?? data.completedToday ?? 0,
     percentage: data.percentage ?? data.progressRate ?? 0,
@@ -24,7 +24,8 @@ export const getDailyGoal = async () => {
 export const getDashboardStats = async () => {
   const res = await httpClient.get("/api/dashboard/stats");
   const d = res.data || {};
- return {
+
+  return {
     // 누적 학습 단어 수: completedWords 기준
     totalLearnedWords: d.totalLearnedWords ?? d.completedWords ?? 0,
 
@@ -34,7 +35,7 @@ export const getDashboardStats = async () => {
     // 오답 수
     wrongWords: d.wrongWords ?? d.wrongAnswers ?? 0,
 
-    // 연속 학습일 (있으면 사용)
+    // 연속 학습일
     streakDays: d.streakDays ?? d.streak ?? 0,
   };
 };
@@ -52,8 +53,27 @@ export const getWeeklyStudy = async () => {
 
   return rawWeekly.map((d) => ({
     date: d.date || d.day || d.baseDate,
-    // count도 함께 본다
     learnedCount: d.learnedCount ?? d.studyCount ?? d.count ?? 0,
     wrongCount: d.wrongCount ?? d.incorrectCount ?? 0,
+  }));
+};
+
+/**
+ * 오답 단어 TOP 5
+ * GET /api/dashboard/wrong/top5?days={days}
+ */
+export const getWrongTop5 = async (days = 7) => {
+  const res = await httpClient.get("/api/dashboard/wrong/top5", {
+    params: { days }, // ?days=7 형태로 전송
+  });
+
+  const arr = res.data || [];
+  const list = Array.isArray(arr) ? arr : arr.items || [];
+
+  return list.map((item) => ({
+    wordId: item.wordId ?? item.id ?? null,
+    word: item.word ?? "",
+    meaning: item.meaning ?? "",
+    count: item.count ?? item.wrongCount ?? 0,
   }));
 };

@@ -8,12 +8,13 @@ import {
   getDailyGoal,
   getDashboardStats,
   getWeeklyStudy,
+  getWrongTop5,
 } from "../../api/dashboardApi";
 import "./DashboardPage.css";
 
-// ... (상단 상수 및 함수 코드는 기존과 동일) ...
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
+// 날짜 포맷
 const formatDateLabel = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
@@ -21,6 +22,7 @@ const formatDateLabel = (dateStr) => {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 };
 
+// 시간 기반 인사말
 const getTimeBasedGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 11) return "좋은 아침이에요,";
@@ -37,11 +39,16 @@ const DashboardPage = () => {
   const [statsData, setStatsData] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
   const [wrongWordsList, setWrongWordsList] = useState([]);
+  const [attendance, setAttendance] = useState([false, false, false, false, false, false, false]);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("반가워요,");
 
+  const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
+
   useEffect(() => {
     setGreeting(getTimeBasedGreeting());
+
+    // MOCK MODE
     if (USE_MOCK) {
       setTimeout(() => {
         setCurrentUser({ nickname: "홍길동", email: "test@example.com" });
@@ -56,49 +63,71 @@ const DashboardPage = () => {
           { date: "2025-12-01", learnedCount: 12, wrongCount: 3 },
           { date: "2025-12-02", learnedCount: 18, wrongCount: 2 },
         ]);
+        setAttendance([true, true, true, false, true, true, false]);
         setWrongWordsList([
           { id: 1, word: "Coffee", meaning: "커피", count: 5 },
           { id: 2, word: "Resilience", meaning: "회복탄력성", count: 4 },
           { id: 3, word: "Ambiguous", meaning: "모호한", count: 3 },
-          { id: 4, word: "Ambiguous", meaning: "모호한", count: 3 },
-          { id: 5, word: "Ambiguous", meaning: "모호한", count: 3 },
+          { id: 4, word: "Strategy", meaning: "전략", count: 3 },
+          { id: 5, word: "Implement", meaning: "실행하다", count: 3 },
         ]);
         setLoading(false);
       }, 500);
+
       return;
     }
 
+    // REAL MODE
     if (!realUser) return;
+
     setCurrentUser(realUser);
     setLoading(true);
-    Promise.all([getDailyGoal(), getDashboardStats(), getWeeklyStudy()])
-      .then(([dailyGoalObj, statsObj, weeklyArr]) => {
-        // 세 개 모두 이미 정규화된 값
-        setDailyGoalData(dailyGoalObj);
-        setStatsData(statsObj);
-        setWeeklyData(weeklyArr);
 
-        // 오답 Top5는 당분간 더미
-        setWrongWordsList([
-          { id: 1, word: "Vocabulary", meaning: "어휘", count: 3 },
-          { id: 2, word: "React", meaning: "반응하다", count: 2 },
-          { id: 3, word: "React", meaning: "반응하다", count: 2 },
-          { id: 4, word: "React", meaning: "반응하다", count: 2 },
-          { id: 5, word: "React", meaning: "반응하다", count: 2 },
-        ]);
+    Promise.all([
+      getDailyGoal(),
+      getDashboardStats(),
+      getWeeklyStudy(),
+      getWrongTop5(),
+    ])
+      .then(([dailyGoalObj, statsObj, weeklyStudyArr, wrongTop5]) => {
+        // 오늘 목표
+        setDailyGoalData(dailyGoalObj);
+
+        // 전체 통계
+        setStatsData(statsObj);
+
+        // 차트 데이터
+        const sortedWeekly = [...weeklyStudyArr].sort((a, b) => new Date(a.date) - new Date(b.date));
+        setWeeklyData(sortedWeekly);
+
+        // 출석 체크도 정렬된 데이터 기반으로
+        const attArr = sortedWeekly.map(day => day.learnedCount > 0);
+        setAttendance(attArr);
+
+
+        // ⭐ 출석 체크 변환 (학습한 날 true)
+        if (Array.isArray(weeklyStudyArr) && weeklyStudyArr.length === 7) {
+          const attArr = weeklyStudyArr.map((item) => item.learnedCount > 0);
+          setAttendance(attArr);
+        }
+
+        // ⭐ 오답 Top5 실제 데이터 적용
+        setWrongWordsList(
+          wrongTop5.map((item) => ({
+            wordId: item.wordId,
+            word: item.word,
+            meaning: item.meaning,
+            count: item.count,
+          }))
+        );
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, [realUser]);
-  if (loading || !currentUser || !dailyGoalData) {
-    return (
-      <Spinner
-        fullHeight={true}
-        message="대시보드를 불러오는 중입니다..."
-      />
-    );
-  }
 
+  if (loading || !currentUser || !dailyGoalData) {
+    return <Spinner fullHeight={true} message="대시보드를 불러오는 중입니다..." />;
+  }
 
   const goal = dailyGoalData.dailyGoal || 50;
   const learned = dailyGoalData.todayProgress || 0;
@@ -106,10 +135,11 @@ const DashboardPage = () => {
   const totalWords = statsData?.totalLearnedWords ?? 0;
   const streak = statsData?.streakDays ?? 0;
   const wrongTotalCount = statsData?.wrongWords ?? 0;
-  const maxVal = Math.max(...weeklyData.map(d => Math.max(d.learnedCount, d.wrongCount)), 10);
 
-  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const attendance = [true, true, true, false, true, true, false];
+  const maxVal = Math.max(
+    ...weeklyData.map((d) => Math.max(d.learnedCount, d.wrongCount)),
+    10
+  );
 
   return (
     <div className="page-container mt-24 fade-in">
@@ -121,11 +151,10 @@ const DashboardPage = () => {
 
       <div className="dashboard-layout">
 
-        {/* === Left Column === */}
+        {/* ===== Left Column ===== */}
         <div className="column-left">
 
           {/* A. Status Overview */}
-          {/* [변경] card -> dashboard-card */}
           <section className="dashboard-card status-overview-card">
             <div className="status-section progress-section">
               <div className="section-header">
@@ -160,7 +189,6 @@ const DashboardPage = () => {
           </section>
 
           {/* B. Chart */}
-          {/* [변경] card -> dashboard-card */}
           <section className="dashboard-card chart-card">
             <div className="card-header-row">
               <h3>학습분석</h3>
@@ -194,41 +222,46 @@ const DashboardPage = () => {
                 </div>
                 <div className="summary-row">
                   <span>최근 7일 학습</span>
-                  <strong>{weeklyData.reduce((acc, cur) => acc + cur.learnedCount, 0)}</strong>
+                  <strong>
+                    {weeklyData.reduce((acc, cur) => acc + cur.learnedCount, 0)}
+                  </strong>
                 </div>
               </div>
             </div>
           </section>
         </div>
 
-        {/* === Right Column === */}
+        {/* ===== Right Column ===== */}
         <div className="column-right">
 
           {/* C. Action */}
-          {/* [변경] card -> dashboard-card, action-card -> dashboard-action-card */}
           <section className="dashboard-card dashboard-action-card">
             <div className="action-text">
               <h3>학습하기</h3>
               <p>오늘의 학습을 시작하세요.</p>
             </div>
 
+            {/* ⭐ 출석 UI */}
             <div className="mini-calendar">
               {weekDays.map((day, i) => (
-                <div key={i} className={`calendar-day ${attendance[i] ? 'checked' : ''}`}>
+                <div key={i} className={`calendar-day ${attendance[i] ? "checked" : ""}`}>
                   <span className="day-char">{day}</span>
                 </div>
               ))}
             </div>
 
-            <Button variant="primary" size="lg" full onClick={() => navigate("/learning/quiz?source=quiz")}>
+            <Button
+              variant="primary"
+              size="lg"
+              full
+              onClick={() => navigate("/learning/quiz?source=quiz")}
+            >
               학습 시작하기
               <ArrowRight size={16} className="btn__icon btn__icon--right" />
             </Button>
-
           </section>
 
           {/* D. Ranking */}
-          {/* [변경] card -> dashboard-card */}
           <section className="dashboard-card wrong-ranking-card">
             <h3>오답 단어 Top 5</h3>
             <ul className="ranking-list">
@@ -246,14 +279,19 @@ const DashboardPage = () => {
                 ))
               )}
             </ul>
+
             <div className="divider-line"></div>
-            <Button variant="warning" size="lg" full onClick={() => navigate("/learning/quiz?source=wrong-note")}>
+
+            <Button
+              variant="warning"
+              size="lg"
+              full
+              onClick={() => navigate("/learning/quiz?source=wrong-note")}
+            >
               오답 복습({wrongTotalCount})
               <ArrowRight size={16} className="btn__icon btn__icon--right" />
             </Button>
-
           </section>
-
         </div>
       </div>
     </div>

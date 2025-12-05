@@ -7,6 +7,7 @@ import Input from "../../components/common/Input";
 import Spinner from "../../components/common/Spinner";
 import PageHeader from "../../components/common/PageHeader";
 import Pagination from "../../components/common/Pagination";
+import EmptyState from "../../components/common/EmptyState";
 import { getStoryList } from "../../api/storyApi";
 
 import "./StoryListPage.css";
@@ -95,7 +96,7 @@ const StoryListPage = ({ stories = [] }) => {
       params.set("page", String(nextIndex));
       return params;
     });
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // 검색 변경
@@ -119,128 +120,111 @@ const StoryListPage = ({ stories = [] }) => {
   };
 
   return (
-    <div className="page-container">
-      <div className="story-list-page">
-        <PageHeader
-          title="AI"
-          highlight="스토리"
-          description="내가 학습한 단어로 만든 나만의 이야기입니다."
-        />
+    <div className="page-container story-list-page">
+      <PageHeader
+        title="AI"
+        highlight="스토리"
+        description="내가 학습한 단어로 만든 나만의 이야기입니다."
+      />
 
-        {/* 스토리가 있을 때만 검색창 노출 */}
-        {hasAnyStories && (
-          <section className="story-controls">
-            <div className="search-wrapper">
-              <Search className="search-icon" size={18} />
-              <Input
-                search
-                size="md"
-                fullWidth
-                placeholder="스토리 검색..."
-                value={searchValue}
-                onChange={handleSearchChange}
-                aria-label="스토리 검색"
-              />
-            </div>
-          </section>
+      {/* 스토리가 있을 때만 검색창 노출 */}
+      {hasAnyStories && (
+        <section className="story-controls">
+          <div className="search-wrapper">
+            <Search className="search-icon" size={18} />
+            <Input
+              search
+              size="md"
+              fullWidth
+              placeholder="스토리 검색..."
+              value={searchValue}
+              onChange={handleSearchChange}
+              aria-label="스토리 검색"
+            />
+          </div>
+        </section>
+      )}
+
+      <section className="story-grid">
+        {/* 로딩 상태 */}
+        {loading && (
+          <div className="status-msg loading">
+            <Spinner
+              fullHeight={false}
+              message="스토리를 불러오는 중입니다..."
+            />
+          </div>
         )}
 
-        <section className="story-grid">
-          {/* 로딩 상태 */}
-          {loading && (
-            <div className="status-msg loading">
-              <Spinner
-                fullHeight={false}
-                message="스토리를 불러오는 중입니다..."
-              />
-            </div>
-          )}
-
-          {/* 1) 스토리가 아예 없거나, 2) 검색 결과가 없을 때 */}
-          {!loading && (!hasAnyStories || !hasFilteredStories) && (
-            <div className="status-msg empty-search">
-              <div className="empty-icon-wrapper">
-                <FileQuestion size={64} strokeWidth={1.5} />
-              </div>
-
-              <p className="empty-title">
-                {!hasAnyStories
-                  ? "AI 스토리가 아직 없습니다."
-                  : "조건에 맞는 AI 스토리가 없습니다."}
-              </p>
-
-              <p className="empty-desc">
-                {!hasAnyStories
-                  ? "학습하기에서 퀴즈를 풀고, 나온 오답 단어들로 AI 스토리를 만들어 보세요."
-                  : "검색어를 변경하거나, 검색어를 지우고 전체 스토리를 확인해 보세요."}
-              </p>
-
-              {!hasAnyStories ? (
-                <button
-                  type="button"
-                  className="reset-text-btn"
-                  onClick={handleGoLearning}
-                >
-                  학습하러 가기
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="reset-text-btn"
-                  onClick={handleResetSearch}
-                >
-                  검색 초기화
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* 목록 렌더링 */}
-          {hasFilteredStories &&
-            pagedStories.map((story) => (
-              <article
-                key={story.id}
-                className="story-card"
-                onClick={() => handleSelectStory(story)}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="story-card-top">
-                  <h3 className="story-title">{story.title}</h3>
-                  <p className="story-excerpt">{story.excerpt}</p>
-                </div>
-
-                {story.words && story.words.length > 0 && (
-                  <div className="story-tags">
-                    {story.words.slice(0, 4).map((word, idx) => (
-                      <span key={idx} className="story-tag">
-                        #{word}
-                      </span>
-                    ))}
-                    {story.words.length > 4 && (
-                      <span className="story-tag">...</span>
-                    )}
-                  </div>
-                )}
-
-                <div className="story-card-bottom">
-                  <span className="story-date">{story.date}</span>
-                  <div className="read-more">
-                    Read Story <ChevronRight size={14} />
-                  </div>
-                </div>
-              </article>
-            ))}
-        </section>
-
-        {hasFilteredStories && (
-          <Pagination
-            page={safeIndex}
-            totalPages={totalPages}
-            onChange={handlePageChange}
+        {/* 스토리가 아예 없을 때 */}
+        {!loading && !hasAnyStories && (
+          <EmptyState
+            icon={FileQuestion}
+            title="AI 스토리가 아직 없습니다."
+            description="학습하기에서 퀴즈를 풀고, 나온 오답 단어들로 AI 스토리를 만들어 보세요."
+            actionLabel="학습하러 가기"
+            onAction={handleGoLearning}
+            variant="page"
           />
         )}
-      </div>
+
+        {/* 스토리는 있는데, 검색/필터 결과가 없을 때 */}
+        {!loading && hasAnyStories && !hasFilteredStories && (
+          <EmptyState
+            icon={FileQuestion}
+            title="조건에 맞는 AI 스토리가 없습니다."
+            description="검색어를 변경하거나, 검색어를 지우고 전체 스토리를 확인해 보세요."
+            actionLabel="검색 초기화"
+            onAction={handleResetSearch}
+            variant="page"
+          />
+        )}
+
+        {/* 목록 렌더링 */}
+        {hasFilteredStories &&
+          pagedStories.map((story) => (
+            <article
+              key={story.id}
+              className="story-card"
+              onClick={() => handleSelectStory(story)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="story-card-top">
+                <h3 className="story-title">{story.title}</h3>
+                <p className="story-excerpt">{story.excerpt}</p>
+              </div>
+
+              {story.words && story.words.length > 0 && (
+                <div className="story-tags">
+                  {story.words.slice(0, 4).map((word, idx) => (
+                    <span key={idx} className="story-tag">
+                      #{word}
+                    </span>
+                  ))}
+                  {story.words.length > 4 && (
+                    <span className="story-tag">...</span>
+                  )}
+                </div>
+              )}
+
+              <div className="story-card-bottom">
+                <span className="story-date">{story.date}</span>
+                <div className="read-more">
+                  Read Story <ChevronRight size={14} />
+                </div>
+              </div>
+            </article>
+          ))}
+      </section>
+
+      {hasFilteredStories && (
+        <Pagination
+          page={safeIndex}
+          totalPages={totalPages}
+          onChange={handlePageChange}
+        />
+      )}
     </div>
   );
 };
