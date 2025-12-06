@@ -5,11 +5,13 @@ import {
   setAccessToken,
   clearTokens,
   getRefreshToken,
-  setRefreshToken, // 추가
+  setRefreshToken,
 } from "../utils/storage";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
@@ -45,7 +47,10 @@ function setAuthHeader(config, token) {
 
 function redirectToLogin() {
   clearTokens();
-  window.location.href = "/auth/login";
+  // 목업 모드에서는 로그인 페이지로 강제 이동하지 않음
+  if (!USE_MOCK) {
+    window.location.href = "/auth/login";
+  }
 }
 
 /* 요청 인터셉터 */
@@ -64,6 +69,11 @@ httpClient.interceptors.request.use(
 httpClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // ✅ 목업 모드에서는 refresh/redirect 로직 사용하지 않고 그대로 에러만 넘김
+    if (USE_MOCK) {
+      return Promise.reject(error);
+    }
+
     const { config, response } = error;
 
     if (!response) {
@@ -78,7 +88,7 @@ httpClient.interceptors.response.use(
 
     const originalRequest = config;
 
-    // ✅ 로그인 요청에서의 401은 refresh 시도하지 않음
+    // 로그인 요청에서의 401은 refresh 시도하지 않음
     if (originalRequest.url?.includes("/api/auth/login")) {
       return Promise.reject(error);
     }

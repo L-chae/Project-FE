@@ -1,3 +1,4 @@
+// src/pages/learning/hooks/useLearningEngine.js
 import { useEffect, useState, useCallback } from 'react';
 import {
   fetchMcqQuestions,
@@ -27,6 +28,9 @@ export function useLearningEngine({ mode, source, wordIds, clusterId, limit = 10
   const [knownCount, setKnownCount] = useState(0);
   const [unknownCount, setUnknownCount] = useState(0);
 
+  // 카드 학습 결과용: 이번 세션에서 "모르겠다"로 찍힌 단어 목록
+  const [unknownWords, setUnknownWords] = useState([]);
+
   // 공통 로딩
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +48,7 @@ export function useLearningEngine({ mode, source, wordIds, clusterId, limit = 10
       setIsFlipped(false);
       setKnownCount(0);
       setUnknownCount(0);
+      setUnknownWords([]); // 새 세션 시작 시 초기화
 
       try {
         let data;
@@ -95,7 +100,7 @@ export function useLearningEngine({ mode, source, wordIds, clusterId, limit = 10
         }
       } catch (e) {
         console.error(e);
-        // 실패하면 최소한 정답 표시를 안 믿는 쪽으로 처리해도 되고, 여기서는 그냥 무시
+        // 실패 시: 여기서는 그냥 무시
       }
     },
     [mode, current, isAnswered]
@@ -153,11 +158,47 @@ export function useLearningEngine({ mode, source, wordIds, clusterId, limit = 10
 
   const markUnknown = useCallback(async () => {
     if (mode !== 'card' || !current) return;
+
+    // 현재 카드 정보를 지역 변수로 담아놓고 사용
+    const item = current;
+
     setUnknownCount((prev) => prev + 1);
+
+    // 이번 세션 "헷갈린 단어" 목록에 추가
+    setUnknownWords((prev) => {
+      if (!item) return prev;
+
+      const wordId = item.wordId ?? item.id ?? null;
+      const text = item.word ?? item.frontText ?? item.text ?? '';
+      const meaning = item.meaning ?? item.backText ?? '';
+
+      if (!wordId && !text) return prev;
+
+      const key = wordId ?? text;
+
+      // 중복 방지
+      const exists = prev.some((w) => {
+        const wKey = w.wordId ?? w.text;
+        return wKey === key;
+      });
+      if (exists) return prev;
+
+      const payload = {
+        wordId,
+        text,
+        meaning,
+        partOfSpeech: item.partOfSpeech ?? item.pos ?? '',
+        level: item.level ?? item.wordLevel ?? null,
+        wrongWordId: item.wrongWordId ?? null,
+      };
+
+      return [...prev, payload];
+    });
+
     moveNextCard();
 
     try {
-      const res = await submitCardResult({ wordId: current.wordId, result: 'unknown' });
+      const res = await submitCardResult({ wordId: item.wordId, result: 'unknown' });
       if (res?.wrongAnswerLog) {
         setWrongAnswerLogs((prev) => [...prev, res.wrongAnswerLog]);
       }
@@ -195,5 +236,6 @@ export function useLearningEngine({ mode, source, wordIds, clusterId, limit = 10
     toggleFlip,
     markKnown,
     markUnknown,
+    unknownWords, // 🔹 카드 결과 페이지에서 사용하는 "헷갈린 단어" 목록
   };
 }

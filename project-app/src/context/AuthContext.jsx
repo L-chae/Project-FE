@@ -5,7 +5,11 @@ import React, {
   useEffect,
   useContext,
 } from "react";
-import { login as loginApi, logout as logoutApi } from "../api/authApi";
+import {
+  login as loginApi,
+  logout as logoutApi,
+  getMe as getMeApi,
+} from "../api/authApi";
 import {
   getAccessToken,
   setAccessToken,
@@ -19,7 +23,7 @@ const AuthContext = createContext({
   user: null,
   login: async () => {},
   logout: async () => {},
-  updateProfileState: () => {},   // ✅ 기본값 추가
+  updateProfileState: () => {},
   loading: false,
 });
 
@@ -27,48 +31,69 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 최초 로드 시 토큰 + userInfo로 세션 복원
+  // -----------------------------
+  // 앱 최초 로드시 세션 복원
+  // -----------------------------
   useEffect(() => {
-    const checkLogin = async () => {
-      try {
-        const token = getAccessToken();
-        const storedUser = localStorage.getItem("userInfo");
-
-        if (token && storedUser) {
-          setUser(JSON.parse(storedUser));
+    // ✅ 목업 모드: 서버 호출 없이 localStorage 만 사용
+    if (USE_MOCK) {
+      const stored = localStorage.getItem("userInfo");
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch {
+          setUser(null);
         }
+      }
+      setLoading(false);
+      return;
+    }
+
+    // 실서버 모드: 토큰 있으면 /api/user/me로 검증
+    const initAuth = async () => {
+      const token = getAccessToken();
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const me = await getMeApi();
+        setUser(me);
+        localStorage.setItem("userInfo", JSON.stringify(me));
+      } catch (e) {
+        clearTokens();
+        localStorage.removeItem("userInfo");
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    checkLogin();
+    initAuth();
   }, []);
 
-  // 공통 로그인 함수 (MOCK + REAL)
+  // -----------------------------
+  // 로그인
+  // -----------------------------
   const login = async (email, password) => {
     if (USE_MOCK) {
-      const mockUser = {
-        email,
-        nickname: "Mock User",
-      };
-
-      setAccessToken("mock_access_token");
-      setRefreshToken("mock_refresh_token");
-      localStorage.setItem("userInfo", JSON.stringify(mockUser));
+      // 목업용: authApi.login 이 이미 mock 분기 처리하므로 그대로 사용해도 됨
+      const { user: mockUser } = await loginApi({ email, password });
       setUser(mockUser);
-
       return mockUser;
     }
 
     const { user: userData } = await loginApi({ email, password });
-
     setUser(userData);
     localStorage.setItem("userInfo", JSON.stringify(userData));
     return userData;
   };
 
-  // ✅ 프로필 수정 시 user / localStorage 동기화
+  // -----------------------------
+  // 프로필 수정 시 상태/스토리지 동기화
+  // -----------------------------
   const updateProfileState = (patch) => {
     setUser((prev) => {
       if (!prev) return prev;
@@ -78,14 +103,15 @@ export function AuthProvider({ children }) {
     });
   };
 
+  // -----------------------------
+  // 로그아웃
+  // -----------------------------
   const logout = async () => {
     const storedUser = localStorage.getItem("userInfo");
     let email;
 
     try {
-      email =
-        user?.email ||
-        (storedUser ? JSON.parse(storedUser).email : undefined);
+      email = user?.email || (storedUser ? JSON.parse(storedUser).email : undefined);
     } catch {
       email = undefined;
     }
@@ -94,13 +120,10 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("userInfo");
     clearTokens();
 
-    // MOCK 모드에서는 서버 로그아웃 안 쏴도 됨
-    if (!USE_MOCK && email) {
-      try {
-        await logoutApi(email);
-      } catch {
-        // 서버 에러는 무시
-      }
+    try {
+      await logoutApi(email);
+    } catch {
+      // 무시
     }
 
     window.location.href = "/auth/login";
@@ -110,6 +133,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{ user, login, logout, updateProfileState, loading }}
     >
+      {/* 초기 인증 체크 끝나기 전엔 children 렌더링 안 함 */}
       {!loading && children}
     </AuthContext.Provider>
   );
