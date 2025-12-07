@@ -1,7 +1,7 @@
 // src/pages/quiz/QuizPage.jsx
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 import Button from "../../components/common/Button";
 import Spinner from "../../components/common/Spinner";
@@ -10,6 +10,9 @@ import { QuizQuestion } from "./components/QuizQuestion";
 import "./QuizPage.css";
 
 import { fetchQuizzes, submitQuizResult } from "../../api/quizApi";
+
+import { LearningProgressHeader } from "../learning/components/LearningProgressHeader";
+import { LearningResultSection } from "../learning/components/LearningResultSection";
 
 const MAX_WRONG_DISPLAY = 20;
 
@@ -52,9 +55,9 @@ const QuizPage = () => {
   const source = searchParams.get("source"); // "quiz" | "wrong-note"
   const limit = searchParams.get("limit") || 10;
   const rawLevel = searchParams.get("level");
+
   const levelLabel = rawLevel === "all" || !rawLevel ? "All" : rawLevel;
   const levelForApi = rawLevel === "all" || !rawLevel ? "1" : rawLevel;
-
   const isWrongMode = source === "wrong-note";
 
   const [questions, setQuestions] = useState([]);
@@ -68,6 +71,7 @@ const QuizPage = () => {
 
   const [animateBars, setAnimateBars] = useState(false);
 
+  // 결과 화면 막대 애니메이션 제어
   useEffect(() => {
     if (isFinished) {
       const id = setTimeout(() => setAnimateBars(true), 60);
@@ -110,19 +114,19 @@ const QuizPage = () => {
     loadData();
   }, [source, limit, levelForApi]);
 
-  const wrapperClassName = `quiz-page-wrapper ${
-    isWrongMode ? "quiz-page-wrapper--wrong" : ""
-  }`.trim();
+  const wrapperClassName = [
+    "quiz-page-wrapper",
+    isWrongMode ? "quiz-page-wrapper--wrong" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  // 로딩: 공통 Spinner 사용
+  // 로딩
   if (isLoading) {
     return (
       <div className={wrapperClassName}>
         <div className="quiz-layout">
-          <Spinner
-            fullHeight={true}
-            message="퀴즈를 불러오는 중입니다..."
-          />
+          <Spinner fullHeight={true} message="퀴즈를 불러오는 중입니다..." />
         </div>
       </div>
     );
@@ -156,7 +160,8 @@ const QuizPage = () => {
   const totalCount = questions.length || 1;
   const currentStep = Math.min(currentIndex + 1, totalCount);
   const incorrectCount = totalCount - score;
-  const accuracy = totalCount > 0 ? Math.round((score / totalCount) * 100) : 0;
+  const accuracy =
+    totalCount > 0 ? Math.round((score / totalCount) * 100) : 0;
 
   const isAnswered = selectedOption !== null;
   const currentQuestion = !isFinished ? questions[currentIndex] : null;
@@ -168,6 +173,7 @@ const QuizPage = () => {
 
   const wrongSafe = Array.isArray(wrongQuizWords) ? wrongQuizWords : [];
 
+  // 선택지 클릭
   const handleOptionClick = (choiceIndex) => {
     if (selectedOption !== null) return;
 
@@ -178,58 +184,90 @@ const QuizPage = () => {
 
     if (isCorrect) {
       setScore((prev) => prev + 1);
-    } else {
-      setWrongQuizWords((prev) => {
-        const wordText = extractWordFromQuestion(currentQ);
-        const normalized = (wordText || "").trim();
-        if (!normalized) return prev;
-
-        const lower = normalized.toLowerCase();
-        if (prev.some((w) => w.text.toLowerCase() === lower)) {
-          return prev;
-        }
-
-        // 한글 뜻 저장 (백엔드 필드 여러 형태 대응)
-        const meaning =
-          currentQ.meaningKo ||
-          currentQ.meaning_ko ||
-          currentQ.meaning ||
-          currentQ.korean ||
-          "";
-
-        const newItem = {
-          text: normalized,
-          wordId: currentQ.wordId,
-          wrongWordId: currentQ.wrongWordId,
-          meaning,
-          meaningKo:
-            currentQ.meaningKo || currentQ.meaning_ko || currentQ.korean || "",
-        };
-
-        return [...prev, newItem];
-      });
+      return;
     }
+
+    // 오답 단어 수집
+    setWrongQuizWords((prev) => {
+      const wordText = extractWordFromQuestion(currentQ);
+      const normalized = (wordText || "").trim();
+      if (!normalized) return prev;
+
+      const lower = normalized.toLowerCase();
+      if (prev.some((w) => w.text.toLowerCase() === lower)) {
+        return prev;
+      }
+
+      const meaning =
+        currentQ.meaningKo ||
+        currentQ.meaning_ko ||
+        currentQ.meaning ||
+        currentQ.korean ||
+        "";
+
+      const newItem = {
+        text: normalized,
+        wordId: currentQ.wordId,
+        wrongWordId: currentQ.wrongWordId,
+        meaning,
+        meaningKo:
+          currentQ.meaningKo || currentQ.meaning_ko || currentQ.korean || "",
+      };
+
+      return [...prev, newItem];
+    });
   };
 
+  // 다음 문제 / 결과 보기
   const handleNext = async () => {
     if (selectedOption === null) return;
 
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
-    } else {
-      try {
-        await submitQuizResult({
-          mode: isWrongMode ? "wrong" : "normal",
-          score,
-          total: questions.length,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (err) {
-        console.error("❌ 결과 전송 실패:", err);
-      }
-      setIsFinished(true);
+      return;
     }
+
+    try {
+      await submitQuizResult({
+        mode: isWrongMode ? "wrong" : "normal",
+        score,
+        total: questions.length,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("❌ 결과 전송 실패:", err);
+    }
+
+    setIsFinished(true);
+  };
+
+  // 결과 화면에서 AI 스토리 이동
+  const handleGoStory = () => {
+    const wrongWordsPayload = wrongSafe
+      .filter((w) => w.text && w.text.trim().length > 0)
+      .map((w) => ({
+        text: w.text.trim(),
+        word: w.text.trim(),
+        wordId: w.wordId ?? null,
+        wrongWordId: w.wrongWordId ?? null,
+        meaning:
+          w.meaningKo || w.meaning_ko || w.meaning || w.korean || "",
+      }));
+
+    navigate("/stories/create", {
+      state: {
+        from: isWrongMode ? "wrong-quiz" : "quiz",
+        mode: isWrongMode ? "wrong" : "normal",
+        score,
+        total: questions.length,
+        wrongWords: wrongWordsPayload,
+      },
+    });
+  };
+
+  const handleGoLearningHome = () => {
+    navigate("/learning");
   };
 
   return (
@@ -238,50 +276,30 @@ const QuizPage = () => {
         {/* 진행 화면 */}
         {!isFinished && currentQuestion ? (
           <>
-            {/* 헤더 (카드 밖) */}
-            <header className="quiz-header">
-              <div className="quiz-header-top">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/learning")}
-                  aria-label="학습 홈으로"
-                  className="quiz-back-btn"
-                >
-                  <ArrowLeft size={20} />
-                </Button>
-              </div>
-
-              <h1 className="quiz-title">
-                {isWrongMode ? "오답 객관식 퀴즈" : "실전 객관식 퀴즈"}
-                <span
-                  className={`quiz-badge ${
-                    isWrongMode ? "badge-orange" : "badge-purple"
-                  }`}
-                >
-                  {`Lv.${levelLabel}`}
-                </span>
-              </h1>
-
-              <p className="quiz-subtitle">
-                {isWrongMode
+            {/* 상단 진행 헤더 */}
+            <LearningProgressHeader
+              title={isWrongMode ? "오답 퀴즈" : "실전 퀴즈"}
+              subtitle={
+                isWrongMode
                   ? "틀렸던 단어들만 다시 객관식으로 점검합니다."
-                  : "객관식 문제로 오늘 학습한 단어를 한 번 더 확인해 보세요."}
-              </p>
-
-              <div className="quiz-progress-area">
-                <span className="quiz-progress-count">
-                  {currentStep} / {totalCount}
-                </span>
+                  : "객관식 문제로 오늘 학습한 단어를 한 번 더 확인해 보세요."
+              }
+              badgeLabel={`Lv.${levelLabel}`}
+              badgeVariant={isWrongMode ? "orange" : "purple"}
+              showBackButton
+              onBack={handleGoLearningHome}
+              progressText={`${currentStep} / ${totalCount}`}
+              progressVariant={isWrongMode ? "warning" : "primary"}
+              progressBar={
                 <ProgressBar
                   current={currentStep}
                   total={totalCount}
                   variant={isWrongMode ? "warning" : "primary"}
                   showLabel={false}
-                  className="quiz-progress-bar"
+                  className="lp-progress-bar"
                 />
-              </div>
-            </header>
+              }
+            />
 
             {/* 문제/보기 카드 */}
             <div className={`quiz-page ${themeClass}`}>
@@ -296,10 +314,12 @@ const QuizPage = () => {
                   <section className="quiz-options-section">
                     <QuizQuestion
                       question={{
-                        choices: currentQuestion.options.map((text, index) => ({
-                          id: index,
-                          text,
-                        })),
+                        choices: currentQuestion.options.map(
+                          (text, index) => ({
+                            id: index,
+                            text,
+                          })
+                        ),
                         answerId: currentQuestion.answer,
                       }}
                       selectedChoiceId={selectedOption}
@@ -330,88 +350,45 @@ const QuizPage = () => {
             </div>
           </>
         ) : (
-          /* 결과 화면 */
+          // 결과 화면
           <section className="quiz-learning-result">
             <header className="quiz-result-header">
               <h1 className="quiz-result-title">{resultTitle}</h1>
               <p className="quiz-result-subtitle">{resultSubtitle}</p>
             </header>
 
-            <div className="quiz-result-grid">
-              {/* 왼쪽: 헷갈린 단어 */}
-              <section className="quiz-unknown-card">
-                <div className="quiz-unknown-header">
-                  <h2 className="quiz-unknown-title">이번에 헷갈렸던 단어</h2>
-                  <p className="quiz-unknown-subtitle">
-                    이번 퀴즈에서 틀린 문제에 등장한 단어들입니다.
-                  </p>
-                </div>
-
-                {wrongSafe.length === 0 ? (
-                  <p className="quiz-unknown-empty">
-                    헷갈린 단어 없이 모두 정확히 맞혔어요.
-                  </p>
-                ) : (
-                  <ul className="quiz-unknown-list">
-                    {wrongSafe.slice(0, MAX_WRONG_DISPLAY).map((w, i) => {
-                      const key = w.wordId ?? w.text ?? i;
-                      const wordText = w.text || w.word || "";
-                      const meaning =
-                        w.meaningKo ||
-                        w.meaning_ko ||
-                        w.meaning ||
-                        w.korean ||
-                        "";
-
-                      return (
-                        <li className="quiz-unknown-item" key={key}>
-                          <div className="quiz-unknown-main">
-                            <span className="quiz-unknown-word">
-                              {wordText}
-                            </span>
-                            {meaning && (
-                              <span className="quiz-unknown-meaning">
-                                {meaning}
-                              </span>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-
-                {wrongSafe.length > MAX_WRONG_DISPLAY && (
-                  <p className="quiz-unknown-more-hint">
-                    그 외 {wrongSafe.length - MAX_WRONG_DISPLAY}
-                    개 단어는 오답 노트에서 계속 확인할 수 있어요.
-                  </p>
-                )}
-              </section>
-
-              {/* 오른쪽: 통계 */}
-              <section className="quiz-stats-card">
-                <div className="quiz-stat-row">
-                  <span className="quiz-stat-label">맞은 문제</span>
-                  <span className="quiz-stat-value quiz-stat-correct">
-                    {score}문제
-                  </span>
-                </div>
-                {/* 맞은 문제: 항상 보라색 (primary) */}
+            <LearningResultSection
+              // 헷갈린 단어 카드
+              unknownTitle="이번에 헷갈렸던 단어"
+              unknownSubtitle="이번 퀴즈에서 틀린 문제에 등장한 단어들입니다."
+              emptyUnknownMessage="헷갈린 단어 없이 모두 정확히 맞혔어요."
+              unknownItems={wrongSafe}
+              maxUnknownDisplay={MAX_WRONG_DISPLAY}
+              getUnknownKey={(w, i) => w.wordId ?? w.text ?? i}
+              getUnknownWord={(w) => w.text || w.word || ""}
+              getUnknownMeaning={(w) =>
+                w.meaningKo || w.meaning_ko || w.meaning || w.korean || ""
+              }
+              buildMoreHintMessage={(restCount) =>
+                `그 외 ${restCount}개 단어는 오답 노트에서 계속 확인할 수 있어요.`
+              }
+              // 통계 카드
+              primaryLabel="맞은 문제"
+              primaryValue={`${score}문제`}
+              primaryProgress={
                 <ProgressBar
-                  value={animateBars ? (score / (totalCount || 1)) * 100 : 0}
+                  value={
+                    animateBars ? (score / (totalCount || 1)) * 100 : 0
+                  }
                   variant="primary"
                   showLabel={false}
                   className="quiz-stat-progress"
                 />
-
-                <div className="quiz-stat-row">
-                  <span className="quiz-stat-label">틀린 문제</span>
-                  <span className="quiz-stat-value quiz-stat-wrong">
-                    {incorrectCount}문제
-                  </span>
-                </div>
-                {/* 틀린 문제: 항상 주황색 (warning) */}
+              }
+              primaryValueClassName="stat-known"
+              secondaryLabel="틀린 문제"
+              secondaryValue={`${incorrectCount}문제`}
+              secondaryProgress={
                 <ProgressBar
                   value={
                     animateBars
@@ -422,55 +399,16 @@ const QuizPage = () => {
                   showLabel={false}
                   className="quiz-stat-progress"
                 />
-
-                <div className="quiz-stat-row quiz-stat-row-simple">
-                  <span className="quiz-stat-label">정답률</span>
-                  <span className="quiz-stat-value">{accuracy}%</span>
-                </div>
-              </section>
-            </div>
-
-            {/* 버튼: AI 스토리 = primary / 학습 홈 = secondary(흰색, 덜 강조) */}
-            <div className="result-buttons result-buttons--inline">
-              <button
-                className="result-btn secondary"
-                onClick={() => navigate("/learning")}
-              >
-                학습 홈으로 이동
-              </button>
-
-              <button
-                className="result-btn primary"
-                onClick={() => {
-                  const wrongWordsPayload = wrongSafe
-                    .filter((w) => w.text && w.text.trim().length > 0)
-                    .map((w) => ({
-                      text: w.text.trim(),
-                      word: w.text.trim(),
-                      wordId: w.wordId ?? null,
-                      wrongWordId: w.wrongWordId ?? null,
-                      meaning:
-                        w.meaningKo ||
-                        w.meaning_ko ||
-                        w.meaning ||
-                        w.korean ||
-                        "",
-                    }));
-
-                  navigate("/stories/create", {
-                    state: {
-                      from: isWrongMode ? "wrong-quiz" : "quiz",
-                      mode: isWrongMode ? "wrong" : "normal",
-                      score,
-                      total: questions.length,
-                      wrongWords: wrongWordsPayload,
-                    },
-                  });
-                }}
-              >
-                AI 스토리 생성하기
-              </button>
-            </div>
+              }
+              secondaryValueClassName="stat-unknown"
+              extraLabel="정답률"
+              extraValue={`${accuracy}%`}
+              // 버튼
+              primaryButtonLabel="AI 스토리 생성하기"
+              onPrimaryButtonClick={handleGoStory}
+              secondaryButtonLabel="학습 홈으로 이동"
+              onSecondaryButtonClick={handleGoLearningHome}
+            />
           </section>
         )}
       </div>

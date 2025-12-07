@@ -11,6 +11,7 @@
   color: var(--color-text);
 }
 
+/* 로딩/에러 카드 */
 .card-page--loading,
 .card-page--error {
   max-width: 760px;
@@ -38,7 +39,12 @@
   gap: var(--space-6);
 }
 
-/* 헤더 공통 */
+/* 결과 섹션 상단 여백 */
+.card-learning-result {
+  margin-top: var(--space-6);
+}
+
+/* 결과 헤더 (타이틀/서브타이틀) */
 .cl-header {
   display: flex;
   flex-direction: column;
@@ -61,47 +67,7 @@
   margin: 0;
 }
 
-/* 헤더 배지 (진행 화면에서만 사용) */
-.cl-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: var(--radius-pill);
-}
-
-.badge-purple {
-  background-color: var(--secondary-100);
-  color: #5b21b6;
-}
-
-.badge-orange {
-  background-color: #fff4e6;
-  color: #c2410c;
-}
-
-/* 진행 영역 */
-.cl-progress-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.cl-progress-count {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--primary-600);
-}
-
-/* 헤더 ProgressBar 너비 */
-.cl-progress-bar {
-  max-width: 180px;
-}
-
-/* 플래시카드 + OX */
+/* 플래시카드 + OX 영역 */
 .cl-main {
   width: 100%;
   display: flex;
@@ -110,7 +76,8 @@
   gap: var(--space-4);
 }
 
-/* OX 버튼 */
+/* OX 버튼 영역 */
+.cl-actions.actions-ox,
 .actions-ox {
   display: flex;
   justify-content: center;
@@ -171,166 +138,7 @@
   transform: scale(0.96);
 }
 
-/* 결과 섹션 */
-.card-learning-result {
-  margin-top: var(--space-6);
-}
-
-/* 결과 내용 – 좌측(헷갈린 단어) + 우측(통계) */
-.learning-result-grid {
-  margin-top: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-@media (min-width: 768px) {
-  .learning-result-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
-    align-items: flex-start;
-  }
-}
-
-/* 헷갈린 단어 카드 */
-.learning-unknown-card {
-  background: var(--surface-1);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.unknown-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.unknown-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--neutral-900);
-}
-
-.unknown-subtitle {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--neutral-500);
-}
-
-.unknown-empty {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--neutral-500);
-  padding-top: 6px;
-}
-
-/* 헷갈린 단어 리스트 */
-.unknown-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.unknown-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 8px 10px;
-  border-radius: var(--radius-md);
-  background-color: var(--neutral-100);
-}
-
-.unknown-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.unknown-word {
-  font-weight: 600;
-  color: var(--neutral-900);
-}
-
-.unknown-meaning {
-  font-size: 0.85rem;
-  color: var(--neutral-600);
-}
-
-.unknown-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  margin-left: var(--space-2);
-}
-
-.unknown-tag {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: var(--radius-pill);
-  background-color: var(--neutral-200);
-  color: var(--neutral-700);
-}
-
-.unknown-more-hint {
-  margin: 2px 0 0;
-  font-size: 0.8rem;
-  color: var(--neutral-500);
-}
-
-/* 통계 카드 */
-.stats-card {
-  width: 100%;
-  background: var(--surface-1);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-row.simple {
-  padding-top: 6px;
-}
-
-.stat-label {
-  color: var(--neutral-700);
-  font-weight: 500;
-}
-
-.stat-value {
-  font-weight: 700;
-  color: var(--neutral-900);
-}
-
-.stat-known {
-  color: var(--primary-500);
-}
-
-.stat-unknown {
-  color: var(--warning-500);
-}
-
-/* 결과 ProgressBar */
+/* 결과 ProgressBar (통계 카드 막대) */
 .stat-progress {
   margin-top: 4px;
 }
@@ -351,6 +159,7 @@
   }
 }
 
+/* 결과 버튼 공통 스타일 */
 .result-btn {
   padding: 10px 20px;
   border-radius: var(--radius-pill);
@@ -365,7 +174,7 @@
     border-color 0.15s ease;
 }
 
-/* Primary: 보라 / 오답모드: 주황 */
+/* Primary: 보라 (오답 모드에서는 아래에서 오버라이드) */
 .result-btn.primary {
   background: var(--primary-500);
   color: #ffffff;
@@ -378,7 +187,7 @@
   box-shadow: 0 4px 10px rgba(108, 92, 231, 0.35);
 }
 
-/* Secondary: 학습 홈 버튼 – 배경과 확실히 구분되도록 */
+/* Secondary: 학습 홈 버튼 */
 .result-btn.secondary {
   background: var(--surface-1);
   color: var(--neutral-800);
@@ -429,4 +238,9 @@
   .actions-ox {
     gap: 20px;
   }
+}
+/* 오답 모드에서 학습 홈(Secondary) 버튼 hover는 주황 계열로 오버라이드 */
+.card-page--wrong .result-btn.secondary:hover {
+  background: var(--warning-50);
+  border-color: var(--warning-200);
 }

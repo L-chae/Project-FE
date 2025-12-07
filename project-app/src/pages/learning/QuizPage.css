@@ -1,13 +1,9 @@
+/* src/pages/quiz/QuizPage.css */
+
 /* 전체 배경 */
 .quiz-page-wrapper {
-  background:
-    radial-gradient(
-      120% 140% at 0% 0%,
-      rgba(108, 92, 231, 0.06),
-      transparent 60%
-    ),
-    var(--neutral-100);
-  min-height: 100vh;
+   max-width: 900px;
+     margin: 0 auto;
   padding: var(--space-6) var(--space-4) var(--space-10);
   box-sizing: border-box;
   display: flex;
@@ -15,15 +11,6 @@
   align-items: flex-start;
 }
 
-.quiz-page-wrapper--wrong {
-  background:
-    radial-gradient(
-      120% 140% at 0% 0%,
-      rgba(251, 146, 60, 0.08),
-      transparent 60%
-    ),
-    var(--neutral-100);
-}
 
 @media (min-width: 768px) {
   .quiz-page-wrapper {
@@ -34,7 +21,7 @@
 /* 공통 너비 컨테이너 */
 .quiz-layout {
   width: 100%;
-  max-width: 600px;
+
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -44,6 +31,8 @@
 /* 문제 카드 */
 .quiz-page {
   width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
   background: var(--surface-1);
   border-radius: var(--radius-lg);
   padding: var(--space-6) var(--space-5) var(--space-8);
@@ -87,88 +76,7 @@
   gap: var(--space-4);
 }
 
-/* ───── 헤더 (카드 밖) ───── */
-
-.quiz-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-2);
-}
-
-.quiz-header-top {
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-}
-
-/* 뒤로가기 버튼 */
-.quiz-back-btn {
-  padding: 4px 6px !important;
-  border-radius: var(--radius-pill) !important;
-}
-
-.quiz-back-btn:hover {
-  background-color: rgba(148, 163, 184, 0.18) !important;
-}
-
-/* 제목/배지 */
-.quiz-title {
-  font-size: var(--font-size-page-title);
-  color: var(--neutral-900);
-  font-weight: 700;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.quiz-badge {
-  display: inline-block;
-  padding: 2px 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: var(--radius-pill);
-}
-
-.badge-purple {
-  background-color: var(--secondary-100);
-  color: #5b21b6;
-}
-
-.badge-orange {
-  background-color: #fff4e6;
-  color: #c2410c;
-}
-
-.quiz-subtitle {
-  font-size: 0.95rem;
-  color: var(--color-text-muted);
-  margin: 0;
-}
-
-/* 진행 바 */
-.quiz-progress-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.quiz-progress-count {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--theme-color);
-}
-
-.quiz-progress-bar {
-  max-width: 180px;
-}
-
-/* ───── 카드 내부 (문제/보기) ───── */
-
+/* 카드 내부 (문제/보기) */
 .quiz-main {
   width: 100%;
   display: flex;
@@ -176,7 +84,7 @@
   gap: var(--space-4);
 }
 
-/* 문제 영역: 너비 줄이고 가운데 정렬 */
+/* 문제 영역: 가운데 정렬 */
 .quiz-question-box {
   margin-top: 4px;
 }
@@ -244,145 +152,7 @@
   margin: 0;
 }
 
-/* 좌/우 그리드 */
-.quiz-result-grid {
-  margin-top: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-@media (min-width: 768px) {
-  .quiz-result-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
-    align-items: flex-start;
-  }
-}
-
-/* 헷갈린 단어 카드 */
-.quiz-unknown-card {
-  background: var(--surface-1);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.quiz-unknown-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.quiz-unknown-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--neutral-900);
-}
-
-.quiz-unknown-subtitle {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--neutral-500);
-}
-
-.quiz-unknown-empty {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--neutral-500);
-  padding-top: 6px;
-}
-
-.quiz-unknown-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.quiz-unknown-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 8px 10px;
-  border-radius: var(--radius-md);
-  background-color: var(--neutral-100);
-}
-
-.quiz-unknown-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.quiz-unknown-word {
-  font-weight: 600;
-  color: var(--neutral-900);
-}
-
-.quiz-unknown-meaning {
-  font-size: 0.85rem;
-  color: var(--neutral-600);
-}
-
-.quiz-unknown-more-hint {
-  margin: 2px 0 0;
-  font-size: 0.8rem;
-  color: var(--neutral-500);
-}
-
-/* 통계 카드 */
-.quiz-stats-card {
-  width: 100%;
-  background: var(--surface-1);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.quiz-stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.quiz-stat-row-simple {
-  padding-top: 6px;
-}
-
-.quiz-stat-label {
-  color: var(--neutral-700);
-  font-weight: 500;
-}
-
-.quiz-stat-value {
-  font-weight: 700;
-  color: var(--neutral-900);
-}
-
-/* 맞은 문제: 항상 보라 */
-.quiz-stat-correct {
-  color: var(--primary-500);
-}
-
-/* 틀린 문제: 주황 */
-.quiz-stat-wrong {
-  color: var(--warning-500);
-}
-
+/* 결과 통계 ProgressBar (LearningResultSection에서 className으로 사용) */
 .quiz-stat-progress {
   margin-top: 4px;
 }
@@ -429,7 +199,7 @@
   box-shadow: 0 4px 10px rgba(108, 92, 231, 0.35);
 }
 
-/* Secondary: 학습 홈 버튼 – 기본(정규 모드)에서는 보라 계열 hover */
+/* Secondary: 학습 홈 버튼 */
 .result-btn.secondary {
   background: var(--surface-1);
   color: var(--neutral-500);
@@ -457,7 +227,7 @@
   transform: translateY(-2px);
 }
 
-/* 오답 모드에서 학습 홈 버튼 hover 는 주황 계열로 오버라이드 */
+/* 오답 모드에서 학습 홈 버튼 hover */
 .quiz-page-wrapper--wrong .result-btn.secondary:hover {
   background: var(--warning-50);
   border-color: var(--warning-200);

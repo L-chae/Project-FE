@@ -84,7 +84,7 @@
 /* 카드 공통 스타일 */
 .story-card {
   background-color: var(--surface-1);
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 24px;
   border: 1px solid var(--border-subtle);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
