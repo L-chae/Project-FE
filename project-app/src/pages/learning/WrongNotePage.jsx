@@ -26,19 +26,15 @@ const SORT_FILTER_OPTIONS = [
   { label: "많이 틀린순", value: "mostWrong" },
 ];
 
-// 스토리 사용 여부 판별
-const isUsedInStory = (item) =>
-  item?.isUsedInStory === "Y" ||
-  item?.isUsedInStory === "y" ||
-  item?.isUsedInStory === true;
+// 스토리 사용 여부 판별 (normalize 기준: "Y" / "N")
+const isUsedInStory = (item) => item?.isUsedInStory === "Y";
 
-// 오답 횟수
-const getWrongCount = (item) =>
-  item?.totalWrong ?? item?.wrongCount ?? item?.wrong ?? 0;
+// 오답 횟수 (normalize 기준)
+const getWrongCount = (item) => item?.totalWrong ?? 0;
 
-// 마지막 오답 시각 (정렬용)
+// 마지막 오답 시각 (정렬용, normalize 기준: wrongAt)
 const getLastWrongTime = (item) => {
-  const raw = item?.lastWrongAt || item?.wrongAt || item?.wrong_at;
+  const raw = item?.wrongAt;
   if (!raw) return 0;
   const t = new Date(raw).getTime();
   return Number.isNaN(t) ? 0 : t;
@@ -70,6 +66,16 @@ export default function WrongNotePage() {
     queryKey: ["wrongNotes", "list"],
     queryFn: getWrongList,
   });
+
+  // 선택된 wrongWordId → wordId 리스트 변환
+  const selectedWordIds = useMemo(() => {
+    if (!selectedIds.length || !rawItems.length) return [];
+    const idSet = new Set(selectedIds);
+    return rawItems
+      .filter((item) => idSet.has(item.wrongWordId))
+      .map((item) => Number(item.wordId))
+      .filter((id) => !Number.isNaN(id));
+  }, [selectedIds, rawItems]);
 
   // 필터 활성 여부 (초기화 버튼 노출 조건)
   const isFilterActive =
@@ -165,25 +171,25 @@ export default function WrongNotePage() {
     setOpenDropdown(null);
   };
 
-  // 액션: 퀴즈
+  // 액션: 퀴즈 (선택한 wordId 기반)
   const handleReviewAsQuiz = () => {
-    if (selectedCount === 0) return;
-    const ids = selectedIds.join(",");
+    if (selectedWordIds.length === 0) return;
+    const ids = selectedWordIds.join(",");
     navigate(
-      `/learning/quiz?source=wrong-note&wrongWordIds=${encodeURIComponent(ids)}`
+      `/learning/quiz?source=wrong-note&wordIds=${encodeURIComponent(ids)}`
     );
   };
 
-  // 액션: 카드
+  // 액션: 카드 (선택한 wordId 기반)
   const handleReviewAsCard = () => {
-    if (selectedCount === 0) return;
-    const ids = selectedIds.join(",");
+    if (selectedWordIds.length === 0) return;
+    const ids = selectedWordIds.join(",");
     navigate(
-      `/learning/card?source=wrong-note&wrongWordIds=${encodeURIComponent(ids)}`
+      `/learning/card?source=wrong-note&wordIds=${encodeURIComponent(ids)}`
     );
   };
 
-  // 액션: 스토리 만들기
+  // 액션: 스토리 만들기 (wrongWordId 기반)
   const handleCreateStory = () => {
     if (selectedCount === 0) return;
 
@@ -330,7 +336,7 @@ export default function WrongNotePage() {
         </div>
       )}
 
-      {/* Empty 상태 (테이블 테두리/배경 없이, 필터/액션 미노출) */}
+      {/* Empty 상태 */}
       {!isLoading && !isError && showEmptyNoData && (
         <EmptyState
           icon={FileQuestion}
@@ -353,7 +359,7 @@ export default function WrongNotePage() {
         />
       )}
 
-      {/* 리스트 + 테이블 (카드 테두리/배경 포함) */}
+      {/* 리스트 + 테이블 */}
       {showTable && (
         <>
           <section className="wrongnote-list">

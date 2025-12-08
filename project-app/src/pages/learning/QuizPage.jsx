@@ -52,12 +52,45 @@ const QuizPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const source = searchParams.get("source"); // "quiz" | "wrong-note"
+  const source = searchParams.get("source") || "quiz"; // "quiz" | "wrong-note"
   const limit = searchParams.get("limit") || 10;
-  const rawLevel = searchParams.get("level");
 
-  const levelLabel = rawLevel === "all" || !rawLevel ? "All" : rawLevel;
-  const levelForApi = rawLevel === "all" || !rawLevel ? "1" : rawLevel;
+  // 레벨
+  const rawLevel = searchParams.get("level");
+  const rawLevelLower = rawLevel ? rawLevel.toLowerCase() : null;
+  const levelLabel =
+    !rawLevelLower || rawLevelLower === "all" ? "All" : rawLevel;
+
+  // API에 넘길 값: all/null 이면 필터 없음
+  const levelForApi =
+    !rawLevelLower || rawLevelLower === "all" ? null : rawLevelLower;
+
+  // 분야(domain)
+  const rawDomain = searchParams.get("domain") || "All";
+  const DOMAIN_LABEL_MAP = {
+    All: "전체 분야",
+    "Daily Life": "일상생활",
+    "People & Feelings": "사람/감정",
+    Business: "직장/비즈니스",
+    "School & Learning": "학교/학습",
+    Travel: "여행/교통",
+    "Food & Health": "음식/건강",
+    Technology: "기술/IT",
+  };
+  const domainLabel = DOMAIN_LABEL_MAP[rawDomain] || rawDomain;
+
+  // 배지에 찍을 텍스트
+  const badgeText = `${domainLabel} | Lv.${levelLabel}`;
+
+  // 선택된 단어 id들 (오답노트/카드 결과에서 넘어온 경우)
+  const wordIdsParam = searchParams.get("wordIds");
+  const wordIds = wordIdsParam
+    ? wordIdsParam
+        .split(",")
+        .map((x) => Number(x))
+        .filter((n) => !Number.isNaN(n))
+    : undefined;
+
   const isWrongMode = source === "wrong-note";
 
   const [questions, setQuestions] = useState([]);
@@ -68,6 +101,9 @@ const QuizPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wrongQuizWords, setWrongQuizWords] = useState([]);
+
+  // 각 문항 정답 여부 기록: [{ wordId, correct }]
+  const [answerResults, setAnswerResults] = useState([]);
 
   const [animateBars, setAnimateBars] = useState(false);
 
@@ -91,6 +127,7 @@ const QuizPage = () => {
           source,
           limit: Number(limit),
           level: levelForApi,
+          wordIds,
         });
 
         if (!data || data.length === 0) {
@@ -103,8 +140,9 @@ const QuizPage = () => {
         setScore(0);
         setIsFinished(false);
         setWrongQuizWords([]);
+        setAnswerResults([]);
       } catch (err) {
-        console.error("❌ 퀴즈 로드 실패:", err);
+        console.error("❌ 퀴즈 로드 실패:", err.response?.data || err);
         setError("문제를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
@@ -112,7 +150,8 @@ const QuizPage = () => {
     };
 
     loadData();
-  }, [source, limit, levelForApi]);
+    // wordIdsParam 이 바뀌면 다시 로드
+  }, [source, limit, levelForApi, wordIdsParam]);
 
   const wrapperClassName = [
     "quiz-page-wrapper",
@@ -178,43 +217,56 @@ const QuizPage = () => {
     if (selectedOption !== null) return;
 
     const currentQ = questions[currentIndex];
-    setSelectedOption(choiceIndex);
-
     const isCorrect = choiceIndex === currentQ.answer;
+
+    setSelectedOption(choiceIndex);
 
     if (isCorrect) {
       setScore((prev) => prev + 1);
-      return;
+    } else {
+      setWrongQuizWords((prev) => {
+        const wordText = extractWordFromQuestion(currentQ);
+        const normalized = (wordText || "").trim();
+        if (!normalized) return prev;
+
+        const lower = normalized.toLowerCase();
+        if (prev.some((w) => w.text.toLowerCase() === lower)) {
+          return prev;
+        }
+
+        const meaning =
+          currentQ.meaningKo ||
+          currentQ.meaning_ko ||
+          currentQ.meaning ||
+          currentQ.korean ||
+          "";
+
+        const newItem = {
+          text: normalized,
+          wordId: currentQ.wordId,
+          wrongWordId: currentQ.wrongWordId,
+          meaning,
+          meaningKo:
+            currentQ.meaningKo ||
+            currentQ.meaning_ko ||
+            currentQ.korean ||
+            "",
+        };
+
+        return [...prev, newItem];
+      });
     }
 
-    // 오답 단어 수집
-    setWrongQuizWords((prev) => {
-      const wordText = extractWordFromQuestion(currentQ);
-      const normalized = (wordText || "").trim();
-      if (!normalized) return prev;
+    // 정답/오답 결과 기록
+    const resultItem = {
+      wordId: currentQ.wordId,
+      correct: isCorrect,
+    };
 
-      const lower = normalized.toLowerCase();
-      if (prev.some((w) => w.text.toLowerCase() === lower)) {
-        return prev;
-      }
-
-      const meaning =
-        currentQ.meaningKo ||
-        currentQ.meaning_ko ||
-        currentQ.meaning ||
-        currentQ.korean ||
-        "";
-
-      const newItem = {
-        text: normalized,
-        wordId: currentQ.wordId,
-        wrongWordId: currentQ.wrongWordId,
-        meaning,
-        meaningKo:
-          currentQ.meaningKo || currentQ.meaning_ko || currentQ.korean || "",
-      };
-
-      return [...prev, newItem];
+    setAnswerResults((prev) => {
+      const next = [...prev];
+      next[currentIndex] = resultItem;
+      return next;
     });
   };
 
@@ -228,15 +280,22 @@ const QuizPage = () => {
       return;
     }
 
+    // 마지막 문제 → 결과 저장
     try {
+      const answersPayload = questions.map((q, idx) => {
+        const recorded = answerResults[idx];
+        return {
+          wordId: q.wordId,
+          correct: recorded ? !!recorded.correct : false,
+        };
+      });
+
       await submitQuizResult({
         mode: isWrongMode ? "wrong" : "normal",
-        score,
-        total: questions.length,
-        timestamp: new Date().toISOString(),
+        answers: answersPayload,
       });
     } catch (err) {
-      console.error("❌ 결과 전송 실패:", err);
+      console.error("❌ 결과 전송 실패:", err.response?.data || err);
     }
 
     setIsFinished(true);
@@ -276,7 +335,6 @@ const QuizPage = () => {
         {/* 진행 화면 */}
         {!isFinished && currentQuestion ? (
           <>
-            {/* 상단 진행 헤더 */}
             <LearningProgressHeader
               title={isWrongMode ? "오답 퀴즈" : "실전 퀴즈"}
               subtitle={
@@ -284,7 +342,7 @@ const QuizPage = () => {
                   ? "틀렸던 단어들만 다시 객관식으로 점검합니다."
                   : "객관식 문제로 오늘 학습한 단어를 한 번 더 확인해 보세요."
               }
-              badgeLabel={`Lv.${levelLabel}`}
+              badgeLabel={badgeText}
               badgeVariant={isWrongMode ? "orange" : "purple"}
               showBackButton
               onBack={handleGoLearningHome}
@@ -301,7 +359,6 @@ const QuizPage = () => {
               }
             />
 
-            {/* 문제/보기 카드 */}
             <div className={`quiz-page ${themeClass}`}>
               <section className="quiz-learning">
                 <main className="quiz-main">
@@ -325,7 +382,8 @@ const QuizPage = () => {
                       selectedChoiceId={selectedOption}
                       isAnswered={isAnswered}
                       isCorrect={
-                        isAnswered && selectedOption === currentQuestion.answer
+                        isAnswered &&
+                        selectedOption === currentQuestion.answer
                       }
                       onSelect={handleOptionClick}
                     />
@@ -358,7 +416,6 @@ const QuizPage = () => {
             </header>
 
             <LearningResultSection
-              // 헷갈린 단어 카드
               unknownTitle="이번에 헷갈렸던 단어"
               unknownSubtitle="이번 퀴즈에서 틀린 문제에 등장한 단어들입니다."
               emptyUnknownMessage="헷갈린 단어 없이 모두 정확히 맞혔어요."
@@ -367,12 +424,15 @@ const QuizPage = () => {
               getUnknownKey={(w, i) => w.wordId ?? w.text ?? i}
               getUnknownWord={(w) => w.text || w.word || ""}
               getUnknownMeaning={(w) =>
-                w.meaningKo || w.meaning_ko || w.meaning || w.korean || ""
+                w.meaningKo ||
+                w.meaning_ko ||
+                w.meaning ||
+                w.korean ||
+                ""
               }
               buildMoreHintMessage={(restCount) =>
                 `그 외 ${restCount}개 단어는 오답 노트에서 계속 확인할 수 있어요.`
               }
-              // 통계 카드
               primaryLabel="맞은 문제"
               primaryValue={`${score}문제`}
               primaryProgress={
@@ -403,7 +463,6 @@ const QuizPage = () => {
               secondaryValueClassName="stat-unknown"
               extraLabel="정답률"
               extraValue={`${accuracy}%`}
-              // 버튼
               primaryButtonLabel="AI 스토리 생성하기"
               onPrimaryButtonClick={handleGoStory}
               secondaryButtonLabel="학습 홈으로 이동"

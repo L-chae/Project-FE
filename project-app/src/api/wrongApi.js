@@ -14,6 +14,12 @@ const normalizeWrongItem = (raw) => {
     return null;
   }
 
+  // 백엔드에서 word가 객체(Word 엔티티)로 내려오는 경우 처리
+  const wordObj =
+    raw.word && typeof raw.word === "object" && raw.word !== null
+      ? raw.word
+      : null;
+
   const used =
     raw.isUsedInStory === true ||
     raw.isUsedInStory === "Y" ||
@@ -24,19 +30,29 @@ const normalizeWrongItem = (raw) => {
     wrongWordId: raw.wrongWordId ?? raw.wrongLogId ?? raw.id,
 
     // 단어 정보
-    wordId: raw.wordId,
-    word: raw.word,
-    meaning: raw.meaning,
+    wordId: raw.wordId ?? wordObj?.wordId ?? wordObj?.id ?? null,
+    word:
+      typeof raw.word === "string"
+        ? raw.word
+        : wordObj?.word ?? wordObj?.text ?? "",
+    meaning:
+      raw.meaning ??
+      wordObj?.meaning ??
+      wordObj?.meaningKo ??
+      wordObj?.exampleSentenceKo ?? // 필요 없으면 이 줄은 빼도 됨
+      "",
 
     // 난이도
     wordLevel:
       raw.wordLevel ??
       raw.level ??
+      wordObj?.level ??
+      wordObj?.wordLevel ??
       raw.difficultyLevel ??
       raw.difficulty ??
       null,
 
-    // 마지막 오답 시각
+    // 마지막 오답 시각(정규화)
     wrongAt: raw.wrongAt ?? raw.lastWrongAt ?? raw.wrong_at ?? null,
 
     // 누적 정답/오답
@@ -47,11 +63,10 @@ const normalizeWrongItem = (raw) => {
     isUsedInStory: used ? "Y" : "N",
   };
 };
-
 /* =========================================================
  * MOCK 모드용 인메모리 상태
- *  - getWrongList / getUnusedWrongLogs / addWrongLog /
- *    deleteWrongLog / markWrongUsed 가 모두 같은 배열을 공유
+ *  - addWrongLog / deleteWrongLog / getWrongList /
+ *    getUnusedWrongLogs / markWrongUsed 가 같은 배열을 공유
  * ======================================================= */
 
 let mockWrongList = [];
@@ -101,105 +116,6 @@ const initMockWrongList = () => {
       totalWrong: 5,
       isUsedInStory: "N",
     },
-    {
-      wrongWordId: 4,
-      wordId: 104,
-      word: "fluctuate",
-      meaning: "변동하다",
-      wordLevel: 2,
-      wrongAt: daysAgo(3),
-      totalCorrect: 3,
-      totalWrong: 3,
-      isUsedInStory: "N",
-    },
-    {
-      wrongWordId: 5,
-      wordId: 105,
-      word: "coherent",
-      meaning: "일관된",
-      wordLevel: 1,
-      wrongAt: daysAgo(4),
-      totalCorrect: 5,
-      totalWrong: 2,
-      isUsedInStory: "Y",
-    },
-    {
-      wrongWordId: 6,
-      wordId: 106,
-      word: "feasible",
-      meaning: "실현 가능한",
-      wordLevel: 2,
-      wrongAt: daysAgo(5),
-      totalCorrect: 1,
-      totalWrong: 6,
-      isUsedInStory: "N",
-    },
-    {
-      wrongWordId: 7,
-      wordId: 107,
-      word: "alleviate",
-      meaning: "완화시키다",
-      wordLevel: 2,
-      wrongAt: daysAgo(6),
-      totalCorrect: 0,
-      totalWrong: 2,
-      isUsedInStory: "N",
-    },
-    {
-      wrongWordId: 8,
-      wordId: 108,
-      word: "abstract",
-      meaning: "추상적인",
-      wordLevel: 1,
-      wrongAt: daysAgo(7),
-      totalCorrect: 4,
-      totalWrong: 1,
-      isUsedInStory: "Y",
-    },
-    {
-      wrongWordId: 9,
-      wordId: 109,
-      word: "disrupt",
-      meaning: "방해하다",
-      wordLevel: 3,
-      wrongAt: daysAgo(8),
-      totalCorrect: 2,
-      totalWrong: 7,
-      isUsedInStory: "N",
-    },
-    {
-      wrongWordId: 10,
-      wordId: 110,
-      word: "plausible",
-      meaning: "그럴듯한",
-      wordLevel: 3,
-      wrongAt: daysAgo(9),
-      totalCorrect: 0,
-      totalWrong: 1,
-      isUsedInStory: "Y",
-    },
-    {
-      wrongWordId: 11,
-      wordId: 111,
-      word: "tedious",
-      meaning: "지루한",
-      wordLevel: 1,
-      wrongAt: daysAgo(10),
-      totalCorrect: 3,
-      totalWrong: 3,
-      isUsedInStory: "N",
-    },
-    {
-      wrongWordId: 12,
-      wordId: 112,
-      word: "inevitable",
-      meaning: "피할 수 없는",
-      wordLevel: 2,
-      wrongAt: daysAgo(11),
-      totalCorrect: 1,
-      totalWrong: 5,
-      isUsedInStory: "N",
-    },
   ];
 
   mockWrongList = raw.map(normalizeWrongItem).filter(Boolean);
@@ -226,27 +142,28 @@ export const addWrongLog = async (wordId) => {
     };
 
     const newItem = normalizeWrongItem(raw);
-    mockWrongList = [newItem, ...mockWrongList]; // 최신 추가 항목이 위로 오도록
-
+    mockWrongList = [newItem, ...mockWrongList];
     return newItem;
   }
 
   const res = await httpClient.post(`/api/wrong/${wordId}`);
-  return res.data;
+  const data = res.data;
+  return normalizeWrongItem(data) ?? data;
 };
 
 /**
  * 오답 기록 삭제
  * DELETE /api/wrong/{wordId}
- *
- * 실제 서버는 wordId 기준으로 삭제된다고 가정.
+ * (wordId 기준 삭제)
  */
 export const deleteWrongLog = async (wordId) => {
   if (USE_MOCK) {
     console.log("[Mock] 오답 기록 삭제:", wordId);
     initMockWrongList();
 
-    mockWrongList = mockWrongList.filter((i) => i.wordId !== wordId);
+    mockWrongList = mockWrongList.filter(
+      (i) => i.wordId !== Number(wordId)
+    );
     return { success: true };
   }
 
@@ -262,7 +179,7 @@ export const getWrongList = async () => {
   if (USE_MOCK) {
     console.log("[Mock] 내 오답 목록 조회");
     initMockWrongList();
-    // 이미 normalize된 상태이므로 복사만 반환
+    // 이미 normalize된 상태이므로 그대로 복사 반환
     return [...mockWrongList];
   }
 
@@ -276,14 +193,14 @@ export const getWrongList = async () => {
  * 스토리에 아직 사용되지 않은 오답 목록
  * GET /api/wrong/unused
  *
- * StoryCreatePage에서 사용.
+ * StoryCreatePage 등에서 사용.
+ * 여기서는 단순 필드만 리턴.
  */
 export const getUnusedWrongLogs = async () => {
   if (USE_MOCK) {
     console.log("[Mock] 스토리 미사용 오답 목록 조회");
     initMockWrongList();
 
-    // isUsedInStory === "N" 만 반환
     return mockWrongList
       .filter((item) => item.isUsedInStory === "N")
       .map((item) => ({
@@ -297,7 +214,6 @@ export const getUnusedWrongLogs = async () => {
   const res = await httpClient.get("/api/wrong/unused");
   const arr = Array.isArray(res.data) ? res.data : [];
 
-  // StoryCreatePage는 이 4개 필드만 사용
   return arr.map((raw) => ({
     wrongWordId: raw.wrongWordId ?? raw.wrongLogId ?? raw.id,
     wordId: raw.wordId,
@@ -316,7 +232,7 @@ export const markWrongUsed = async (wrongLogId) => {
     initMockWrongList();
 
     mockWrongList = mockWrongList.map((item) =>
-      item.wrongWordId === wrongLogId
+      item.wrongWordId === Number(wrongLogId)
         ? { ...item, isUsedInStory: "Y" }
         : item
     );

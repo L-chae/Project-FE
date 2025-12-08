@@ -128,10 +128,30 @@ const MOCK_WRONG_NOTES = [
 
 /**
  * 객관식 퀴즈 문제 조회
- * - 실제 퀴즈 화면은 quizApi.js를 쓰고 있으므로,
- *   여기서는 MOCK 전용으로만 사용하게 두는 것이 안전하다.
+ *
+ * 백엔드 규격:
+ *  - 일반 퀴즈: GET /api/quiz?mode=normal&limit={limit}
+ *  - 오답 복습: GET /api/quiz?mode=wrong&limit={limit}
+ *
+ * Response 예시:
+ *  [
+ *    {
+ *      "wordId": 21,
+ *      "word": "coffee",
+ *      "options": ["커피", "사과", "나무", "오렌지"],
+ *      "answerIndex": 0
+ *    }
+ *  ]
+ *
+ * 프론트에서는 위 응답을 내부에서 쓰기 좋은 형태로 변환해서 리턴한다.
  */
-export async function fetchMcqQuestions({ source, wordIds, clusterId, limit }) {
+export async function fetchMcqQuestions({
+  source,
+  wordIds,
+  clusterId,
+  limit,
+  mode,
+}) {
   if (USE_MOCK) {
     await delay(200);
     const sliced = MOCK_MCQ_QUESTIONS.slice(
@@ -141,37 +161,154 @@ export async function fetchMcqQuestions({ source, wordIds, clusterId, limit }) {
     return sliced;
   }
 
-  // 실제 서버는 quizApi.js의 /api/quiz를 통해 사용하도록 유도
-  throw new Error(
-    "fetchMcqQuestions: 실제 서버 연동은 quizApi.js를 사용하세요."
-  );
+  const quizMode =
+    mode ||
+    (source === "wrong-note" || source === "wrong" ? "wrong" : "normal");
+
+  const params = { mode: quizMode };
+  if (typeof limit === "number") {
+    params.limit = limit;
+  }
+
+  // 필요 시 wordIds, clusterId를 쿼리로 추가할 수 있음
+  // (백엔드와 합의 후 주석 해제)
+  // if (Array.isArray(wordIds) && wordIds.length > 0) {
+  //   params.wordIds = wordIds.join(",");
+  // }
+  // if (clusterId) {
+  //   params.clusterId = clusterId;
+  // }
+
+  const res = await httpClient.get("/api/quiz", { params });
+  const data = res.data;
+
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data.items)
+    ? data.items
+    : Array.isArray(data.content)
+    ? data.content
+    : [];
+
+  // 백엔드 응답을 프론트 공통 형태로 정규화
+  return list.map((raw, index) => {
+    const id = raw.quizId ?? raw.id ?? raw.wordId ?? index;
+    const wordId = raw.wordId ?? raw.id ?? null;
+
+    const questionText =
+      raw.word ?? raw.question ?? raw.questionText ?? "" /* 단어/지문 */;
+
+    const options = Array.isArray(raw.options)
+      ? raw.options
+      : Array.isArray(raw.choices)
+      ? raw.choices
+      : [];
+
+    const answerIndex =
+      typeof raw.answerIndex === "number"
+        ? raw.answerIndex
+        : typeof raw.answer === "number"
+        ? raw.answer
+        : null;
+
+    const choices = options.map((opt, i) => {
+      const optText =
+        typeof opt === "string"
+          ? opt
+          : typeof opt.text === "string"
+          ? opt.text
+          : String(opt);
+
+      return {
+        id: `${id}-${i}`, // 프론트 내부용 선택지 ID
+        label: String.fromCharCode(65 + i), // A, B, C, ...
+        text: optText,
+        isCorrect: answerIndex === i,
+      };
+    });
+
+    return {
+      id,
+      wordId,
+      title: questionText,
+      description: raw.description ?? "",
+      choices,
+      explanation: raw.explanation ?? "",
+    };
+  });
 }
 
 /**
  * 객관식 답안 제출
- * - 실제 서버에서는 /api/quiz/result 또는 /api/study/...를 이용해야 하므로
- *   여기서도 MOCK 전용으로만 유지한다.
+ *
+ * 백엔드 규격(제안):
+ *  - POST /api/quiz/result
+ *
+ * Request Body:
+ *  {
+ *    "mode": "normal" | "wrong",
+ *    "wordId": number,
+ *    "selectedIndex": number  // 사용자가 고른 보기 인덱스(0 기반)
+ *  }
+ *
+ * Response:
+ *  {
+ *    "isCorrect": true,
+ *    "wrongAnswerLog": {
+ *      "wrongWordId": 9001,
+ *      "wordId": 21
+ *    }
+ *  }
+ *
+ * 프론트에서 사용하는 파라미터:
+ *  - wordId: 퀴즈 대상 단어 ID
+ *  - selectedIndex: 사용자가 선택한 보기 인덱스(0 기반)
+ *  - mode: "normal" | "wrong" (옵션, 기본 "normal")
  */
-export async function submitMcqAnswer({ questionId, choiceId }) {
+export async function submitMcqAnswer({
+  wordId,
+  selectedIndex,
+  mode = "normal",
+}) {
   if (USE_MOCK) {
     await delay(150);
-    const q = MOCK_MCQ_QUESTIONS.find((q) => q.id === questionId);
-    const correctChoice = q?.choices.find((c) => c.isCorrect);
-    const isCorrect = !!correctChoice && correctChoice.id === choiceId;
+
+    const q = MOCK_MCQ_QUESTIONS.find((item) => item.wordId === wordId);
+    if (!q) {
+      return { isCorrect: false, wrongAnswerLog: null };
+    }
+
+    const correctIndex = q.choices.findIndex((c) => c.isCorrect);
+    const isCorrect =
+      typeof selectedIndex === "number" && selectedIndex === correctIndex;
 
     const wrongAnswerLog = !isCorrect
       ? {
           wrongWordId: Date.now(),
-          wordId: q?.wordId,
+          wordId: q.wordId,
         }
       : null;
 
     return { isCorrect, wrongAnswerLog };
   }
 
-  throw new Error(
-    "submitMcqAnswer: 실제 서버 연동은 quizApi.js / STUDY_LOG API를 사용하세요."
-  );
+  if (typeof wordId === "undefined" || typeof selectedIndex === "undefined") {
+    throw new Error("submitMcqAnswer: wordId, selectedIndex가 필요합니다.");
+  }
+
+  const payload = {
+    mode,
+    wordId,
+    selectedIndex,
+  };
+
+  const res = await httpClient.post("/api/quiz/result", payload);
+  const data = res.data ?? {};
+
+  return {
+    isCorrect: !!data.isCorrect,
+    wrongAnswerLog: data.wrongAnswerLog ?? null,
+  };
 }
 
 /**
