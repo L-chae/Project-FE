@@ -604,7 +604,7 @@ export const getWordCount = async () => {
 };
 
 // =====================================================
-// 9. 연관 단어(클러스터)에서 단어장에 추가 (Mock 전용)
+// 9. 연관 단어(클러스터)에서 단어장에 추가 (Mock 전용) 
 // =====================================================
 export const addWordFromCluster = async ({ text, level = 1 }) => {
   if (USE_MOCK) {

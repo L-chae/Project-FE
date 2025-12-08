@@ -11,8 +11,7 @@
 .wordlist-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  text-align: center;         
   margin-bottom: var(--space-8);
 }
 
@@ -100,7 +99,7 @@
 .stat-count {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--neutral-900);   /* #1e293b → 토큰 사용 */
   margin-top: 2px;
 }
 
@@ -218,21 +217,25 @@
   margin-top: 0;
 }
 
-/* 별 아이콘 버튼 */
+/* 별 아이콘 버튼: 상세 페이지와 통일된 느낌 */
 .star-btn {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 1.3rem;
-  color: var(--neutral-300);
-  cursor: pointer;
   padding: 0;
-  display: flex;
+  cursor: pointer;
+  color: var(--neutral-300);
+  display: inline-flex;
   align-items: center;
-  transition: transform 0.2s;
+  justify-content: center;
+  line-height: 0;
+  transition:
+    color 0.16s ease,
+    transform 0.12s ease;
 }
 
 .star-btn:hover {
-  transform: scale(1.1);
+  color: var(--primary-500);
+  transform: scale(1.08);        /* 살짝 확대 */
 }
 
 .star-btn.active {
@@ -248,6 +251,9 @@
   margin-bottom: 12px;
 }
 
+/* ─────────────
+   태그 스타일: 기존 그대로 유지
+   ───────────── */
 .tag {
   padding: 3px 8px;
   border-radius: var(--radius-pill);

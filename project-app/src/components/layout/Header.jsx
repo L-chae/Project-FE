@@ -17,14 +17,6 @@ const AUTH_NAV_ITEMS = [
   { to: "/learning", label: "학습하기" },
 ];
 
-// 비회원 메뉴: 홈은 자유 접근, 나머지는 클릭 시 로그인 유도
-const GUEST_NAV_ITEMS = [
-  { to: "/", label: "홈", requiresAuth: false },
-  { to: "/words", label: "단어장", requiresAuth: true },
-  { to: "/stories", label: "AI 스토리", requiresAuth: true },
-  { to: "/learning", label: "학습하기", requiresAuth: true },
-];
-
 const AUTH_HOME_PATH = "/dashboard";
 const GUEST_HOME_PATH = "/";
 
@@ -79,18 +71,9 @@ export default function Header() {
     setIsAccountMenuOpen((prev) => !prev);
   };
 
-  // 비회원 + 회원 전용 메뉴일 때 클릭을 가로채서 로그인 페이지로 보냄
-  const handleNavClick = (e, item) => {
-    if (!isAuthenticated && item.requiresAuth) {
-      e.preventDefault();
-      navigate("/auth/login", {
-        state: { from: item.to }, // 로그인 후 다시 보내줄 경로
-      });
-    }
-  };
-
   const isAuthPage = location.pathname.startsWith("/auth");
 
+  // 로그인/회원가입 페이지에는 로고만 표시
   if (isAuthPage) {
     return (
       <header className="header">
@@ -111,11 +94,12 @@ export default function Header() {
     );
   }
 
-  const navItems = isAuthenticated ? AUTH_NAV_ITEMS : GUEST_NAV_ITEMS;
+  const navItems = isAuthenticated ? AUTH_NAV_ITEMS : [];
 
   return (
     <header className="header">
       <div className="header-inner">
+        {/* 로고: 로그인 O → /dashboard, 로그인 X → / */}
         <button
           type="button"
           className="header-logo"
@@ -128,20 +112,22 @@ export default function Header() {
           />
         </button>
 
-        <nav className="header-nav" aria-label="주요 메뉴">
-          <div className="header-nav-group">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={getNavClass}
-                onClick={(e) => handleNavClick(e, item)}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
+        {/* 비회원일 때는 nav 자체를 렌더링하지 않음 */}
+        {isAuthenticated && (
+          <nav className="header-nav" aria-label="주요 메뉴">
+            <div className="header-nav-group">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={getNavClass}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </nav>
+        )}
 
         <div className="header-actions">
           {isAuthenticated ? (

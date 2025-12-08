@@ -405,6 +405,7 @@ const QuizPage = () => {
                   </footer>
                 </main>
               </section>
+              
             </div>
           </>
         ) : (
@@ -470,7 +471,9 @@ const QuizPage = () => {
             />
           </section>
         )}
+        
       </div>
+      
     </div>
   );
 };

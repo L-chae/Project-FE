@@ -15,24 +15,10 @@ import {
   getFavoriteList,
   getWordDetail,
   removeFavorite,
-  addWordFromCluster, // 연관 단어 추가 (mock용)
+  addWordFromCluster, // 연관 단어 → 단어장에 추가 (wordApi)
 } from "../../api/wordApi";
+import { getWordCluster } from "../../api/wordClusterApi";
 import "./WordDetailPage.css";
-
-// --------------------------------------------------
-// 연관 단어 초기 더미 데이터
-// --------------------------------------------------
-const INITIAL_CLUSTER_DATA = {
-  similar: [
-    { text: "Drink", level: 1, inMyList: false },
-    { text: "Beverage", level: 2, inMyList: false },
-    { text: "Espresso", level: 3, inMyList: true },
-  ],
-  opposite: [
-    { text: "Refuse", level: 3, inMyList: false },
-    { text: "Reject", level: 2, inMyList: false },
-  ],
-};
 
 function WordDetailPage() {
   const { id } = useParams();
@@ -48,10 +34,13 @@ function WordDetailPage() {
 
   // 연관 단어 탭 / 데이터
   const [clusterTab, setClusterTab] = useState("전체");
-  const [clusterData, setClusterData] = useState(INITIAL_CLUSTER_DATA);
+  const [clusterData, setClusterData] = useState({
+    similar: [],
+    opposite: [],
+  });
 
   // ------------------------------------------------
-  // 단어 상세 + 즐겨찾기/학습완료 상태 로딩
+  // 단어 상세 + 즐겨찾기/학습완료 + 연관 단어 로딩
   // ------------------------------------------------
   useEffect(() => {
     if (!id) return;
@@ -61,11 +50,13 @@ function WordDetailPage() {
       try {
         setLoading(true);
 
-        const [detailRes, favoriteRes, completedRes] = await Promise.all([
-          getWordDetail(id),
-          getFavoriteList().catch(() => []),
-          getCompletedList().catch(() => []),
-        ]);
+        const [detailRes, favoriteRes, completedRes, clusterRes] =
+          await Promise.all([
+            getWordDetail(id),
+            getFavoriteList().catch(() => []),
+            getCompletedList().catch(() => []),
+            getWordCluster(id).catch(() => null),
+          ]);
 
         if (cancelled) return;
 
@@ -86,6 +77,18 @@ function WordDetailPage() {
         };
 
         setWord(merged);
+
+        if (clusterRes && typeof clusterRes === "object") {
+          setClusterData({
+            similar: Array.isArray(clusterRes.similar)
+              ? clusterRes.similar
+              : [],
+            opposite: Array.isArray(clusterRes.opposite)
+              ? clusterRes.opposite
+              : [],
+          });
+        }
+
         setError(null);
       } catch (e) {
         if (cancelled) return;
@@ -131,10 +134,8 @@ function WordDetailPage() {
   // ------------------------------------------------
   const handleAddClusterWord = async (targetWord, level = 1) => {
     try {
-      // mock 모드에서는 mockWordList에 실제 추가됨 (wordApi.addWordFromCluster)
       await addWordFromCluster({ text: targetWord, level });
 
-      // UI 상태(inMyList) 갱신
       setClusterData((prev) => {
         const updateGroup = (group) =>
           group.map((item) =>
@@ -175,7 +176,7 @@ function WordDetailPage() {
   if (loading)
     return (
       <div className="detail-loading">
-        <div className="spinner"></div>
+        <div className="spinner" />
       </div>
     );
   if (error) return <div className="detail-error">{error}</div>;
@@ -210,54 +211,51 @@ function WordDetailPage() {
         <div className="detail-nav">
           <button onClick={handleBack} className="back-btn">
             <ArrowLeft size={18} />
-            목록으로
+            <span className="back-label">목록으로</span>
           </button>
         </div>
 
-        {/* 메인 헤더 (단어, 뜻, 태그, 즐겨찾기) */}
+        {/* 메인 헤더 (단어, 뜻, 태그, 즐겨찾기, 상태) */}
         <header className="detail-header">
           <div className="header-top-row">
             <div className="header-content">
               <h1 className="detail-word-title">{text}</h1>
-              <p className="detail-meaning">{meaning}</p>
-
-              <div className="detail-tags-row">
-                {typeof level === "number" && (
-                  <span className="tag tag-level">Lv.{displayLevel}</span>
-                )}
-                {partOfSpeech && (
-                  <span className="tag tag-pos">{partOfSpeech}</span>
-                )}
-                {displayDomain && (
-                  <span className="tag tag-domain">{displayDomain}</span>
-                )}
-              </div>
+              {meaning && <p className="detail-meaning">{meaning}</p>}
             </div>
 
-            <div className="header-actions">
-              <button
-                type="button"
-                className={`fav-action-btn ${isFavorite ? "active" : ""}`}
-                onClick={handleToggleFavorite}
-                disabled={favLoading}
-                title={isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
-              >
-                <Star
-                  size={28}
-                  fill={isFavorite ? "currentColor" : "none"}
-                  strokeWidth={1.5}
-                />
-              </button>
-            </div>
+            <button
+              type="button"
+              className={`fav-action-btn ${isFavorite ? "active" : ""}`}
+              onClick={handleToggleFavorite}
+              disabled={favLoading}
+              title={isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
+            >
+              <Star
+                size={26}
+                fill={isFavorite ? "currentColor" : "none"}
+                strokeWidth={1.6}
+              />
+            </button>
           </div>
 
-          <div className="detail-separator" />
+          <div className="header-bottom-row">
+            <div className="detail-tags-row">
+              {typeof level === "number" && (
+                <span className="tag tag-level">Lv.{displayLevel}</span>
+              )}
+              {partOfSpeech && (
+                <span className="tag tag-pos">{partOfSpeech}</span>
+              )}
+              {displayDomain && (
+                <span className="tag tag-domain">{displayDomain}</span>
+              )}
+            </div>
 
-          {/* 학습 상태 배지 */}
-          <div className="header-status-row">
             <div className={`status-badge ${isCompleted ? "done" : "todo"}`}>
               <CheckCircle size={16} />
-              {isCompleted ? "학습 완료" : "학습 예정"}
+              <span className="status-label">
+                {isCompleted ? "학습 완료" : "학습 예정"}
+              </span>
             </div>
           </div>
         </header>
@@ -268,7 +266,8 @@ function WordDetailPage() {
           <div className="detail-left-col">
             <section className="detail-card example-section">
               <div className="card-label">
-                <BookOpen size={16} /> 예문
+                <BookOpen size={16} />
+                <span>예문</span>
               </div>
               {exampleSentenceEn || exampleSentenceKo ? (
                 <div className="example-box">
@@ -324,11 +323,30 @@ function WordDetailPage() {
                     </div>
                     <div className="chip-grid">
                       {clusterData.similar.map((item) => (
-                        <div className="word-chip" key={item.text}>
-                          <div className="chip-info">
-                            <span className="chip-word">{item.text}</span>
-                            <span className="chip-lv">Lv.{item.level}</span>
+                        <div
+                          className={`word-chip ${
+                            item.inMyList
+                              ? "word-chip--selected"
+                              : "word-chip--unselected"
+                          }`}
+                          key={item.text}
+                        >
+                          <div className="chip-main">
+                            <div className="chip-header-row">
+                              <span className="chip-word">{item.text}</span>
+                              {typeof item.level === "number" && (
+                                <span
+                                  className={`chip-lv chip-lv--${item.level}`}
+                                >
+                                  Lv.{item.level}
+                                </span>
+                              )}
+                            </div>
+                            {item.meaning && (
+                              <p className="chip-meaning">{item.meaning}</p>
+                            )}
                           </div>
+
                           {item.inMyList ? (
                             <span className="chip-check">
                               <Check size={14} />
@@ -363,11 +381,30 @@ function WordDetailPage() {
                     </div>
                     <div className="chip-grid">
                       {clusterData.opposite.map((item) => (
-                        <div className="word-chip" key={item.text}>
-                          <div className="chip-info">
-                            <span className="chip-word">{item.text}</span>
-                            <span className="chip-lv">Lv.{item.level}</span>
+                        <div
+                          className={`word-chip ${
+                            item.inMyList
+                              ? "word-chip--selected"
+                              : "word-chip--unselected"
+                          }`}
+                          key={item.text}
+                        >
+                          <div className="chip-main">
+                            <div className="chip-header-row">
+                              <span className="chip-word">{item.text}</span>
+                              {typeof item.level === "number" && (
+                                <span
+                                  className={`chip-lv chip-lv--${item.level}`}
+                                >
+                                  Lv.{item.level}
+                                </span>
+                              )}
+                            </div>
+                            {item.meaning && (
+                              <p className="chip-meaning">{item.meaning}</p>
+                            )}
                           </div>
+
                           {item.inMyList ? (
                             <span className="chip-check">
                               <Check size={14} />

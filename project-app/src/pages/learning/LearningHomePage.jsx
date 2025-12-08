@@ -14,8 +14,8 @@ import {
 
 import PageHeader from "../../components/common/PageHeader";
 import FilterDropdown from "../../components/common/FilterDropdown";
-import { useLearningSettingsStore } from "./hooks/useLearningSettingsStore";
 import "./LearningHomePage.css";
+import { useLearningSettingsStore } from './../../store/useLearningSettingsStore';
 
 const LEVEL_OPTIONS = [
   { label: "전체", value: "All" },

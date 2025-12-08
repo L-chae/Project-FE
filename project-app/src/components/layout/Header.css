@@ -156,12 +156,9 @@
 
   padding: 0;
   border-radius: 50%;
-  border: 1px solid rgba(76, 68, 184, 0.12);
   background-color: #ffffff;
   cursor: pointer;
   flex-shrink: 0;
-
-  box-shadow: 0 8px 18px rgba(108, 92, 231, 0.24);
   transition:
     transform 0.05s ease,
     box-shadow 0.15s ease,

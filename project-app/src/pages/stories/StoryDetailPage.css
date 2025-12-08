@@ -80,10 +80,7 @@
   border-radius: 24px;
   padding: 32px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-
-  min-height: 640px;
   max-height: 80vh;
-
   display: flex;
   flex-direction: column;
 }
@@ -254,7 +251,6 @@
 
 /* 하이라이트 */
 .highlighted-word {
-  background-color: rgba(162, 149, 255, 0.15);
   color: var(--primary-600);
   font-weight: 700;
   padding: 0 4px;
@@ -264,7 +260,6 @@
 
 .highlighted-word--active {
   background-color: rgba(108, 92, 231, 0.35);
-  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.25);
 }
 
 /* 구분선 */

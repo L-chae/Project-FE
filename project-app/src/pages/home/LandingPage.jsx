@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import './LandingPage.module.css'; // 위에서 작성한 CSS 파일 import
 
 const LandingPage = () => {
   // 스크롤 애니메이션 로직

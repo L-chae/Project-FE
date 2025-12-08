@@ -197,7 +197,17 @@ const DashboardPage = () => {
     wrong: d.wrongCount,
   }));
 
-  const attendance = weeklyDataSorted.map((day) => day.learnedCount > 0);
+// 요일별 출석 여부 (0: 일 ~ 6: 토)
+const attendanceByWeekday = Array(7).fill(false);
+
+weeklyDataSorted.forEach((day) => {
+  const date = new Date(day.date);
+  if (Number.isNaN(date.getTime())) return;
+
+  const weekday = date.getDay(); // 0: 일 ~ 6: 토
+  attendanceByWeekday[weekday] = day.learnedCount > 0;
+});
+
 
   const totalLearned7 = weeklyDataSorted.reduce(
     (acc, cur) => acc + cur.learnedCount,
@@ -323,38 +333,39 @@ const DashboardPage = () => {
           </div>
         </section>
 
-        {/* 2. 이번 주 출석 현황 */}
-        <section className="dashboard-card action-card">
-          <div className="action-top">
-            <div>
-              <h3 className="section-title">이번 주 출석 현황</h3>
-            </div>
-            <div className="mini-calendar">
-              {weekDays.map((day, i) => (
-                <div
-                  key={day + i}
-                  className={`calendar-day ${
-                    attendance[i] ? "checked" : ""
-                  }`}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-          </div>
+{/* 2. 이번 주 출석 현황 */}
+<section className="dashboard-card action-card">
+  <div className="action-top">
+    <div>
+      <h3 className="section-title">이번 주 출석 현황</h3>
+    </div>
+    <div className="mini-calendar">
+      {weekDays.map((day, i) => (
+        <div
+          key={day + i}
+          className={`calendar-day ${
+            attendanceByWeekday[i] ? "checked" : ""
+          }`}
+        >
+          {day}
+        </div>
+      ))}
+    </div>
+  </div>
 
-          <div className="action-bottom">
-            <Button
-              variant="primary"
-              size="md"
-              full
-              onClick={() => navigate("/learning/quiz?source=quiz")}
-            >
-              학습 시작하기
-              <ArrowRight size={16} className="btn__icon btn__icon--right" />
-            </Button>
-          </div>
-        </section>
+  <div className="action-bottom">
+    <Button
+      variant="primary"
+      size="md"
+      full
+      onClick={() => navigate("/learning/quiz?source=quiz")}
+    >
+      학습 시작하기
+      <ArrowRight size={16} className="btn__icon btn__icon--right" />
+    </Button>
+  </div>
+</section>
+
 
         {/* 3. 주간 학습 분석 */}
         <section className="dashboard-card chart-card">
