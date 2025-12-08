@@ -1,17 +1,13 @@
 // src/pages/wrongnote/WrongNotePage.jsx
-import {
-  ChevronDown,
-  RotateCcw,
-  FileQuestion,
-  Layers,
-  BookOpen,
-} from "lucide-react";
-
-import { useEffect, useMemo, useState } from "react";
+import { RotateCcw, FileQuestion, Layers, BookOpen } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
 import { getWrongList } from "../../api/wrongApi";
 import FilterDropdown from "../../components/common/FilterDropdown";
 import Pagination from "../../components/common/Pagination";
+import EmptyState from "../../components/common/EmptyState";
 import { WrongNoteItem } from "./components/WrongNoteItem";
 
 import "./WrongNotePage.css";
@@ -51,79 +47,33 @@ const getLastWrongTime = (item) => {
 export default function WrongNotePage() {
   const navigate = useNavigate();
 
-  // 원본 데이터
-  const [rawItems, setRawItems] = useState([]);
-
   // 필터 상태
   const [filters, setFilters] = useState({
     isUsedInStory: "", // "", "Y", "N"
-    sortBy: "latest",  // latest | oldest | mostWrong
+    sortBy: "latest", // latest | oldest | mostWrong
   });
 
-  // 필터 활성 여부 (초기화 버튼 노출 조건)
-  const isFilterActive =
-    filters.isUsedInStory !== "" || filters.sortBy !== "latest";
-
   // UI 상태
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]); // wrongWordId[]
   const [page, setPage] = useState(0);
   const [openDropdown, setOpenDropdown] = useState(null); // "story" | "sort" | null
   const [activeAction, setActiveAction] = useState("none"); // quiz | card | story | none
 
-  // 데이터 로딩
-  const refresh = async () => {
-    setLoading(true);
-    setError(null);
+  // React Query: 오답 목록 조회
+  const {
+    data: rawItems = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["wrongNotes", "list"],
+    queryFn: getWrongList,
+  });
 
-    try {
-      const data = await getWrongList();
-      setRawItems(Array.isArray(data) ? data : []);
-      setSelectedIds([]);
-      setPage(0);
-    } catch (e) {
-      console.error("오답 목록 조회 실패:", e);
-      setError("오답 기록을 불러오는 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  // 필터 변경
-  const handleChangeFilter = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPage(0);
-  };
-
-  // 드롭다운 토글
-  const handleDropdownToggle = (id) => {
-    setOpenDropdown((prev) => (prev === id ? null : id));
-  };
-
-  // 드롭다운 값 변경
-  const handleDropdownChange = (id, nextValue) => {
-    if (id === "story") {
-      handleChangeFilter("isUsedInStory", nextValue);
-    } else if (id === "sort") {
-      handleChangeFilter("sortBy", nextValue);
-    }
-    setOpenDropdown(null);
-  };
-
-  // 필터 초기화
-  const handleResetFilters = () => {
-    setFilters({
-      isUsedInStory: "",
-      sortBy: "latest",
-    });
-    setPage(0);
-    setOpenDropdown(null);
-  };
+  // 필터 활성 여부 (초기화 버튼 노출 조건)
+  const isFilterActive =
+    filters.isUsedInStory !== "" || filters.sortBy !== "latest";
 
   // 필터 + 정렬 적용
   const processedItems = useMemo(() => {
@@ -157,7 +107,7 @@ export default function WrongNotePage() {
     return sorted;
   }, [rawItems, filters]);
 
-  // 페이지네이션
+  // 페이지네이션 계산
   const totalPages = useMemo(
     () => Math.ceil(processedItems.length / PAGE_SIZE) || 0,
     [processedItems.length]
@@ -183,6 +133,37 @@ export default function WrongNotePage() {
   };
 
   const selectedCount = selectedIds.length;
+
+  // 필터 변경
+  const handleChangeFilter = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(0);
+  };
+
+  // 드롭다운 토글
+  const handleDropdownToggle = (id) => {
+    setOpenDropdown((prev) => (prev === id ? null : id));
+  };
+
+  // 드롭다운 값 변경
+  const handleDropdownChange = (id, nextValue) => {
+    if (id === "story") {
+      handleChangeFilter("isUsedInStory", nextValue);
+    } else if (id === "sort") {
+      handleChangeFilter("sortBy", nextValue);
+    }
+    setOpenDropdown(null);
+  };
+
+  // 필터 초기화
+  const handleResetFilters = () => {
+    setFilters({
+      isUsedInStory: "",
+      sortBy: "latest",
+    });
+    setPage(0);
+    setOpenDropdown(null);
+  };
 
   // 액션: 퀴즈
   const handleReviewAsQuiz = () => {
@@ -223,8 +204,17 @@ export default function WrongNotePage() {
     console.log("row clicked:", item);
   };
 
+  // Empty / 표시 상태 계산
+  const hasAnyItems = rawItems.length > 0;
+  const hasProcessedItems = processedItems.length > 0;
+
+  const showEmptyNoData = !isLoading && !isError && !hasAnyItems;
+  const showEmptyFiltered =
+    !isLoading && !isError && hasAnyItems && !hasProcessedItems;
+  const showTable = !isLoading && !isError && hasProcessedItems;
+
   return (
-   <div className="page-container wrongnote-page">
+    <div className="page-container wrongnote-page">
       {/* 헤더 */}
       <header className="wrongnote-header">
         <h1>오답 노트</h1>
@@ -233,166 +223,212 @@ export default function WrongNotePage() {
         </p>
       </header>
 
-      {/* 헤더 하단 필터 + 초기화 버튼 */}
-     <section className="wrongnote-header__filters">
-  <FilterDropdown
-    id="story"
-    label="스토리"
-    options={STORY_FILTER_OPTIONS}
-    value={filters.isUsedInStory}
-    isOpen={openDropdown === "story"}
-    onToggle={handleDropdownToggle}
-    onChange={handleDropdownChange}
-  />
+      {/* 필터 / 액션 영역 (리스트 있을 때만 노출) */}
+      {showTable && (
+        <>
+          <section className="wrongnote-header__filters">
+            <FilterDropdown
+              id="story"
+              label="스토리"
+              options={STORY_FILTER_OPTIONS}
+              value={filters.isUsedInStory}
+              isOpen={openDropdown === "story"}
+              onToggle={handleDropdownToggle}
+              onChange={handleDropdownChange}
+            />
 
-  <FilterDropdown
-    id="sort"
-    label="정렬"
-    options={SORT_FILTER_OPTIONS}
-    value={filters.sortBy}
-    isOpen={openDropdown === "sort"}
-    onToggle={handleDropdownToggle}
-    onChange={handleDropdownChange}
-  />
+            <FilterDropdown
+              id="sort"
+              label="정렬"
+              options={SORT_FILTER_OPTIONS}
+              value={filters.sortBy}
+              isOpen={openDropdown === "sort"}
+              onToggle={handleDropdownToggle}
+              onChange={handleDropdownChange}
+            />
 
-  {isFilterActive && (
-    <button
-      type="button"
-      className="filter-reset-btn"
-      onClick={handleResetFilters}
-      title="필터 초기화"
-    >
-      <RotateCcw size={16} />
-    </button>
-  )}
-</section>
+            {isFilterActive && (
+              <button
+                type="button"
+                className="filter-reset-btn"
+                onClick={handleResetFilters}
+                title="필터 초기화"
+              >
+                <RotateCcw size={16} />
+              </button>
+            )}
+          </section>
 
-      {/* 선택 단어 액션 영역 */}
- <section className="wrongnote-actions">
-  <div className="wrongnote-actions__left">
-    <span className="wrongnote-selected-count">
-      선택한 오답 {selectedCount}개
-    </span>
-  </div>
+          <section className="wrongnote-actions">
+            <div className="wrongnote-actions__left">
+              <span className="wrongnote-selected-count">
+                선택한 오답 {selectedCount}개
+              </span>
+            </div>
 
-  <div className="wrongnote-actions__right">
-    <button
-      type="button"
-      disabled={selectedCount === 0}
-      className={`sl-btn sl-btn--quiz ${activeAction === "quiz" ? "sl-btn-primary" : "" }`}
-      onClick={() => {
-        handleReviewAsQuiz();
-        setActiveAction("quiz");
-      }}
-    >
-      <FileQuestion size={16} />
-      <span>퀴즈 풀기</span>
-    </button>
+            <div className="wrongnote-actions__right">
+              <button
+                type="button"
+                disabled={selectedCount === 0}
+                className={`sl-btn sl-btn--quiz ${
+                  activeAction === "quiz" ? "sl-btn-primary" : ""
+                }`}
+                onClick={() => {
+                  handleReviewAsQuiz();
+                  setActiveAction("quiz");
+                }}
+              >
+                <FileQuestion size={16} />
+                <span>퀴즈 풀기</span>
+              </button>
 
-    <button
-      type="button"
-      disabled={selectedCount === 0}
-      className={`sl-btn sl-btn--card ${activeAction === "card" ? "sl-btn-primary" : ""}`}
-      onClick={() => {
-        handleReviewAsCard();
-        setActiveAction("card");
-      }}
-    >
-      <Layers size={16} />
-      <span>카드로 보기</span>
-    </button>
+              <button
+                type="button"
+                disabled={selectedCount === 0}
+                className={`sl-btn sl-btn--card ${
+                  activeAction === "card" ? "sl-btn-primary" : ""
+                }`}
+                onClick={() => {
+                  handleReviewAsCard();
+                  setActiveAction("card");
+                }}
+              >
+                <Layers size={16} />
+                <span>카드로 보기</span>
+              </button>
 
-    <button
-      type="button"
-      disabled={selectedCount === 0}
-      className={`sl-btn sl-btn--story ${activeAction === "story" ? "sl-btn-primary" : ""}`}
-      onClick={() => {
-        handleCreateStory();
-        setActiveAction("story");
-      }}
-    >
-      <BookOpen size={16} />
-      <span>스토리 만들기</span>
-    </button>
-  </div>
-</section>
+              <button
+                type="button"
+                disabled={selectedCount === 0}
+                className={`sl-btn sl-btn--story ${
+                  activeAction === "story" ? "sl-btn-primary" : ""
+                }`}
+                onClick={() => {
+                  handleCreateStory();
+                  setActiveAction("story");
+                }}
+              >
+                <BookOpen size={16} />
+                <span>스토리 만들기</span>
+              </button>
+            </div>
+          </section>
+        </>
+      )}
 
-      {/* 리스트 영역 */}
-      <section className="wrongnote-list">
-        {loading && (
-          <div className="wrongnote-list__loading">로딩 중...</div>
-        )}
+      {/* 로딩 / 에러 */}
+      {isLoading && (
+        <div className="wrongnote-list__loading">로딩 중...</div>
+      )}
 
-        {error && <div className="wrongnote-list__error">{error}</div>}
+      {isError && !isLoading && (
+        <div className="wrongnote-list__error">
+          <p>오답 기록을 불러오는 중 오류가 발생했습니다.</p>
+          <button className="retry-btn" onClick={() => refetch()}>
+            다시 시도
+          </button>
+        </div>
+      )}
 
-        {!loading && !error && processedItems.length === 0 && (
-          <div className="wrongnote-list__empty">오답 기록이 없습니다.</div>
-        )}
+      {/* Empty 상태 (테이블 테두리/배경 없이, 필터/액션 미노출) */}
+      {!isLoading && !isError && showEmptyNoData && (
+        <EmptyState
+          icon={FileQuestion}
+          title="오답 기록이 없습니다."
+          description="퀴즈나 학습을 진행하면, 틀린 단어들이 여기에 모입니다."
+          actionLabel="이전 페이지로 돌아가기"
+          onAction={() => navigate(-1)}
+          variant="page"
+        />
+      )}
 
-        {!loading && !error && processedItems.length > 0 && (
-          <table className="wrongnote-table">
-            <thead>
-              <tr>
-                <th>
-                  {/* 현재 페이지 전체 선택/해제 */}
-                  <input
-                    type="checkbox"
-                    className="sl-checkbox"
-                    checked={
-                      pagedItems.length > 0 &&
-                      pagedItems.every((item) =>
-                        selectedIds.includes(item.wrongWordId)
-                      )
-                    }
-                    onChange={(e) => {
-                      const { checked } = e.target;
-                      setSelectedIds((prev) => {
-                        if (checked) {
-                          const idsToAdd = pagedItems
-                            .map((i) => i.wrongWordId)
-                            .filter((id) => !prev.includes(id));
-                          return [...prev, ...idsToAdd];
-                        } else {
-                          const pageIds = pagedItems.map(
-                            (i) => i.wrongWordId
-                          );
-                          return prev.filter((id) => !pageIds.includes(id));
-                        }
-                      });
+      {!isLoading && !isError && showEmptyFiltered && (
+        <EmptyState
+          icon={FileQuestion}
+          title="조건에 맞는 오답 기록이 없습니다."
+          description="스토리 / 정렬 조건을 변경하거나, 다른 목록으로 이동해 보세요."
+          actionLabel="이전 페이지로 돌아가기"
+          onAction={() => navigate(-1)}
+          variant="page"
+        />
+      )}
+
+      {/* 리스트 + 테이블 (카드 테두리/배경 포함) */}
+      {showTable && (
+        <>
+          <section className="wrongnote-list">
+            <table className="wrongnote-table">
+              <thead>
+                <tr>
+                  <th>
+                    {/* 현재 페이지 전체 선택/해제 */}
+                    <input
+                      type="checkbox"
+                      className="sl-checkbox"
+                      checked={
+                        pagedItems.length > 0 &&
+                        pagedItems.every((item) =>
+                          selectedIds.includes(item.wrongWordId)
+                        )
+                      }
+                      onChange={(e) => {
+                        const { checked } = e.target;
+                        setSelectedIds((prev) => {
+                          if (checked) {
+                            const idsToAdd = pagedItems
+                              .map((i) => i.wrongWordId)
+                              .filter((id) => !prev.includes(id));
+                            return [...prev, ...idsToAdd];
+                          } else {
+                            const pageIds = pagedItems.map(
+                              (i) => i.wrongWordId
+                            );
+                            return prev.filter(
+                              (id) => !pageIds.includes(id)
+                            );
+                          }
+                        });
+                      }}
+                    />
+                  </th>
+                  <th>단어</th>
+                  <th>뜻</th>
+                  <th>난이도</th>
+                  <th>마지막 오답</th>
+                  <th>오답 횟수</th>
+                  <th>스토리</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {pagedItems.map((item) => (
+                  <WrongNoteItem
+                    key={item.wrongWordId}
+                    item={item}
+                    selected={selectedIds.includes(item.wrongWordId)}
+                    onToggleSelect={(e) => {
+                      e.stopPropagation();
+                      toggleSelect(item.wrongWordId);
                     }}
+                    onClick={() => handleRowClick(item)}
                   />
-                </th>
-                <th>단어</th>
-                <th>뜻</th>
-                <th>난이도</th>
-                <th>마지막 오답</th>
-                <th>오답 횟수</th>
-                <th>스토리</th>
-              </tr>
-            </thead>
+                ))}
+              </tbody>
+            </table>
+          </section>
 
-            <tbody>
-              {pagedItems.map((item) => (
-                <WrongNoteItem
-                  key={item.wrongWordId}
-                  item={item}
-                  selected={selectedIds.includes(item.wrongWordId)}
-                  onToggleSelect={(e) => {
-                    e.stopPropagation();
-                    toggleSelect(item.wrongWordId);
-                  }}
-                  onClick={() => handleRowClick(item)}
-                />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      {/* 페이지네이션 */}
-      <div className="wrongnote-pagination">
-        <Pagination page={page} totalPages={totalPages} onChange={setPage} />
-      </div>
+          {/* 페이지네이션 */}
+          {totalPages > 0 && (
+            <div className="wrongnote-pagination">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onChange={setPage}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

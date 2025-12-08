@@ -1,11 +1,12 @@
+// src/pages/quiz/components/QuizQuestion.jsx
 import React from "react";
-
+import "./QuizQuestion.css";
 export function QuizQuestion({
-  question,         // { choices: [...], answerId: ... }
-  selectedChoiceId, // 사용자가 선택한 답의 ID
+  question,         // { choices: [{id, text}], answerId }
+  selectedChoiceId, // 숫자 index
   isAnswered,       // 정답 확인 여부
-  isCorrect,        // 전체 정답 여부
-  onSelect          // 답 선택 시 실행할 함수(choiceId)
+  isCorrect,        // 전체 정답 여부 (접근성용)
+  onSelect,         // 선택 시 (choiceId:number) 호출
 }) {
   if (!question || !question.choices) return null;
 
@@ -52,12 +53,8 @@ export function QuizQuestion({
             aria-disabled={isAnswered}
           >
             <span className="quiz-option-main">
-              <span className="quiz-option-label">
-                {labelChar}
-              </span>
-              <span className="quiz-option-text">
-                {choice.text}
-              </span>
+              <span className="quiz-option-label">{labelChar}</span>
+              <span className="quiz-option-text">{choice.text}</span>
             </span>
 
             {isAnswered && (

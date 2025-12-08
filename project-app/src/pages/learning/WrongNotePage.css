@@ -1,8 +1,8 @@
-/* =========================================================
-   WrongNotePage – 오답 노트 (오렌지 테마)
-   ========================================================= */
+/* src/pages/wrongnote/WrongNotePage.css */
 
-/* 레이아웃 + 이 페이지 전용 오렌지 액센트 변수 */
+/* =========================================================
+   1. 페이지 레이아웃 & 오렌지 테마 변수
+   ========================================================= */
 .wrongnote-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -11,7 +11,6 @@
   flex-direction: column;
   gap: 16px;
 
-  /* warning 팔레트 기반 오렌지 액센트 */
   --wrongnote-accent-bg:        var(--warning-50);
   --wrongnote-accent-bg-strong: var(--warning-100);
   --wrongnote-accent-border:    var(--warning-200);
@@ -19,7 +18,9 @@
   --wrongnote-accent-main-dark: var(--warning-600);
 }
 
-/* 헤더 */
+/* =========================================================
+   2. 헤더
+   ========================================================= */
 .wrongnote-header {
   text-align: center;
 }
@@ -38,9 +39,8 @@
 }
 
 /* =========================================================
-   헤더 하단 필터 + 초기화
+   3. 헤더 하단 필터 + 초기화
    ========================================================= */
-
 .wrongnote-header__filters {
   display: flex;
   flex-wrap: wrap;
@@ -49,8 +49,6 @@
   margin-top: 8px;
 }
 
-/* FilterDropdown – 기본 스타일은 FilterDropdown.css,
-   여기서는 오답 노트용 오렌지 테마만 오버라이드 */
 .wrongnote-page .dropdown-btn:hover {
   background-color: var(--wrongnote-accent-bg);
 }
@@ -61,7 +59,6 @@
   color: var(--wrongnote-accent-main-dark);
   font-weight: 600;
 }
-
 
 .wrongnote-page .dropdown-menu {
   background-color: var(--surface-1);
@@ -78,7 +75,6 @@
   font-weight: 600;
 }
 
-/* 필터 초기화 버튼 (WordList와 톤 통일 + 오렌지) */
 .wrongnote-page .filter-reset-btn:hover {
   background-color: var(--wrongnote-accent-bg);
   border-color: var(--wrongnote-accent-main);
@@ -92,7 +88,7 @@
 }
 
 /* =========================================================
-   선택 액션 영역
+   4. 선택 액션 영역
    ========================================================= */
 .wrongnote-actions {
   margin-top: 8px;
@@ -124,7 +120,6 @@
   gap: 8px;
 }
 
-/* StoryLex Bottom Buttons – 이전 공통 스타일 복원 */
 .sl-btn {
   display: inline-flex;
   align-items: center;
@@ -146,8 +141,8 @@
 }
 
 .sl-btn:hover:not(:disabled) {
-  background-color: var(--warning-500) !important; /* 주황 */
-  border-color: var(--warning-500) !important;
+  background-color: var(--wrongnote-accent-main) !important;
+  border-color: var(--wrongnote-accent-main) !important;
   color: #ffffff !important;
 }
 
@@ -168,9 +163,8 @@
 }
 
 /* =========================================================
-   리스트 카드 / 테이블
+   5. 리스트 카드 / 테이블
    ========================================================= */
-
 .wrongnote-list {
   background-color: #ffffff;
   border-radius: 24px;
@@ -180,15 +174,30 @@
   overflow: hidden;
 }
 
+/* EmptyState가 표시될 때는 카드 테두리/배경 제거 */
+.wrongnote-list--empty {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* 로딩 / 에러 텍스트 */
 .wrongnote-list__loading,
-.wrongnote-list__error,
-.wrongnote-list__empty {
+.wrongnote-list__error {
   padding: 28px 20px;
   text-align: center;
   font-size: 0.95rem;
   color: #9ca3af;
 }
 
+/* EmptyState가 리스트 카드 안에 올 때 패딩 보정 */
+.wrongnote-list .empty-state.empty-state--page {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* 테이블 기본 */
 .wrongnote-table {
   width: 100%;
   border-collapse: collapse;
@@ -226,9 +235,8 @@
 }
 
 /* =========================================================
-   스토리 뱃지
+   6. 스토리 뱃지
    ========================================================= */
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -239,7 +247,7 @@
 }
 
 .badge--used {
-  background-color: rgba(251, 146, 60, 0.12); /* 연한 주황 */
+  background-color: rgba(251, 146, 60, 0.12);
   color: #ea580c;
 }
 
@@ -249,9 +257,8 @@
 }
 
 /* =========================================================
-   체크박스 (이 페이지만 오렌지 포커스)
+   7. 체크박스
    ========================================================= */
-
 .wrongnote-page .sl-checkbox {
   appearance: none !important;
   width: 18px;
@@ -287,15 +294,14 @@
 }
 
 /* =========================================================
-   페이지네이션 (이 페이지만 오렌지)
+   8. 페이지네이션
    ========================================================= */
-
 .wrongnote-pagination {
   margin-top: 16px;
   display: flex;
   justify-content: center;
 }
-/* 현재 페이지(활성 페이지) */
+
 .wrongnote-page .wrongnote-pagination button.is-active,
 .wrongnote-page .wrongnote-pagination button[aria-current="page"] {
   background-color: var(--wrongnote-accent-main);
@@ -303,16 +309,14 @@
   color: #ffffff;
 }
 
-/* 비활성 */
 .wrongnote-page .wrongnote-pagination button:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
 /* =========================================================
-   반응형
+   9. 반응형
    ========================================================= */
-
 @media (max-width: 768px) {
   .wrongnote-page {
     padding: 20px 12px 28px;
@@ -363,4 +367,3 @@
     padding-top: 10px;
   }
 }
-

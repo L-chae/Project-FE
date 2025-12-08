@@ -1,20 +1,25 @@
 // src/pages/quiz/QuizPage.jsx
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import clsx from "clsx";
+import { AlertCircle } from "lucide-react";
 
 import Button from "../../components/common/Button";
+import Spinner from "../../components/common/Spinner";
+import { ProgressBar } from "./components/ProgressBar";
+import { QuizQuestion } from "./components/QuizQuestion";
 import "./QuizPage.css";
 
-// API 모듈
 import { fetchQuizzes, submitQuizResult } from "../../api/quizApi";
 
-// 문제 객체에서 단어만 추출하는 헬퍼
+import { LearningProgressHeader } from "../learning/components/LearningProgressHeader";
+import { LearningResultSection } from "../learning/components/LearningResultSection";
+
+const MAX_WRONG_DISPLAY = 20;
+
+// 문제 객체에서 단어만 추출
 const extractWordFromQuestion = (q) => {
   if (!q) return "";
 
-  // 백엔드가 word 필드를 내려주면 그게 가장 정확함
   if (typeof q.word === "string" && q.word.trim().length > 0) {
     return q.word.trim();
   }
@@ -26,23 +31,20 @@ const extractWordFromQuestion = (q) => {
 
   if (!src) return "";
 
-  // 1) "[복습] 'Abstract'의 의미는?" → 작은따옴표 안의 단어만 추출
   const singleMatch = src.match(/'([^']+)'/);
   if (singleMatch && singleMatch[1]) {
     return singleMatch[1].trim();
   }
 
-  // 2) "Abstract" 처럼 큰따옴표 사용 시
   const doubleMatch = src.match(/"([^"]+)"/);
   if (doubleMatch && doubleMatch[1]) {
     return doubleMatch[1].trim();
   }
 
-  // 3) 아무 것도 못 찾으면 대충 첫 단어 사용 (fallback)
   return src
-    .split(/\s+/)[0] // 첫 단어
-    .replace(/^[\[\(]+/, "") // 앞의 [, ( 제거
-    .replace(/[\]\)\?:]+$/, "") // 뒤의 ], ), ?, : 제거
+    .split(/\s+/)[0]
+    .replace(/^[\[\(]+/, "")
+    .replace(/[\]\)\?:]+$/, "")
     .trim();
 };
 
@@ -50,17 +52,14 @@ const QuizPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // 1️⃣ URL 파라미터 파싱 및 레벨 검증
   const source = searchParams.get("source"); // "quiz" | "wrong-note"
   const limit = searchParams.get("limit") || 10;
-
   const rawLevel = searchParams.get("level");
-  const level = rawLevel === "all" || !rawLevel ? "1" : rawLevel;
 
-  // 모드 판별
+  const levelLabel = rawLevel === "all" || !rawLevel ? "All" : rawLevel;
+  const levelForApi = rawLevel === "all" || !rawLevel ? "1" : rawLevel;
   const isWrongMode = source === "wrong-note";
 
-  // 상태 관리
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -68,25 +67,30 @@ const QuizPage = () => {
   const [isFinished, setIsFinished] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // 이번 퀴즈 세션에서 틀린 단어 목록 (정규/오답 모드 공통)
   const [wrongQuizWords, setWrongQuizWords] = useState([]);
 
-  // 2️⃣ 퀴즈 데이터 가져오기
+  const [animateBars, setAnimateBars] = useState(false);
+
+  // 결과 화면 막대 애니메이션 제어
+  useEffect(() => {
+    if (isFinished) {
+      const id = setTimeout(() => setAnimateBars(true), 60);
+      return () => clearTimeout(id);
+    }
+    setAnimateBars(false);
+  }, [isFinished]);
+
+  // 퀴즈 데이터 로드
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        console.log(
-          `📡 데이터 요청: 모드=${source}, 문항수=${limit}, 난이도=${level}`
-        );
-
         const data = await fetchQuizzes({
           source,
           limit: Number(limit),
-          level,
+          level: levelForApi,
         });
 
         if (!data || data.length === 0) {
@@ -98,7 +102,7 @@ const QuizPage = () => {
         setSelectedOption(null);
         setScore(0);
         setIsFinished(false);
-        setWrongQuizWords([]); // 새 세션 시작 시 초기화
+        setWrongQuizWords([]);
       } catch (err) {
         console.error("❌ 퀴즈 로드 실패:", err);
         setError("문제를 불러오는 중 오류가 발생했습니다.");
@@ -108,269 +112,304 @@ const QuizPage = () => {
     };
 
     loadData();
-  }, [source, limit, level]);
+  }, [source, limit, levelForApi]);
 
-  // 정답 선택 핸들러
-  const handleOptionClick = (index) => {
-    if (selectedOption !== null) return;
+  const wrapperClassName = [
+    "quiz-page-wrapper",
+    isWrongMode ? "quiz-page-wrapper--wrong" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-    const currentQ = questions[currentIndex];
-    setSelectedOption(index);
-
-    const isCorrect = index === currentQ.answer;
-
-    if (isCorrect) {
-      setScore((prev) => prev + 1);
-    } else {
-      // 오답이면 모드 상관없이 이번 세션 오답 단어로 수집
-      setWrongQuizWords((prev) => {
-        const wordText = extractWordFromQuestion(currentQ);
-        const normalized = (wordText || "").trim();
-        if (!normalized) return prev;
-
-        const lower = normalized.toLowerCase();
-
-        // 이미 동일 단어가 있으면 중복 추가 X
-        if (prev.some((w) => w.text.toLowerCase() === lower)) {
-          return prev;
-        }
-
-        const newItem = {
-          text: normalized, // StoryCreatePage에서 그대로 칩에 표시할 단어
-          wordId: currentQ.wordId,
-          wrongWordId: currentQ.wrongWordId,
-          meaning: currentQ.meaning,
-        };
-
-        return [...prev, newItem];
-      });
-    }
-  };
-
-  // 3️⃣ 다음 문제 이동 및 결과 전송
-  const handleNext = async () => {
-    if (selectedOption === null) return;
-
-    if (currentIndex + 1 < questions.length) {
-      // 다음 문제로 이동
-      setCurrentIndex((prev) => prev + 1);
-      setSelectedOption(null);
-    } else {
-      // 마지막 문제 → 이미 handleOptionClick 에서 점수 계산됨
-      try {
-        await submitQuizResult({
-          mode: isWrongMode ? "wrong" : "normal",
-          score,
-          total: questions.length,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (err) {
-        console.error("❌ 결과 전송 실패:", err);
-      }
-
-      setIsFinished(true);
-    }
-  };
-
-  // ─── 화면 렌더링 ───
-
+  // 로딩
   if (isLoading) {
-    return <div className="loading-screen">퀴즈를 불러오는 중입니다...</div>;
-  }
-
-  if (error) {
     return (
-      <div className="error-screen">
-        <AlertCircle size={48} className="mb-4" color="var(--danger-500)" />
-        <h3>오류 발생</h3>
-        <p className="mt-12">{error}</p>
-        <div className="mt-24">
-          <Button variant="secondary" size="md" onClick={() => navigate(-1)}>
-            뒤로 가기
-          </Button>
+      <div className={wrapperClassName}>
+        <div className="quiz-layout">
+          <Spinner fullHeight={true} message="퀴즈를 불러오는 중입니다..." />
         </div>
       </div>
     );
   }
 
-  const themeClass = isWrongMode ? "theme-orange" : "";
-
-  return (
-    <div className={`quiz-page-wrapper ${themeClass}`}>
-      <div className="quiz-container">
-        {/* 헤더 영역 */}
-        <header className="quiz-header">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/learning")}
-            aria-label="뒤로 가기"
-            style={{ padding: "8px" }}
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <div className="quiz-title">
-            {isWrongMode ? "오답 퀴즈" : "실전 퀴즈"}
-            <span className="quiz-badge">
-              {isWrongMode ? "복습" : `Lv.${level}`}
-            </span>
-          </div>
-          <div style={{ width: "40px" }} />
-        </header>
-
-        {/* 퀴즈 진행 화면 */}
-        {!isFinished ? (
-          <div className="quiz-content">
-            {/* 진행 상태 바 */}
-            <div className="progress-area">
-              <div className="progress-track">
-                <div
-                  className="progress-fill"
-                  style={{
-                    width: `${
-                      ((currentIndex + 1) / questions.length) * 100
-                    }%`,
-                  }}
-                />
-              </div>
-              <div className="progress-text">
-                {currentIndex + 1} / {questions.length}
-              </div>
-            </div>
-
-            {/* 문제 텍스트 */}
-            <div className="question-section">
-              <h2 className="question-text">
-                {questions[currentIndex].question}
-              </h2>
-            </div>
-
-            {/* 보기 버튼 영역 */}
-            <div className="options-grid">
-              {questions[currentIndex].options.map((option, idx) => {
-                const currentQ = questions[currentIndex];
-
-                const cardClass = clsx("option-card", {
-                  correct:
-                    selectedOption !== null && idx === currentQ.answer,
-                  wrong:
-                    selectedOption !== null &&
-                    idx === selectedOption &&
-                    idx !== currentQ.answer,
-                  disabled:
-                    selectedOption !== null &&
-                    idx !== currentQ.answer &&
-                    idx !== selectedOption,
-                });
-
-                return (
-                  <button
-                    key={idx}
-                    className={cardClass}
-                    onClick={() => handleOptionClick(idx)}
-                    disabled={selectedOption !== null}
-                  >
-                    <span className="option-number">{idx + 1}</span>
-                    <span className="option-text">{option}</span>
-
-                    {selectedOption !== null && idx === currentQ.answer && (
-                      <CheckCircle2
-                        className="result-icon correct"
-                        size={20}
-                      />
-                    )}
-                    {selectedOption !== null &&
-                      idx === selectedOption &&
-                      idx !== currentQ.answer && (
-                        <XCircle className="result-icon wrong" size={20} />
-                      )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* 다음 버튼 */}
-            <div className="mt-24">
-              {selectedOption !== null && (
-                <Button
-                  variant="primary"
-                  full
-                  size="lg"
-                  onClick={handleNext}
-                >
-                  {currentIndex + 1 === questions.length
-                    ? "결과 보기"
-                    : "다음 문제"}
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          // 결과 화면
-          <div className="result-section">
-            <div className="score-circle">
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  lineHeight: 1,
-                }}
-              >
-                <span className="score-number">{score}</span>
-                <span className="score-total">/ {questions.length}</span>
-              </div>
-            </div>
-            <h3>
-              {score === questions.length ? "완벽해요! 🎉" : "수고하셨어요!"}
-            </h3>
-            <p className="result-msg">
-              {isWrongMode
-                ? "틀린 문제를 다시 한번 확인해보세요."
-                : "오늘의 학습 목표를 달성했습니다."}
-            </p>
-
-            <div className="result-actions">
+  // 에러
+  if (error) {
+    return (
+      <div className={wrapperClassName}>
+        <div className="quiz-layout">
+          <div className="quiz-page quiz-page--error">
+            <AlertCircle size={40} className="quiz-error-icon" />
+            <h3>오류 발생</h3>
+            <p>{error}</p>
+            <div className="quiz-error-actions">
               <Button
                 variant="secondary"
-                full
-                size="lg"
-                onClick={() => {
-                  // 정규/오답 모드 공통: 이번 세션의 '틀린 단어들'을 StoryCreatePage로 전달
-                  const wrongWordsPayload = wrongQuizWords
-                    .filter((w) => w.text && w.text.trim().length > 0)
-                    .map((w) => ({
-                      text: w.text.trim(),
-                      word: w.text.trim(),
-                      wordId: w.wordId ?? null,
-                      wrongWordId: w.wrongWordId ?? null,
-                      meaning: w.meaning ?? "",
-                    }));
-
-                  navigate("/stories/create", {
-                    state: {
-                      from: isWrongMode ? "wrong-quiz" : "quiz",
-                      mode: isWrongMode ? "wrong" : "normal",
-                      score,
-                      total: questions.length,
-                      wrongWords: wrongWordsPayload,
-                    },
-                  });
-                }}
+                size="md"
+                onClick={() => navigate(-1)}
               >
-                AI 스토리 생성하기
-              </Button>
-
-              <Button
-                variant="primary"
-                full
-                size="lg"
-                onClick={() => navigate("/learning")}
-              >
-                학습 홈으로 이동
+                뒤로 가기
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  const themeClass = isWrongMode ? "quiz-page--wrong" : "";
+  const totalCount = questions.length || 1;
+  const currentStep = Math.min(currentIndex + 1, totalCount);
+  const incorrectCount = totalCount - score;
+  const accuracy =
+    totalCount > 0 ? Math.round((score / totalCount) * 100) : 0;
+
+  const isAnswered = selectedOption !== null;
+  const currentQuestion = !isFinished ? questions[currentIndex] : null;
+
+  const resultTitle = isWrongMode ? "오답 퀴즈 결과" : "퀴즈 결과";
+  const resultSubtitle = isWrongMode
+    ? "이번에 틀린 문제를 기준으로 약한 단어를 다시 정리해 보세요."
+    : "이번 퀴즈에서 헷갈렸던 단어를 중심으로 한 번 더 복습해 보세요.";
+
+  const wrongSafe = Array.isArray(wrongQuizWords) ? wrongQuizWords : [];
+
+  // 선택지 클릭
+  const handleOptionClick = (choiceIndex) => {
+    if (selectedOption !== null) return;
+
+    const currentQ = questions[currentIndex];
+    setSelectedOption(choiceIndex);
+
+    const isCorrect = choiceIndex === currentQ.answer;
+
+    if (isCorrect) {
+      setScore((prev) => prev + 1);
+      return;
+    }
+
+    // 오답 단어 수집
+    setWrongQuizWords((prev) => {
+      const wordText = extractWordFromQuestion(currentQ);
+      const normalized = (wordText || "").trim();
+      if (!normalized) return prev;
+
+      const lower = normalized.toLowerCase();
+      if (prev.some((w) => w.text.toLowerCase() === lower)) {
+        return prev;
+      }
+
+      const meaning =
+        currentQ.meaningKo ||
+        currentQ.meaning_ko ||
+        currentQ.meaning ||
+        currentQ.korean ||
+        "";
+
+      const newItem = {
+        text: normalized,
+        wordId: currentQ.wordId,
+        wrongWordId: currentQ.wrongWordId,
+        meaning,
+        meaningKo:
+          currentQ.meaningKo || currentQ.meaning_ko || currentQ.korean || "",
+      };
+
+      return [...prev, newItem];
+    });
+  };
+
+  // 다음 문제 / 결과 보기
+  const handleNext = async () => {
+    if (selectedOption === null) return;
+
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1);
+      setSelectedOption(null);
+      return;
+    }
+
+    try {
+      await submitQuizResult({
+        mode: isWrongMode ? "wrong" : "normal",
+        score,
+        total: questions.length,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("❌ 결과 전송 실패:", err);
+    }
+
+    setIsFinished(true);
+  };
+
+  // 결과 화면에서 AI 스토리 이동
+  const handleGoStory = () => {
+    const wrongWordsPayload = wrongSafe
+      .filter((w) => w.text && w.text.trim().length > 0)
+      .map((w) => ({
+        text: w.text.trim(),
+        word: w.text.trim(),
+        wordId: w.wordId ?? null,
+        wrongWordId: w.wrongWordId ?? null,
+        meaning:
+          w.meaningKo || w.meaning_ko || w.meaning || w.korean || "",
+      }));
+
+    navigate("/stories/create", {
+      state: {
+        from: isWrongMode ? "wrong-quiz" : "quiz",
+        mode: isWrongMode ? "wrong" : "normal",
+        score,
+        total: questions.length,
+        wrongWords: wrongWordsPayload,
+      },
+    });
+  };
+
+  const handleGoLearningHome = () => {
+    navigate("/learning");
+  };
+
+  return (
+    <div className={wrapperClassName}>
+      <div className="quiz-layout">
+        {/* 진행 화면 */}
+        {!isFinished && currentQuestion ? (
+          <>
+            {/* 상단 진행 헤더 */}
+            <LearningProgressHeader
+              title={isWrongMode ? "오답 퀴즈" : "실전 퀴즈"}
+              subtitle={
+                isWrongMode
+                  ? "틀렸던 단어들만 다시 객관식으로 점검합니다."
+                  : "객관식 문제로 오늘 학습한 단어를 한 번 더 확인해 보세요."
+              }
+              badgeLabel={`Lv.${levelLabel}`}
+              badgeVariant={isWrongMode ? "orange" : "purple"}
+              showBackButton
+              onBack={handleGoLearningHome}
+              progressText={`${currentStep} / ${totalCount}`}
+              progressVariant={isWrongMode ? "warning" : "primary"}
+              progressBar={
+                <ProgressBar
+                  current={currentStep}
+                  total={totalCount}
+                  variant={isWrongMode ? "warning" : "primary"}
+                  showLabel={false}
+                  className="lp-progress-bar"
+                />
+              }
+            />
+
+            {/* 문제/보기 카드 */}
+            <div className={`quiz-page ${themeClass}`}>
+              <section className="quiz-learning">
+                <main className="quiz-main">
+                  <section className="quiz-question-box">
+                    <h2 className="quiz-question-text">
+                      {currentQuestion.question}
+                    </h2>
+                  </section>
+
+                  <section className="quiz-options-section">
+                    <QuizQuestion
+                      question={{
+                        choices: currentQuestion.options.map(
+                          (text, index) => ({
+                            id: index,
+                            text,
+                          })
+                        ),
+                        answerId: currentQuestion.answer,
+                      }}
+                      selectedChoiceId={selectedOption}
+                      isAnswered={isAnswered}
+                      isCorrect={
+                        isAnswered && selectedOption === currentQuestion.answer
+                      }
+                      onSelect={handleOptionClick}
+                    />
+                  </section>
+
+                  <footer className="quiz-footer">
+                    {isAnswered && (
+                      <Button
+                        variant="primary"
+                        full
+                        size="lg"
+                        onClick={handleNext}
+                      >
+                        {currentIndex + 1 === questions.length
+                          ? "결과 보기"
+                          : "다음 문제"}
+                      </Button>
+                    )}
+                  </footer>
+                </main>
+              </section>
+            </div>
+          </>
+        ) : (
+          // 결과 화면
+          <section className="quiz-learning-result">
+            <header className="quiz-result-header">
+              <h1 className="quiz-result-title">{resultTitle}</h1>
+              <p className="quiz-result-subtitle">{resultSubtitle}</p>
+            </header>
+
+            <LearningResultSection
+              // 헷갈린 단어 카드
+              unknownTitle="이번에 헷갈렸던 단어"
+              unknownSubtitle="이번 퀴즈에서 틀린 문제에 등장한 단어들입니다."
+              emptyUnknownMessage="헷갈린 단어 없이 모두 정확히 맞혔어요."
+              unknownItems={wrongSafe}
+              maxUnknownDisplay={MAX_WRONG_DISPLAY}
+              getUnknownKey={(w, i) => w.wordId ?? w.text ?? i}
+              getUnknownWord={(w) => w.text || w.word || ""}
+              getUnknownMeaning={(w) =>
+                w.meaningKo || w.meaning_ko || w.meaning || w.korean || ""
+              }
+              buildMoreHintMessage={(restCount) =>
+                `그 외 ${restCount}개 단어는 오답 노트에서 계속 확인할 수 있어요.`
+              }
+              // 통계 카드
+              primaryLabel="맞은 문제"
+              primaryValue={`${score}문제`}
+              primaryProgress={
+                <ProgressBar
+                  value={
+                    animateBars ? (score / (totalCount || 1)) * 100 : 0
+                  }
+                  variant="primary"
+                  showLabel={false}
+                  className="quiz-stat-progress"
+                />
+              }
+              primaryValueClassName="stat-known"
+              secondaryLabel="틀린 문제"
+              secondaryValue={`${incorrectCount}문제`}
+              secondaryProgress={
+                <ProgressBar
+                  value={
+                    animateBars
+                      ? (incorrectCount / (totalCount || 1)) * 100
+                      : 0
+                  }
+                  variant="warning"
+                  showLabel={false}
+                  className="quiz-stat-progress"
+                />
+              }
+              secondaryValueClassName="stat-unknown"
+              extraLabel="정답률"
+              extraValue={`${accuracy}%`}
+              // 버튼
+              primaryButtonLabel="AI 스토리 생성하기"
+              onPrimaryButtonClick={handleGoStory}
+              secondaryButtonLabel="학습 홈으로 이동"
+              onSecondaryButtonClick={handleGoLearningHome}
+            />
+          </section>
         )}
       </div>
     </div>

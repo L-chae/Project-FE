@@ -5,13 +5,16 @@ import React, {
   useEffect,
   useContext,
 } from "react";
-import { login as loginApi, logout as logoutApi } from "../api/authApi";
+import {
+  login as loginApi,
+  logout as logoutApi,
+  getMe as getMeApi,
+} from "../api/authApi";
 import {
   getAccessToken,
-  setAccessToken,
-  setRefreshToken,
   clearTokens,
 } from "../utils/storage";
+import useAuthStore from "../store/useAuthStore";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -19,48 +22,66 @@ const AuthContext = createContext({
   user: null,
   login: async () => {},
   logout: async () => {},
-  updateProfileState: () => {},   // ✅ 기본값 추가
+  updateProfileState: () => {},
   loading: false,
 });
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const { user, setUser, clearUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
-  // 최초 로드 시 토큰 + userInfo로 세션 복원
+  // -----------------------------
+  // 앱 최초 로드시 세션 복원
+  // -----------------------------
   useEffect(() => {
-    const checkLogin = async () => {
-      try {
-        const token = getAccessToken();
-        const storedUser = localStorage.getItem("userInfo");
-
-        if (token && storedUser) {
-          setUser(JSON.parse(storedUser));
+    // 목업 모드: 서버 호출 없이 localStorage만 사용
+    if (USE_MOCK) {
+      const stored = localStorage.getItem("userInfo");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setUser(parsed);
+        } catch {
+          clearUser();
         }
+      }
+      setLoading(false);
+      return;
+    }
+
+    // 실서버 모드: accessToken 있으면 /api/user/me로 검증
+    const initAuth = async () => {
+      const token = getAccessToken();
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const me = await getMeApi();
+        setUser(me);
+        localStorage.setItem("userInfo", JSON.stringify(me));
+      } catch (e) {
+        clearTokens();
+        localStorage.removeItem("userInfo");
+        clearUser();
       } finally {
         setLoading(false);
       }
     };
 
-    checkLogin();
-  }, []);
+    initAuth();
+  }, [setUser, clearUser]);
 
-  // 공통 로그인 함수 (MOCK + REAL)
+  // -----------------------------
+  // 로그인
+  // -----------------------------
   const login = async (email, password) => {
-    if (USE_MOCK) {
-      const mockUser = {
-        email,
-        nickname: "Mock User",
-      };
-
-      setAccessToken("mock_access_token");
-      setRefreshToken("mock_refresh_token");
-      localStorage.setItem("userInfo", JSON.stringify(mockUser));
-      setUser(mockUser);
-
-      return mockUser;
-    }
-
+    // authApi.login 이 내부에서
+    // 1) /api/auth/login → 토큰 발급
+    // 2) 토큰 저장
+    // 3) /api/user/me 호출 후 user 반환
     const { user: userData } = await loginApi({ email, password });
 
     setUser(userData);
@@ -68,16 +89,20 @@ export function AuthProvider({ children }) {
     return userData;
   };
 
-  // ✅ 프로필 수정 시 user / localStorage 동기화
+  // -----------------------------
+  // 프로필 수정 시 상태/스토리지 동기화
+  // -----------------------------
   const updateProfileState = (patch) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const nextUser = { ...prev, ...patch };
-      localStorage.setItem("userInfo", JSON.stringify(nextUser));
-      return nextUser;
-    });
+    if (!user) return;
+
+    const nextUser = { ...user, ...patch };
+    setUser(nextUser);
+    localStorage.setItem("userInfo", JSON.stringify(nextUser));
   };
 
+  // -----------------------------
+  // 로그아웃
+  // -----------------------------
   const logout = async () => {
     const storedUser = localStorage.getItem("userInfo");
     let email;
@@ -90,25 +115,31 @@ export function AuthProvider({ children }) {
       email = undefined;
     }
 
-    setUser(null);
+    // 상태/스토리지 초기화
+    clearUser();
     localStorage.removeItem("userInfo");
     clearTokens();
 
-    // MOCK 모드에서는 서버 로그아웃 안 쏴도 됨
-    if (!USE_MOCK && email) {
-      try {
-        await logoutApi(email);
-      } catch {
-        // 서버 에러는 무시
-      }
+    // 서버 로그아웃 호출 (실패해도 화면 쪽은 그대로 진행)
+    try {
+      await logoutApi(email);
+    } catch {
+      // 무시
     }
 
+    // 강제 이동
     window.location.href = "/auth/login";
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, updateProfileState, loading }}
+      value={{
+        user,
+        login,
+        logout,
+        updateProfileState,
+        loading,
+      }}
     >
       {!loading && children}
     </AuthContext.Provider>

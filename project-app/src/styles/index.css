@@ -1,10 +1,7 @@
 /* src/styles/index.css */
 @import "./reset.css";
 @import "./tokens.css";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* 기본 타이포/배경 */
 html {
@@ -80,22 +77,6 @@ a:hover {
 .no-select {
   user-select: none;
   -webkit-user-select: none; /* Safari/Chrome */
-}
-
-/* ----------------------------------------- */
-/* 카드 (공통 구성요소)                     */
-/* ----------------------------------------- */
-
-.card {
-  background: var(--surface-1);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-soft);
-  padding: var(--space-4);
-  border: 1px solid var(--border-subtle);
-
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 /* ----------------------------------------- */

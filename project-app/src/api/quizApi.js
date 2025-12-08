@@ -6,25 +6,15 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 // --------------------------------------------------------
 // 내부 유틸: 백엔드 응답을 프론트에서 쓰기 좋은 형태로 정규화
 // 프론트가 기대하는 형태: { id, question, options: string[], answer: number }
+// + 추가: word, meaning, meaningKo, partOfSpeech, level 등을 최대한 공통 필드로 맞춰줌
 // --------------------------------------------------------
 const normalizeQuizItem = (raw, index) => {
   if (!raw) return null;
 
-  // 이미 기대 형태인 경우
-  if (
-    typeof raw.id !== "undefined" &&
-    typeof raw.question === "string" &&
-    Array.isArray(raw.options) &&
-    typeof raw.answer === "number"
-  ) {
-    return raw;
-  }
-
-  // 백엔드가 이런 형태로 줄 수도 있다고 가정:
-  // { quizId, questionText, choices, answerIndex }
-  // { wordId, word, options, answerIndex } 등
+  // id
   const id = raw.quizId ?? raw.id ?? raw.wordId ?? index ?? 0;
 
+  // 질문 텍스트
   const question =
     raw.questionText ??
     raw.question ??
@@ -32,23 +22,72 @@ const normalizeQuizItem = (raw, index) => {
     raw.prompt ??
     "질문 내용이 없습니다.";
 
-  const options = raw.options ?? raw.choices ?? [];
+  // 보기
+  const optionsRaw = raw.options ?? raw.choices ?? [];
+  const options = Array.isArray(optionsRaw) ? optionsRaw : [];
 
-  const answer =
+  // 정답 인덱스
+  const rawAnswer =
     typeof raw.answerIndex === "number"
       ? raw.answerIndex
       : typeof raw.correctIndex === "number"
       ? raw.correctIndex
+      : typeof raw.correctOptionIndex === "number"
+      ? raw.correctOptionIndex
       : typeof raw.answer === "number"
       ? raw.answer
       : 0;
 
-    return {
+  const answer = Number.isFinite(rawAnswer) ? rawAnswer : 0;
+
+  // 단어(영어)
+  const word =
+    typeof raw.word === "string" && raw.word.trim().length > 0
+      ? raw.word.trim()
+      : raw.baseWord ??
+        raw.mainWord ??
+        "";
+
+  // 한글 뜻 / 의미 필드 정규화
+  const meaningKoSource =
+    raw.meaningKo ??
+    raw.meaning_ko ??
+    raw.korean ??
+    (typeof raw.meaning === "string" ? raw.meaning : undefined);
+
+  const meaningKo = typeof meaningKoSource === "string" ? meaningKoSource : "";
+  const meaning =
+    typeof raw.meaning === "string" && raw.meaning.trim().length > 0
+      ? raw.meaning
+      : meaningKo;
+
+  // 품사
+  const partOfSpeech =
+    raw.partOfSpeech ??
+    raw.pos ??
+    raw.part_of_speech ??
+    "";
+
+  // 레벨
+  const level =
+    raw.level ??
+    raw.wordLevel ??
+    raw.difficulty ??
+    raw.levelId ??
+    null;
+
+  // 원본 필드는 유지하되, 정규화된 필드가 우선하도록 마지막에 덮어쓰기
+  return {
     ...raw,
     id,
     question,
     options,
     answer,
+    word,
+    meaning,
+    meaningKo,
+    partOfSpeech,
+    level,
   };
 };
 
@@ -74,7 +113,6 @@ const normalizeQuizListResponse = (data) => {
 //    프론트 파라미터: { source: 'quiz' | 'wrong-note', limit: number, level: string }
 // ============================================================
 export const fetchQuizzes = async (params) => {
-  // params: { source, limit, level }
   if (USE_MOCK) {
     return mockFetchQuizzes(params);
   }
@@ -84,18 +122,18 @@ export const fetchQuizzes = async (params) => {
 
     const res = await httpClient.get("/api/quiz", {
       params: {
-        mode,               // normal | wrong
-        count: params.limit, // 백엔드 명세: /api/quiz?mode=normal&count=10&level=1
+        mode,                // normal | wrong
+        count: params.limit, // /api/quiz?mode=normal&count=10&level=1
         level: params.level,
       },
     });
 
     const list = normalizeQuizListResponse(res.data);
 
-    // 백엔드가 count를 무시하고 더 많이 줘도 프론트에서 제한
-    const limit = typeof params.limit === "number"
-      ? params.limit
-      : Number(params.limit);
+    const limit =
+      typeof params.limit === "number"
+        ? params.limit
+        : Number(params.limit);
 
     return Number.isFinite(limit) && limit > 0
       ? list.slice(0, limit)
@@ -137,32 +175,29 @@ const mockFetchQuizzes = (params) => {
             // 오답 다시 풀기용 데이터 (주황색 테마)
             {
               id: 101,
+              word: "Abstract",
+              meaningKo: "추상적인",
+              partOfSpeech: "Adj",
               question: "[복습] 'Abstract'의 의미는?",
               options: ["구체적인", "추상적인", "단순한", "복잡한"],
               answer: 1,
             },
             {
               id: 102,
+              word: "Yield",
+              meaningKo: "굴복하다",
+              partOfSpeech: "Verb",
               question: "[복습] 'Yield'의 뜻은?",
               options: ["굴복하다", "방패", "공격하다", "머무르다"],
               answer: 0,
             },
             {
               id: 103,
+              word: "Candid",
+              meaningKo: "솔직한",
+              partOfSpeech: "Adj",
               question: "[복습] 'Candid'의 동의어는?",
               options: ["Frank", "Secret", "Shy", "Rude"],
-              answer: 0,
-            },
-            {
-              id: 104,
-              question: "[복습] 'Inevitable'의 뜻은?",
-              options: ["피할 수 없는", "우연한", "행복한", "드문"],
-              answer: 0,
-            },
-            {
-              id: 105,
-              question: "[복습] 'Benevolent'의 뜻은?",
-              options: ["자비로운", "사악한", "이기적인", "게으른"],
               answer: 0,
             },
           ]
@@ -170,33 +205,21 @@ const mockFetchQuizzes = (params) => {
             // 정규 학습용 데이터 (보라색 테마)
             {
               id: 1,
+              word: "Apple",
+              meaningKo: "사과",
+              partOfSpeech: "Noun",
               question: "'Apple'의 뜻은 무엇인가요?",
               options: ["포도", "사과", "바나나", "오렌지"],
               answer: 1,
             },
             {
               id: 2,
+              word: "Happy",
+              meaningKo: "행복한",
+              partOfSpeech: "Adj",
               question: "'Happy'의 반대말은?",
               options: ["Sad", "Joyful", "Excited", "Glad"],
               answer: 0,
-            },
-            {
-              id: 3,
-              question: "'Library'는 무엇을 하는 곳인가요?",
-              options: ["운동", "요리", "독서", "쇼핑"],
-              answer: 2,
-            },
-            {
-              id: 4,
-              question: "'Run'의 과거형은?",
-              options: ["Runned", "Running", "Ran", "Run"],
-              answer: 2,
-            },
-            {
-              id: 5,
-              question: "'Water'의 뜻은?",
-              options: ["불", "흙", "공기", "물"],
-              answer: 3,
             },
           ];
 

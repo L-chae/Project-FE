@@ -66,23 +66,6 @@ ul {
   100% { transform: scale(1); }
 }
 
-/* --- 4. 공통 카드 스타일 --- */
-.card {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 32px;
-  padding: 32px;
-  box-shadow: var(--shadow-soft);
-  position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(108, 92, 231, 0.15);
-}
-
 /* --- 5. Hero Section --- */
 .hero-section {
   padding-bottom: 60px;

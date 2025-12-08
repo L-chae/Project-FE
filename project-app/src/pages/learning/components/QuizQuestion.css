@@ -1,3 +1,4 @@
+/* src/pages/quiz/components/QuizQuestion.css */
 /* =========================================
    퀴즈 선택지 버튼 (웹 학습 최적화 버전)
    ========================================= */
@@ -89,26 +90,27 @@
   color: var(--color-error);
 }
 
-/* Hover / Focus (풀이 중에만 적용) */
+/* Hover / Focus (풀이 중에만 적용)
+   → 페이지 테마 색상 사용 */
 .quiz-option-btn:hover:not(:disabled):not(.correct):not(.wrong) {
-  border-color: var(--primary-400);
-  background: var(--primary-50);
-  color: var(--primary-800);
+  border-color: var(--theme-color);
+  background: var(--theme-bg-subtle);
+  color: var(--theme-color-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
 }
 
 .quiz-option-btn:focus-visible {
-  outline: 2px solid var(--primary-400);
+  outline: 2px solid var(--theme-color);
   outline-offset: 2px;
 }
 
 /* 선택 상태 (풀이 중) */
 .quiz-option-btn.selected {
-  background: var(--primary-500);
-  border-color: var(--primary-500);
+  background: var(--theme-color);
+  border-color: var(--theme-color);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
 }
 
 .quiz-option-btn.selected .quiz-option-label {

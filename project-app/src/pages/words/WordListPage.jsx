@@ -1,30 +1,21 @@
-// src/pages/words/WordListPage.jsx
-import {
-  ArrowRight,
-  FileQuestion,
-  LayoutGrid,
-  RotateCcw,
-  Search,
-  Star,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, FileQuestion, LayoutGrid, RotateCcw, Search, Star } from "lucide-react";
+import { addFavorite, getCompletedList, getFavoriteList, getWordList, removeFavorite } from "../../api/wordApi";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  addFavorite,
-  getCompletedList,
-  getFavoriteList,
-  getWordList,
-  removeFavorite,
-} from "../../api/wordApi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Card from "../../components/common/Card";
 import Input from "../../components/common/Input";
 import PageHeader from "../../components/common/PageHeader";
 import Pagination from "../../components/common/Pagination";
 import Spinner from "../../components/common/Spinner";
 import FilterDropdown from "../../components/common/FilterDropdown";
+import EmptyState from "../../components/common/EmptyState";
 import "./WordListPage.css";
 
-// --- 필터 옵션 ---
+// =========================================
+// 필터 옵션
+// =========================================
+
 // 품사 필터
 const CATEGORY_OPTIONS = [
   { label: "전체 품사", value: "All" },
@@ -58,95 +49,114 @@ const LEVEL_OPTIONS = [
 ];
 
 const FILTER_INITIAL = { category: "All", domain: "All", level: "All" };
+const WORDS_QUERY_KEY = ["words", "list"];
 
 function WordListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
 
-  // --- 상태 관리 ---
-  const [words, setWords] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // =========================================
+  // 상태 관리 (UI용)
+  // =========================================
   const [search, setSearch] = useState("");
-  const [mode, setMode] = useState("all"); // all / favorite
+  const [mode, setMode] = useState("all"); // all | favorite
   const [filter, setFilter] = useState(FILTER_INITIAL);
-  const [sortKey, setSortKey] = useState("default"); // default / alphabet / level
+  const [sortKey, setSortKey] = useState("default"); // default | alphabet | level
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  // --- 데이터 로딩 ---
-  useEffect(() => {
-    let cancelled = false;
+  // =========================================
+  // 데이터 로딩 (React Query)
+  // =========================================
+  const {
+  data: words = [],
+  isLoading,
+  isError,
+  error,
+} = useQuery({
+  queryKey: WORDS_QUERY_KEY,
+  queryFn: async () => {
+    const [wordPage, favoriteRes, completedRes] = await Promise.all([
+      getWordList(0, 100),
+      getFavoriteList().catch(() => []),
+      getCompletedList().catch(() => []),
+    ]);
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [wordRes, favoriteRes, completedRes] = await Promise.all([
-          getWordList(0, 100),
-          getFavoriteList().catch(() => []),
-          getCompletedList().catch(() => []),
-        ]);
+    const baseWords = Array.isArray(wordPage?.content)
+      ? wordPage.content
+      : [];
 
-        if (cancelled) return;
-
-        const baseWords = Array.isArray(wordRes?.content)
-          ? wordRes.content
-          : wordRes || [];
-
-        const favoriteIds = new Set(
-          (favoriteRes || []).map((f) => Number(f.wordId))
-        );
-        const completedIds = new Set(
-          (completedRes || []).map((c) => Number(c.wordId))
-        );
-
-        const merged = baseWords.map((w) => {
-          const id = Number(w.wordId);
-          return {
-            ...w,
-            isFavorite: favoriteIds.has(id) || !!w.isFavorite,
-            isCompleted: completedIds.has(id) || !!w.isCompleted,
-          };
-        });
-
-        setWords(merged);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        if (cancelled) return;
-        setError("단어장을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchData();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // --- 핸들러 ---
-  const handleCardClick = (wordId) => navigate(`/words/${wordId}`);
-
-  const handleToggleFavorite = async (word, e) => {
-    e.stopPropagation();
-    const originalWords = [...words];
-    const currentStatus = word.isFavorite;
-
-    setWords((prev) =>
-      prev.map((w) =>
-        w.wordId === word.wordId ? { ...w, isFavorite: !currentStatus } : w
-      )
+    const favoriteIds = new Set(
+      (favoriteRes || []).map((f) => Number(f.wordId))
+    );
+    const completedIds = new Set(
+      (completedRes || []).map((c) => Number(c.wordId))
     );
 
-    try {
-      currentStatus
-        ? await removeFavorite(word.wordId)
-        : await addFavorite(word.wordId);
-    } catch (err) {
-      console.error("즐겨찾기 실패", err);
-      setWords(originalWords);
-    }
+    return baseWords.map((w) => {
+      const id = Number(w.wordId);
+      return {
+        ...w,
+        isFavorite: favoriteIds.has(id) || !!w.isFavorite,
+        isCompleted: completedIds.has(id) || !!w.isCompleted,
+      };
+    });
+  },
+});
+
+
+  const errorMessage = isError
+    ? "단어장을 불러오지 못했습니다. 잠시 후 다시 시도해주세요."
+    : null;
+
+  // =========================================
+  // 즐겨찾기 토글 (React Query Mutation + 업데이트)
+  // =========================================
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async ({ wordId, isFavorite }) => {
+      if (isFavorite) {
+        await removeFavorite(wordId);
+      } else {
+        await addFavorite(wordId);
+      }
+    },
+    onMutate: async ({ wordId, isFavorite }) => {
+      await queryClient.cancelQueries({ queryKey: WORDS_QUERY_KEY });
+
+      const previousWords = queryClient.getQueryData(WORDS_QUERY_KEY);
+
+      queryClient.setQueryData(WORDS_QUERY_KEY, (old = []) =>
+        old.map((w) =>
+          Number(w.wordId) === Number(wordId)
+            ? { ...w, isFavorite: !isFavorite }
+            : w
+        )
+      );
+
+      return { previousWords };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousWords) {
+        queryClient.setQueryData(WORDS_QUERY_KEY, context.previousWords);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: WORDS_QUERY_KEY });
+    },
+  });
+
+  // =========================================
+  // 이벤트 핸들러
+  // =========================================
+  const handleCardClick = (wordId) => navigate(`/words/${wordId}`);
+
+  const handleToggleFavorite = (word, e) => {
+    e.stopPropagation();
+
+    toggleFavoriteMutation.mutate({
+      wordId: word.wordId,
+      isFavorite: word.isFavorite,
+    });
   };
 
   const handleModeChange = (type) => {
@@ -175,6 +185,9 @@ function WordListPage() {
     setSearchParams({ page: "0" });
   };
 
+  // =========================================
+  // 파생 값
+  // =========================================
   const isFilterActive =
     filter.category !== "All" ||
     filter.domain !== "All" ||
@@ -214,7 +227,7 @@ function WordListPage() {
     },
   ];
 
-  // --- 필터 + 정렬 ---
+  // 필터 + 정렬 적용
   const filteredAndSortedWords = useMemo(() => {
     let result = words.filter((w) => {
       if (mode === "favorite" && !w.isFavorite) return false;
@@ -227,14 +240,10 @@ function WordListPage() {
         return false;
 
       // 분야 필터: filter.domain 값은 category 컬럼과 동일하게 사용
-      if (filter.domain !== "All" && w.category !== filter.domain)
-        return false;
+      if (filter.domain !== "All" && w.category !== filter.domain) return false;
 
       // 난이도 필터
-      if (
-        filter.level !== "All" &&
-        Number(w.level) !== Number(filter.level)
-      )
+      if (filter.level !== "All" && Number(w.level) !== Number(filter.level))
         return false;
 
       // 검색어
@@ -250,7 +259,7 @@ function WordListPage() {
       return true;
     });
 
-    // 정렬
+    // 정렬 (현재 UI에서 sortKey 변경은 없지만, 확장 대비)
     if (sortKey === "alphabet") {
       result.sort((a, b) => (a.word || "").localeCompare(b.word || ""));
     } else if (sortKey === "level") {
@@ -260,7 +269,9 @@ function WordListPage() {
     return result;
   }, [words, mode, filter, search, sortKey]);
 
-  // --- 페이지네이션 ---
+  // =========================================
+  // 페이지네이션
+  // =========================================
   const PAGE_SIZE = 12;
   const totalPages = Math.max(
     1,
@@ -279,9 +290,12 @@ function WordListPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const isEmptyAll = !loading && !error && words.length === 0;
+  // 완전히 비어있는 단어장 여부
+  const isEmptyAll = !isLoading && !errorMessage && words.length === 0;
 
-  // --- 렌더링 ---
+  // =========================================
+  // 렌더링
+  // =========================================
   return (
     <div className="page-container wordlist-page">
       {/* 1. 헤더 영역 */}
@@ -292,85 +306,91 @@ function WordListPage() {
           description="오늘의 학습을 시작하세요."
         />
 
-        <div className="wordlist-stats-wrapper">
-          <nav className="word-stats" aria-label="학습 현황 필터">
-            <div className="word-stats-list">
-              {statItems.map(({ key, label, count, icon, color }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`stat-card no-select ${
-                    mode === key ? "active" : ""
-                  } ${color}`}
-                  onClick={() => handleModeChange(key)}
-                >
-                  <div className={`stat-icon-wrapper bg-${color}`}>
-                    {icon}
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-label">{label}</span>
-                    <span className="stat-count">{count}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </nav>
-        </div>
+        {/* 단어가 있을 때만 카테고리(전체 단어 / 즐겨찾기) 버튼 노출 */}
+        {!isEmptyAll && (
+          <div className="wordlist-stats-wrapper">
+            <nav className="word-stats" aria-label="학습 현황 필터">
+              <div className="word-stats-list">
+                {statItems.map(({ key, label, count, icon, color }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`stat-card no-select ${
+                      mode === key ? "active" : ""
+                    } ${color}`}
+                    onClick={() => handleModeChange(key)}
+                  >
+                    <div className={`stat-icon-wrapper bg-${color}`}>
+                      {icon}
+                    </div>
+                    <div className="stat-info">
+                      <span className="stat-label">{label}</span>
+                      <span className="stat-count">{count}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
-      {/* 2. 컨트롤 영역 */}
-      <section className="wordlist-controls">
-        <div className="controls-left">
-          <div className="filter-container">
-            {[
-              { id: "category", label: "품사", options: CATEGORY_OPTIONS },
-              { id: "domain", label: "분야", options: DOMAIN_OPTIONS },
-              { id: "level", label: "난이도", options: LEVEL_OPTIONS },
-            ].map(({ id, label, options }) => (
-              <FilterDropdown
-                key={id}
-                id={id}
-                label={label}
-                options={options}
-                value={filter[id]}
-                isOpen={openDropdown === id}
-                onToggle={toggleDropdown}     // (id) => ...
-                onChange={selectFilterOption} // (id, value) => ...
+      {/* 2. 컨트롤 영역 (단어가 하나도 없을 때는 숨김) */}
+      {!isEmptyAll && (
+        <section className="wordlist-controls">
+          <div className="controls-left">
+            <div className="filter-container">
+              {[
+                { id: "category", label: "품사", options: CATEGORY_OPTIONS },
+                { id: "domain", label: "분야", options: DOMAIN_OPTIONS },
+                { id: "level", label: "난이도", options: LEVEL_OPTIONS },
+              ].map(({ id, label, options }) => (
+                <FilterDropdown
+                  key={id}
+                  id={id}
+                  label={label}
+                  options={options}
+                  value={filter[id]}
+                  isOpen={openDropdown === id}
+                  onToggle={toggleDropdown}
+                  onChange={selectFilterOption}
+                />
+              ))}
+
+              {isFilterActive && (
+                <button
+                  type="button"
+                  onClick={handleFilterReset}
+                  className="filter-reset-btn"
+                  title="필터 초기화"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="controls-right">
+            <div className="search-wrapper">
+              <Search className="search-icon" size={18} />
+              <Input
+                size="md"
+                search
+                fullWidth
+                placeholder="단어 검색..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="단어 검색"
               />
-            ))}
-
-            {isFilterActive && (
-              <button
-                type="button"
-                onClick={handleFilterReset}
-                className="filter-reset-btn"
-                title="필터 초기화"
-              >
-                <RotateCcw size={16} />
-              </button>
-            )}
+            </div>
           </div>
-        </div>
-
-        <div className="controls-right">
-          <div className="search-wrapper">
-            <Search className="search-icon" size={18} />
-            <Input
-              size="md"
-              search
-              fullWidth
-              placeholder="단어 검색..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="단어 검색"
-            />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 3. 리스트 영역 */}
       <section className="wordlist-content">
-        {loading && (
+        {/* 로딩 상태 */}
+        {isLoading && (
           <div className="status-msg loading">
             <Spinner
               fullHeight={false}
@@ -379,9 +399,10 @@ function WordListPage() {
           </div>
         )}
 
-        {!loading && error && (
+        {/* 에러 상태 */}
+        {!isLoading && errorMessage && (
           <div className="status-msg error">
-            <p>{error}</p>
+            <p>{errorMessage}</p>
             <button
               onClick={() => window.location.reload()}
               className="retry-btn"
@@ -391,17 +412,18 @@ function WordListPage() {
           </div>
         )}
 
-        {/* 단어장에 단어가 없는 경우 */}
-        {!loading && !error && isEmptyAll && (
-          <div className="status-msg empty">
-            <p>저장된 단어가 없습니다. 📭</p>
-            <span className="sub-text">
-              새로운 단어를 학습하고 추가해보세요!
-            </span>
-          </div>
+        {/* 단어장에 단어가 아예 없는 경우 */}
+        {!isLoading && !errorMessage && isEmptyAll && (
+          <EmptyState
+            icon={FileQuestion}
+            title="저장된 단어가 없습니다."
+            description="새로운 단어를 학습하고 단어장에 추가해 보세요."
+            variant="page"
+          />
         )}
 
-        {!loading && !error && !isEmptyAll && (
+        {/* 단어는 있는데, 필터/검색 조건으로 0개인 경우 포함 */}
+        {!isLoading && !errorMessage && !isEmptyAll && (
           <>
             {filteredAndSortedWords.length > 0 ? (
               <div className="wordlist-grid">
@@ -446,7 +468,9 @@ function WordListPage() {
                           <span className="tag tag-level">Lv.{w.level}</span>
                         )}
                         {w.partOfSpeech && (
-                          <span className="tag tag-pos">{w.partOfSpeech}</span>
+                          <span className="tag tag-pos">
+                            {w.partOfSpeech}
+                          </span>
                         )}
                         {w.category && (
                           <span className="tag tag-domain">{w.category}</span>
@@ -470,25 +494,21 @@ function WordListPage() {
                 })}
               </div>
             ) : (
-              <div className="status-msg empty-search">
-                <div className="empty-icon-wrapper">
-                  <FileQuestion size={64} strokeWidth={1.5} />
-                </div>
-                <p className="empty-title">조건에 맞는 단어가 없습니다.</p>
-                <p className="empty-desc">
-                  검색어나 필터를 변경하여 다시 시도해 보세요.
-                </p>
-                <button className="reset-text-btn" onClick={resetFilters}>
-                  필터 초기화
-                </button>
-              </div>
+              <EmptyState
+                icon={FileQuestion}
+                title="조건에 맞는 단어가 없습니다."
+                description="검색어나 필터를 변경하여 다시 시도해 보세요."
+                actionLabel="필터 초기화"
+                onAction={resetFilters}
+                variant="page"
+              />
             )}
           </>
         )}
       </section>
 
       {/* 4. 페이지네이션 */}
-      {!loading && !error && filteredAndSortedWords.length > 0 && (
+      {!isLoading && !errorMessage && filteredAndSortedWords.length > 0 && (
         <Pagination
           page={safeIndex}
           totalPages={totalPages}

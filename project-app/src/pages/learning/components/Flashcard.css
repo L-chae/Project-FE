@@ -80,13 +80,14 @@
 /* 뒷면 */
 .flashcard-inner--back {
   transform: rotateY(180deg);
-  background-color: var(--primary-100); /* 보라색 톤 */
+  background-color: var(--primary-500);
+  color: #fff;
 }
 
 .flashcard-inner--back .flashcard-meaning {
   font-size: 1.6rem;
   font-weight: 600;
-  color: var(--neutral-900);
+  color:#fff;
   line-height: 1.4;
   white-space: pre-wrap;
   word-break: keep-all;
@@ -95,7 +96,7 @@
 .flashcard-subword {
   margin-top: 10px;
   font-size: 1rem;
-  color: var(--neutral-500);
+  color: var(--neutral-200);
 }
 
 .flashcard-helper-back {
@@ -103,15 +104,10 @@
   font-size: 0.9rem;
   color: var(--neutral-300);
 }
-
 .card-page--wrong .flashcard-inner--back {
-  background-color: var(--warning-100) !important;
+  background-color: var(--warning-500) !important;
 }
 
-/* 오답 카드에서 '뜻(meaning)' 텍스트만 검정 */
-.card-page--wrong .flashcard-inner--back .flashcard-meaning {
-  color: #111 !important;
-}
 .card-page--wrong .flashcard-helper-back {
   color: var(--neutral-500) !important;
 }

@@ -22,6 +22,12 @@
   justify-content: center;
 }
 
+/* 상단 통계 영역 래퍼(nav) */
+.word-stats {
+  width: 100%;
+  max-width: 720px;
+}
+
 .word-stats-list {
   display: flex;
   gap: var(--space-3);
@@ -29,7 +35,10 @@
   justify-content: center;
 }
 
-/* 통계 카드 */
+
+/* =========================================
+   2. 통계 카드
+   ========================================= */
 .stat-card {
   display: flex;
   align-items: center;
@@ -88,7 +97,6 @@
   color: var(--neutral-500);
 }
 
-/* 숫자 텍스트 강조 */
 .stat-count {
   font-size: 1.5rem;
   font-weight: 700;
@@ -98,7 +106,7 @@
 
 
 /* =========================================
-   2. 컨트롤 영역
+   3. 컨트롤 영역 (필터 + 검색)
    ========================================= */
 .wordlist-controls {
   display: flex;
@@ -107,6 +115,18 @@
   margin-bottom: var(--space-6);
   gap: var(--space-4);
   flex-wrap: wrap;
+}
+
+/* 좌/우 컨트롤 래퍼 */
+.controls-left,
+.controls-right {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.controls-right {
+  margin-left: auto;
 }
 
 .filter-container {
@@ -130,35 +150,21 @@
   font-size: 1.1rem;
 }
 
-.search-input {
-  width: 100%;
-  height: 46px;
-  padding-left: 44px;
-  padding-right: 16px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
-  color: var(--neutral-800);
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
-  outline: none;
-}
-
 
 /* =========================================
-   3. Card 커스텀 스타일 (배치 수정)
+   4. 단어 카드 리스트 & 카드 스타일
    ========================================= */
+.wordlist-content {
+  margin-bottom: var(--space-6);
+}
 
 .wordlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-4);
 }
+
+/* 단어 카드 기본: 둥글기는 여기서, 테두리/그림자는 Card 컴포넌트에서 */
 
 .wordlist-grid .card {
   min-height: 180px;
@@ -168,7 +174,7 @@
   text-align: left;
 }
 
-/* [중요] 헤더 정렬 및 상단 여백 제어 */
+/* 카드 헤더 (단어 + 별 아이콘) */
 .wordlist-grid .card .card-header {
   display: flex !important;
   flex-direction: row !important;
@@ -176,12 +182,10 @@
   align-items: center !important;
   margin-bottom: 0 !important;
   border-bottom: none !important;
-  
-  /* [수정] 단어(Title)와 구분선 사이의 간격 (12px) */
-  padding-bottom:0 !important;
+  padding-bottom: 0 !important;
 }
 
-/* 카드 제목(영어단어) */
+/* 카드 제목(영어 단어) */
 .wordlist-grid .card .card-title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -193,18 +197,16 @@
   border-bottom: none !important;
 }
 
-/* [수정] 구분선 스타일 */
+/* 카드 구분선 */
 .card-separator {
   width: 100%;
   height: 1px;
   background-color: var(--border-subtle);
   opacity: 0.6;
-  
-  /* 아래쪽(태그)과의 간격 */
-  margin-bottom: 18px; 
+  margin-bottom: 18px;
 }
 
-/* 카드 본문(Body) */
+/* 카드 본문 */
 .wordlist-grid .card .card-body {
   flex-grow: 1;
   display: flex;
@@ -215,7 +217,6 @@
   gap: 0;
   margin-top: 0;
 }
-
 
 /* 별 아이콘 버튼 */
 .star-btn {
@@ -229,22 +230,24 @@
   align-items: center;
   transition: transform 0.2s;
 }
-.star-btn:hover { transform: scale(1.1); }
-.star-btn.active { color: var(--warning-500); }
 
+.star-btn:hover {
+  transform: scale(1.1);
+}
 
-/* --- 내부 요소 배치 --- */
+.star-btn.active {
+  color: var(--warning-500);
+}
 
-/* 1. 태그 영역 */
+/* 태그 영역 (Level / 품사 / 분야) */
 .word-tags-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   width: 100%;
-  
-  /* 태그와 그 아래 뜻(Meaning) 사이의 간격 */
-  margin-bottom: 12px; 
+  margin-bottom: 12px;
 }
+
 .tag {
   padding: 3px 8px;
   border-radius: var(--radius-pill);
@@ -253,17 +256,26 @@
   white-space: nowrap;
   line-height: 1.4;
 }
-.tag-pos { background-color: #a29bfe; color: white; }
-.tag-domain { background-color: #dfe6e9; color: #55556c; }
-.tag-level { background-color: #74b9ff; color: white; }
 
-/* 2. 뜻 영역 */
+.tag-pos {
+  background-color: #a29bfe;
+  color: white;
+}
+
+.tag-domain {
+  background-color: #dfe6e9;
+  color: #55556c;
+}
+
+.tag-level {
+  background-color: #74b9ff;
+  color: white;
+}
+
+/* 뜻 영역 */
 .word-meaning-row {
   width: 100%;
-  
-  /* [수정] 뜻 아래 불필요한 큰 여백 제거 */
-  margin-bottom: 4px; 
-  
+  margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -279,15 +291,12 @@
   text-align: left;
 }
 
-/* 3. 하단 푸터 (자세히 보기) */
+/* 카드 하단 (More 링크) */
 .word-card-footer {
   width: 100%;
-  
-  /* [중요] flex-grow 된 Body 안에서 최하단으로 밀어냄 */
-  margin-top: auto; 
-  
+  margin-top: auto;
   display: flex;
-  justify-content: flex-end; /* 우측 정렬 */
+  justify-content: flex-end;
 }
 
 .view-detail {
@@ -306,13 +315,53 @@
   transition: transform 0.2s;
 }
 
-.card:hover .view-detail { color: var(--neutral-600); }
-.card:hover .view-detail .arrow-icon { transform: translateX(3px); }
+.card:hover .view-detail {
+  color: var(--neutral-600);
+}
+
+.card:hover .view-detail .arrow-icon {
+  transform: translateX(3px);
+}
 
 
 /* =========================================
-   4. 필터 초기화 & 빈 화면
+   5. 상태 메시지 & 필터 초기화 버튼
    ========================================= */
+.status-msg {
+  padding: var(--space-6) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  color: var(--neutral-600);
+}
+
+.status-msg.loading {
+  color: var(--neutral-500);
+}
+
+.status-msg.error {
+  color: var(--danger-600, #dc2626);
+}
+
+.retry-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--primary-400);
+  background: var(--surface-1);
+  color: var(--primary-600);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.retry-btn:hover {
+  background: var(--primary-50);
+}
+
+/* 필터 초기화 버튼 */
 .filter-reset-btn {
   display: flex;
   align-items: center;
@@ -340,77 +389,26 @@
   transform: scale(0.95) rotate(-180deg);
 }
 
-.status-msg.empty-search {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 0;
-  text-align: center;
-  min-height: 400px;
-  animation: fadeIn 0.3s ease-in-out;
-}
 
-.empty-icon-wrapper {
-  margin-bottom: 24px;
-  color: var(--neutral-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100px;
-  height: 100px;
-  background-color: var(--neutral-50);
-  border-radius: 50%;
-}
-
-.empty-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--neutral-800);
-  margin-bottom: 8px;
-}
-
-.empty-desc {
-  font-size: 0.95rem;
-  color: var(--neutral-500);
-  margin-bottom: 24px;
-}
-
-.reset-text-btn {
-  background: none;
-  border: none;
-  padding: 8px 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--primary-500);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: all 0.2s ease;
-}
-
-.reset-text-btn:hover {
-  color: var(--primary-700);
-  background-color: var(--primary-50);
-  border-radius: 8px;
-  text-decoration: none;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* =========================================
+   6. 반응형
+   ========================================= */
 @media (min-width: 640px) {
-  .wordlist-grid { grid-template-columns: repeat(2, 1fr); }
+  .wordlist-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 1024px) {
-  .wordlist-grid { grid-template-columns: repeat(3, 1fr); }
+  .wordlist-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (min-width: 1280px) {
-  .wordlist-grid { grid-template-columns: repeat(4, 1fr); }
+  .wordlist-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -419,7 +417,9 @@
     align-items: stretch;
   }
 
-  .search-wrapper { width: 100%; }
+  .search-wrapper {
+    width: 100%;
+  }
 
   .word-stats-list {
     overflow-x: auto;
