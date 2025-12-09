@@ -167,3 +167,23 @@ export const saveStory = async ({ title, storyEn, storyKo, wrongLogIds }) => {
   });
   return res.data;
 };
+/**
+스토리 삭제 API
+DELETE /api/story/{storyId}
+ */
+export const deleteStory = async (storyId) => {
+  if (USE_MOCK) {
+    console.log("[Mock] 스토리 삭제 요청:", storyId);
+
+    mockStories = mockStories.filter((s) => s.storyId !== Number(storyId));
+
+    return {
+      success: true,
+      message: "스토리가 삭제되었습니다. (mock)",
+      storyId,
+    };
+  }
+
+  const res = await httpClient.delete(`/api/story/${storyId}`);
+  return res.data;
+};
