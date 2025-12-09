@@ -18,8 +18,10 @@ export default function SignupPage() {
     globalError,
     emailChecking,
     emailAvailable,
+    emailCheckMessage,
     handleSubmit,
     handleChange,
+    handleEmailCheck,
   } = useSignupForm();
 
   return (
@@ -48,25 +50,49 @@ export default function SignupPage() {
               >
                 이메일
               </label>
-              <Input
-                id="signup-email"
-                type="email"
-                name="email"
-                placeholder="이메일을 입력하세요"
-                value={formData.email}
-                onChange={handleChange}
-                autoComplete="email"
-                fullWidth
-              />
+
+              {/* 인풋 + 중복확인 버튼 한 줄 배치 */}
+              <div className="signup-email-row">
+                <div className="signup-email-input">
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    name="email"
+                    placeholder="이메일을 입력하세요"
+                    value={formData.email}
+                    onChange={handleChange}
+                    autoComplete="email"
+                    fullWidth
+                  />
+                </div>
+
+                <div className="signup-email-btn-wrap">
+                  <Button
+                    type="button"
+                    variant="secondary"  // 공통 버튼 스타일 그대로 사용
+                    size="sm"
+                    onClick={handleEmailCheck}
+                    disabled={
+                      emailChecking ||
+                      !formData.email ||   // 값 없으면 비활성화
+                      !!errors.email       // 형식 에러 있으면 비활성화
+                    }
+                  >
+                    {emailChecking ? "확인 중..." : "중복 확인"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* 이메일 에러 */}
               {errors.email && <p className="form-error">{errors.email}</p>}
 
-              {!errors.email && emailChecking && (
-                <p className="form-help">이메일 중복을 확인 중입니다...</p>
-              )}
+              {/* 중복 체크 성공 메시지 */}
               {!errors.email &&
                 !emailChecking &&
                 emailAvailable === true && (
-                  <p className="form-success">사용 가능한 이메일입니다.</p>
+                  <p className="form-success">
+                    {emailCheckMessage || "사용 가능한 이메일입니다."}
+                  </p>
                 )}
             </div>
 

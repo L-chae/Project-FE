@@ -1,7 +1,7 @@
 // src/pages/auth/hooks/useSignupForm.js
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { checkEmailDuplicate } from "../../../api/authApi"; // alias 쓰면 "@/api/authApi"
+import { checkEmailDuplicate } from "../../../api/authApi"; // "@/api/authApi" 로 써도 됨
 
 export function useSignupForm() {
   const navigate = useNavigate();
@@ -28,7 +28,8 @@ export function useSignupForm() {
 
   // 이메일 중복 상태
   const [emailChecking, setEmailChecking] = useState(false);
-  const [emailAvailable, setEmailAvailable] = useState(null); // null | true | false
+  const [emailAvailable, setEmailAvailable] = useState(null); // true(사용 가능) / false(중복) / null(미확인)
+  const [emailCheckMessage, setEmailCheckMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,6 +39,7 @@ export function useSignupForm() {
       [name]: value,
     }));
 
+    // 해당 필드 에러 초기화
     setErrors((prev) => ({
       ...prev,
       [name]: "",
@@ -45,60 +47,61 @@ export function useSignupForm() {
     setGlobalError("");
 
     if (name === "email") {
-      // 이메일 수정하면 중복 결과 초기화
+      // 이메일 변경 시 중복 결과 초기화
       setEmailAvailable(null);
+      setEmailCheckMessage("");
     }
   };
 
-  // 이메일 입력값 변경 시 디바운스로 자동 중복 체크
-  useEffect(() => {
+  // 이메일 중복 확인 버튼 핸들러
+  const handleEmailCheck = async () => {
     const email = formData.email.trim();
 
-    // 비어 있거나 형식이 잘못된 경우 → 중복 체크 안 함
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      setEmailChecking(false);
-      setEmailAvailable(null);
+    // 비어 있으면
+    if (!email) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "이메일을 입력해 주세요.",
+      }));
       return;
     }
 
-    let canceled = false;
+    // 형식 검증
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "이메일 형식이 올바르지 않습니다.",
+      }));
+      return;
+    }
 
     setEmailChecking(true);
-    setEmailAvailable(null);
+    setEmailCheckMessage("");
+    setGlobalError("");
 
-    const timer = setTimeout(async () => {
-      try {
-        const { duplicated } = await checkEmailDuplicate(email);
-        if (canceled) return;
+    try {
+      // 백엔드 명세: { exists: boolean, message: string }
+      const { exists, message } = await checkEmailDuplicate(email);
 
-        if (duplicated) {
-          setErrors((prev) => ({
-            ...prev,
-            email: "이미 사용 중인 이메일입니다.",
-          }));
-          setEmailAvailable(false);
-        } else {
-          setEmailAvailable(true);
-        }
-      } catch (err) {
-        if (canceled) return;
-        console.error("이메일 중복 확인 실패:", err);
-        setGlobalError(
-          "이메일 중복 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
-        );
-        setEmailAvailable(null);
-      } finally {
-        if (!canceled) {
-          setEmailChecking(false);
-        }
-      }
-    }, 400); // 입력 멈춘 후 400ms 뒤에 중복 체크
+      // exists = true → 이미 사용 중, exists = false → 사용 가능
+      setEmailAvailable(!exists);
+      setEmailCheckMessage(message || "");
 
-    return () => {
-      canceled = true;
-      clearTimeout(timer);
-    };
-  }, [formData.email]);
+      setErrors((prev) => ({
+        ...prev,
+        email: exists ? "이미 사용 중인 이메일입니다." : "",
+      }));
+    } catch (err) {
+      console.error("[useSignupForm] 이메일 중복 확인 실패", err);
+      setEmailAvailable(null);
+      setEmailCheckMessage("");
+      setGlobalError(
+        "이메일 중복 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      setEmailChecking(false);
+    }
+  };
 
   const validate = () => {
     const nextErrors = {
@@ -162,7 +165,7 @@ export function useSignupForm() {
     e.preventDefault();
     setGlobalError("");
 
-    // 아직 이메일 중복 체크 중이면 제출 막기
+    // 아직 이메일 중복 체크 호출 중이면 제출 막기
     if (emailChecking) {
       setGlobalError("이메일 중복 확인이 끝난 후 다시 시도해 주세요.");
       return;
@@ -189,7 +192,9 @@ export function useSignupForm() {
     globalError,
     emailChecking,
     emailAvailable,
+    emailCheckMessage,
     handleSubmit,
     handleChange,
+    handleEmailCheck,
   };
 }

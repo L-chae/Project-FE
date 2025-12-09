@@ -126,23 +126,50 @@ export async function login({ email, password }) {
     refreshToken: finalRefreshToken,
   };
 }
+
 /**
  * 이메일 중복 체크
  * Backend: POST /api/auth/check-email
  * Request: { email: string }
- * Response: { duplicated: boolean }
+ * Response: { exists: boolean, message: string }
  */
 export async function checkEmailDuplicate(email) {
   if (USE_MOCK) {
-    // 목업 모드: 특정 이메일만 중복이라고 가정
+    const exists = email === "test@test.com";
     return {
-      duplicated: email === "test@test.com",
+      exists,
+      message: exists
+        ? "이미 사용 중인 이메일입니다."
+        : "사용 가능한 이메일입니다.",
     };
   }
 
   const res = await httpClient.post("/api/auth/check-email", { email });
-  return res.data; // { duplicated: boolean }
+  // 백엔드 명세: { exists: boolean, message: string }
+  return res.data;
 }
+
+/**
+ * 닉네임 중복 체크
+ * Backend: POST /api/auth/check-nickname
+ * Request: { nickname: string }
+ * Response: { exists: boolean, message: string }
+ */
+export async function checkNicknameDuplicate(nickname) {
+  if (USE_MOCK) {
+    const exists = nickname === "admin" || nickname === "테스트";
+    return {
+      exists,
+      message: exists
+        ? "이미 사용 중인 닉네임입니다."
+        : "사용 가능한 닉네임입니다.",
+    };
+  }
+
+  const res = await httpClient.post("/api/auth/check-nickname", { nickname });
+  return res.data; // { exists, message }
+}
+
 /**
  * 회원가입
  * Backend: POST /api/auth/signup
