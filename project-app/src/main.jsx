@@ -2,6 +2,7 @@
 import "./components/common/Button.css";
 import "./components/common/Input.css";
 import "./styles/index.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 import React from "react";
 import ReactDOM from "react-dom/client";

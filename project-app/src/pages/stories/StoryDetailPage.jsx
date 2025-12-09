@@ -1,20 +1,35 @@
 // src/pages/story/StoryDetailPage.jsx
-import { deleteStory, getStoryDetail, getStoryWords } from '@/api/storyApi';
-import { ArrowLeft, Book, Calendar, Clock, Quote } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import './StoryDetailPage.css';
+import { deleteStory, getStoryDetail, getStoryWords } from "@/api/storyApi";
+import { ArrowLeft, Book, Calendar, Clock, Quote } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import "./StoryDetailPage.css";
 
 // 정규식 특수문자 이스케이프
-const escapeRegExp = (str = '') =>
-  str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegExp = (str = "") =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // 읽기 시간(분) 추정
-const estimateReadTime = (text = '') => {
-  if (!text.trim()) return '';
+const estimateReadTime = (text = "") => {
+  if (!text.trim()) return "";
   const wordCount = text.trim().split(/\s+/).length;
   const minutes = Math.max(1, Math.round(wordCount / 150)); // 150 wpm 기준
   return `${minutes} min read`;
+};
+
+// 단어 객체/값을 안전한 문자열로 변환
+const toSafeWord = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+
+  const raw = item.text ?? item.word ?? "";
+  if (typeof raw === "string") return raw;
+
+  try {
+    return String(raw);
+  } catch {
+    return "";
+  }
 };
 
 const StoryDetailPage = () => {
@@ -42,9 +57,9 @@ const StoryDetailPage = () => {
         const wordList = await getStoryWords(id);
         setWords(wordList || []);
       } catch (error) {
-        console.error('스토리 로딩 실패:', error);
-        alert('스토리를 불러올 수 없습니다.');
-        navigate('/stories');
+        console.error("스토리 로딩 실패:", error);
+        alert("스토리를 불러올 수 없습니다.");
+        navigate("/stories");
       } finally {
         setLoading(false);
       }
@@ -57,25 +72,31 @@ const StoryDetailPage = () => {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate('/stories');
+      navigate("/stories");
     }
   };
- const handleDelete = async () => {
-  if (!window.confirm('정말 이 스토리를 삭제할까요?')) return;
 
-  try {
-    await deleteStory(id);
-    alert('스토리가 삭제되었습니다.');
-    navigate('/stories');
-  } catch (error) {
-    console.error(error);
-    alert('스토리 삭제에 실패했습니다.');
-  }
-};
+  const handleDelete = async () => {
+    if (!window.confirm("정말 이 스토리를 삭제할까요?")) return;
+
+    try {
+      await deleteStory(id);
+      alert("스토리가 삭제되었습니다.");
+      navigate("/stories");
+    } catch (error) {
+      console.error(error);
+      alert("스토리 삭제에 실패했습니다.");
+    }
+  };
 
   // --- 하이라이트 로직 ---
-  const keywords = words
-    ? words.map((w) => (typeof w === 'string' ? w : w.text || w.word))
+
+  // keywords: words 배열에서 안전하게 문자열만 추출
+  const keywords = Array.isArray(words)
+    ? words
+        .map(toSafeWord)
+        .map((s) => (typeof s === "string" ? s.trim() : ""))
+        .filter((s) => s.length > 0)
     : [];
 
   const highlightKeywords = (text) => {
@@ -84,16 +105,18 @@ const StoryDetailPage = () => {
     const pattern = keywords
       .filter(Boolean)
       .map((k) => escapeRegExp(k))
-      .join('|');
+      .join("|");
 
     if (!pattern) return text;
 
-    const regex = new RegExp(`\\b(${pattern})\\b`, 'gi');
+    const regex = new RegExp(`\\b(${pattern})\\b`, "gi");
     const parts = text.split(regex);
 
     return parts.map((part, i) => {
+      if (!part) return part;
+
       const isKeyword = keywords.some(
-        (k) => k && k.toLowerCase() === part.toLowerCase(),
+        (k) => k && k.toLowerCase() === part.toLowerCase()
       );
 
       if (!isKeyword) return part;
@@ -101,8 +124,8 @@ const StoryDetailPage = () => {
       const normalized = part.toLowerCase();
       const isActive = activeWord && activeWord === normalized;
       const className = isActive
-        ? 'highlighted-word highlighted-word--active'
-        : 'highlighted-word';
+        ? "highlighted-word highlighted-word--active"
+        : "highlighted-word";
 
       return (
         <span
@@ -128,12 +151,12 @@ const StoryDetailPage = () => {
 
   const { title, storyEn, storyKo, createdAt } = story;
 
-  const content = storyEn || '';
-  const translation = storyKo || '';
-  const date = createdAt ? createdAt.slice(0, 10) : '';
+  const content = storyEn || "";
+  const translation = storyKo || "";
+  const date = createdAt ? createdAt.slice(0, 10) : "";
   const readTime = estimateReadTime(content);
 
-  const lines = content ? content.split('\n') : [];
+  const lines = content ? content.split("\n") : [];
 
   return (
     <div className="page-container">
@@ -154,7 +177,7 @@ const StoryDetailPage = () => {
               <h3>
                 <Book size={18} className="text-primary-500" /> 학습 단어
               </h3>
-              <span className="nav-badge" style={{ fontSize: '0.8rem' }}>
+              <span className="nav-badge" style={{ fontSize: "0.8rem" }}>
                 {words.length}
               </span>
             </div>
@@ -166,20 +189,35 @@ const StoryDetailPage = () => {
             </p>
 
             <div className="vocab-list">
-              {words.length > 0 ? (
+              {Array.isArray(words) && words.length > 0 ? (
                 words.map((item, idx) => {
-                  const isString = typeof item === 'string';
-                  const text = isString ? item : item.text || item.word || '';
-                  const pos = !isString ? item.pos || item.type || 'Word' : 'Word';
-                  const meaning = !isString ? item.meaning || item.kor || '' : '';
+                  const isString = typeof item === "string";
 
-                  const normalized = text ? text.toLowerCase() : '';
+                  const rawText = isString ? item : item?.text ?? item?.word ?? "";
+                  const text =
+                    typeof rawText === "string"
+                      ? rawText
+                      : rawText != null
+                      ? String(rawText)
+                      : "";
+
+                  const pos = !isString
+                    ? item.pos || item.type || "Word"
+                    : "Word";
+
+                  const meaning = !isString
+                    ? item.meaning || item.kor || ""
+                    : "";
+
+                  const normalized = text ? text.toLowerCase() : "";
 
                   return (
                     <div
                       key={idx}
                       className="mini-word-card"
-                      onMouseEnter={() => normalized && setActiveWord(normalized)}
+                      onMouseEnter={() =>
+                        normalized && setActiveWord(normalized)
+                      }
                       onMouseLeave={() => setActiveWord(null)}
                     >
                       <div className="mini-word-header">
@@ -233,19 +271,20 @@ const StoryDetailPage = () => {
               <div className="story-korean">
                 <div className="ko-label">한국어 번역</div>
                 <p className="ko-paragraph">
-                  {translation || '번역이 제공되지 않았습니다.'}
+                  {translation || "번역이 제공되지 않았습니다."}
                 </p>
               </div>
             </article>
+
             <div className="story-main-footer">
-            <button
-              type="button"
-              className="story-delete-btn"
-              onClick={handleDelete}
-            >
-              스토리 삭제
-            </button>
-          </div>
+              <button
+                type="button"
+                className="story-delete-btn"
+                onClick={handleDelete}
+              >
+                스토리 삭제
+              </button>
+            </div>
           </main>
         </div>
       </div>

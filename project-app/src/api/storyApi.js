@@ -3,23 +3,6 @@ import httpClient from "./httpClient";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
-/**
- * Story API
- *
- * - POST /api/story
- *     Request : { title, storyEn, storyKo, wrongLogIds: number[] }
- *     Response: { storyId, title, storyEn, storyKo, createdAt }
- *
- * - GET  /api/story
- *     내 스토리 목록
- *
- * - GET  /api/story/{storyId}
- *     스토리 상세
- *
- * - GET  /api/story/{storyId}/words
- *     스토리 사용 단어 목록
- */
-
 // =========================
 // MOCK 상태 (USE_MOCK === true)
 // =========================
@@ -53,7 +36,6 @@ let mockStories = [
 export const getStoryList = async () => {
   if (USE_MOCK) {
     console.log("[Mock] 스토리 목록 조회");
-    // StoryListPage에서 사용하는 필드에 맞춰 반환
     return [...mockStories];
   }
 
@@ -86,7 +68,6 @@ export const getStoryDetail = async (storyId) => {
       };
     }
 
-    // 없는 ID에 대해서는 기본 목업
     return {
       storyId: idNum,
       title: "Mock Story",
@@ -101,6 +82,59 @@ export const getStoryDetail = async (storyId) => {
   return res.data;
 };
 
+/** 🔹 공통: 스토리 단어 응답 정규화 */
+const normalizeStoryWord = (raw) => {
+  if (!raw) return null;
+
+  // 문자열인 경우 그대로 사용
+  if (typeof raw === "string") {
+    return {
+      text: raw,
+      pos: "Word",
+      meaning: "",
+    };
+  }
+
+  // 단어 텍스트 추출
+  let text = "";
+  if (typeof raw.text === "string") {
+    text = raw.text;
+  } else if (typeof raw.word === "string") {
+    text = raw.word;
+  } else if (raw.word && typeof raw.word === "object") {
+    // 백엔드에서 word 객체로 내려오는 케이스
+    if (typeof raw.word.word === "string") text = raw.word.word;
+    else if (typeof raw.word.text === "string") text = raw.word.text;
+  }
+
+  // 품사
+  const pos =
+    raw.pos ||
+    raw.partOfSpeech ||
+    raw.part_of_speech ||
+    raw.word?.partOfSpeech ||
+    raw.word?.pos ||
+    "Word";
+
+  // 의미(한글)
+  const meaning =
+    raw.meaningKo ||
+    raw.meaning_ko ||
+    raw.meaning ||
+    raw.korean ||
+    raw.word?.meaningKo ||
+    raw.word?.meaning ||
+    raw.word?.korean ||
+    "";
+
+  return {
+    ...raw,
+    text,
+    pos,
+    meaning,
+  };
+};
+
 /**
  * 스토리 사용 단어 조회
  * GET /api/story/{storyId}/words
@@ -111,7 +145,7 @@ export const getStoryWords = async (storyId) => {
   if (USE_MOCK) {
     console.log("[Mock] 스토리 사용 단어 조회:", storyId);
 
-    // 테스트용 고정 데이터 (필요하면 storyId에 따라 분기)
+    // 테스트용 고정 데이터
     return [
       { text: "ambiguous", pos: "adj.", meaning: "애매모호한" },
       { text: "mitigate", pos: "v.", meaning: "완화하다" },
@@ -122,7 +156,13 @@ export const getStoryWords = async (storyId) => {
   }
 
   const res = await httpClient.get(`/api/story/${storyId}/words`);
-  return res.data;
+  const data = res.data;
+
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .map((item) => normalizeStoryWord(item))
+    .filter((w) => w && typeof w.text === "string" && w.text.trim().length > 0);
 };
 
 /**
@@ -150,10 +190,9 @@ export const saveStory = async ({ title, storyEn, storyKo, wrongLogIds }) => {
       storyEn: storyEn || "",
       storyKo: storyKo || "",
       createdAt: now,
-      keywords: [], // 필요하면 words에서 추출해서 넣어도 됨
+      keywords: [],
     };
 
-    // 목록에 추가해서 StoryListPage에서도 바로 보이게
     mockStories = [newStory, ...mockStories];
 
     return newStory;
@@ -167,9 +206,10 @@ export const saveStory = async ({ title, storyEn, storyKo, wrongLogIds }) => {
   });
   return res.data;
 };
+
 /**
-스토리 삭제 API
-DELETE /api/story/{storyId}
+ * 스토리 삭제 API
+ * DELETE /api/story/{storyId}
  */
 export const deleteStory = async (storyId) => {
   if (USE_MOCK) {
