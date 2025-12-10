@@ -108,6 +108,13 @@ const normalizeQuizItem = (raw, index) => {
     raw.levelId ??
     null;
 
+  // 오답 로그 ID (있으면 같이 넘겨두기)
+  const wrongWordId =
+    raw.wrongWordId ??
+    raw.wrongLogId ??
+    raw.wrongAnswerLogId ??
+    null;
+
   return {
     ...raw,
     id,
@@ -119,6 +126,7 @@ const normalizeQuizItem = (raw, index) => {
     meaningKo,
     partOfSpeech,
     level,
+    wrongWordId,
   };
 };
 

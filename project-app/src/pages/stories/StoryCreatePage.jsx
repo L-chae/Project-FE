@@ -17,7 +17,7 @@ const StoryCreatePage = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // 오답 데이터
+  // 오답 데이터 풀
   const [mistakePool, setMistakePool] = useState([]);
   const [loadingMistakes, setLoadingMistakes] = useState(true);
 
@@ -49,7 +49,7 @@ const StoryCreatePage = () => {
         const mapped = (res || []).map((item) => {
           const rawWord = item.word;
 
-          // 서버 연동 시: item.word 가 Word 객체일 수 있음
+          // 서버에서 word가 문자열 / 객체 둘 다 올 수 있음
           const wordText =
             typeof rawWord === "string"
               ? rawWord
@@ -61,10 +61,19 @@ const StoryCreatePage = () => {
             "";
 
           return {
+            // 오답 로그 PK
             id:
               item.wrongWordId ??
               item.wrongAnswerLogId ??
               item.id,
+
+            // 단어 PK (wordId도 같이 보존)
+            wordId:
+              item.wordId ??
+              (typeof rawWord === "object"
+                ? rawWord.wordId ?? rawWord.id ?? null
+                : null),
+
             word: wordText,
             meaning: meaningText,
           };
@@ -83,6 +92,7 @@ const StoryCreatePage = () => {
 
   // 2) Quiz / WrongNote 에서 넘어온 단어 자동 선택
   useEffect(() => {
+    // 아직 오답 목록 못 불러왔거나, 이미 한 번 초기화 했으면 패스
     if (initializedFromParams || loadingMistakes) return;
 
     const wrongWordsFromState = Array.isArray(state.wrongWords)
@@ -91,7 +101,7 @@ const StoryCreatePage = () => {
 
     const initialSelected = [];
 
-    // (1) QuizPage 에서 온 wrongWords
+    // (1) QuizPage / 다른 페이지에서 state.wrongWords 로 넘어온 케이스
     if (wrongWordsFromState.length > 0) {
       wrongWordsFromState.forEach((item) => {
         if (initialSelected.length >= MAX_SELECTED_WORDS) return;
@@ -102,15 +112,53 @@ const StoryCreatePage = () => {
         const lower = text.toLowerCase();
         if (initialSelected.some((w) => w.text.toLowerCase() === lower)) return;
 
+        // 1차: state에 직접 실려온 ID들
+        let wrongLogId =
+          item.wrongLogId ??
+          item.wrongWordId ??
+          item.wrongAnswerLogId ??
+          item.id ??
+          null;
+
+        // 2차: mistakePool 기준으로 wordId / 단어 텍스트로 매칭해서 wrongLogId 보완
+        if (!wrongLogId && mistakePool.length > 0) {
+          const itemWordId =
+            item.wordId != null ? Number(item.wordId) : null;
+
+          // 2-1) wordId 기준 매칭
+          if (itemWordId != null && !Number.isNaN(itemWordId)) {
+            const matchedById = mistakePool.find(
+              (m) =>
+                m.wordId != null &&
+                Number(m.wordId) === itemWordId
+            );
+            if (matchedById) {
+              wrongLogId = matchedById.id;
+            }
+          }
+
+          // 2-2) 그래도 없으면 단어 텍스트 기준 매칭
+          if (!wrongLogId) {
+            const matchedByText = mistakePool.find(
+              (m) =>
+                typeof m.word === "string" &&
+                m.word.toLowerCase() === lower
+            );
+            if (matchedByText) {
+              wrongLogId = matchedByText.id;
+            }
+          }
+        }
+
         initialSelected.push({
           text,
           source: "mistake",
-          wrongLogId: item.wrongWordId ?? item.id ?? null,
+          wrongLogId,
         });
       });
     }
 
-    // (2) WrongNotePage → /stories/create?wrongWordIds=... 로 온 경우
+    // (2) WrongNotePage → /stories/create?wrongWordIds=... 로 온 경우 (기존 동작 유지)
     if (initialSelected.length < MAX_SELECTED_WORDS) {
       const idsParam = searchParams.get("wrongWordIds");
 
@@ -130,7 +178,11 @@ const StoryCreatePage = () => {
           if (!text) return;
 
           const lower = text.toLowerCase();
-          if (initialSelected.some((w) => w.text.toLowerCase() === lower))
+          if (
+            initialSelected.some(
+              (w) => w.text.toLowerCase() === lower
+            )
+          )
             return;
 
           initialSelected.push({

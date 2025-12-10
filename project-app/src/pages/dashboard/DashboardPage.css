@@ -51,6 +51,8 @@
   align-items: flex-start;
 }
 
+
+
 /* 1. 오늘의 학습 목표 */
 
 .status-card {
@@ -195,6 +197,12 @@
   color: var(--warning-600);
   font-size: 1.15rem;
 }
+.action-card .action-subtitle {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--neutral-500);
+}
+
 
 /* 반응형 */
 

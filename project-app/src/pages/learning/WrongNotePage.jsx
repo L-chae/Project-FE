@@ -55,6 +55,13 @@ export default function WrongNotePage() {
   const [openDropdown, setOpenDropdown] = useState(null); // "story" | "sort" | null
   const [activeAction, setActiveAction] = useState("none"); // quiz | card | story | none
 
+  // “이미 스토리에 사용된 단어 포함” 안내 모달 상태
+  const [usedStoryModal, setUsedStoryModal] = useState({
+    open: false,
+    onlyUsed: false,
+    usedWords: [],
+  });
+
   // React Query: 오답 목록 조회
   const {
     data: rawItems = [],
@@ -67,7 +74,7 @@ export default function WrongNotePage() {
     queryFn: getWrongList,
   });
 
-  // 선택된 wrongWordId → wordId 리스트 변환
+  // 선택된 wrongWordId → wordId 리스트 변환 (퀴즈/카드용)
   const selectedWordIds = useMemo(() => {
     if (!selectedIds.length || !rawItems.length) return [];
     const idSet = new Set(selectedIds);
@@ -76,6 +83,8 @@ export default function WrongNotePage() {
       .map((item) => Number(item.wordId))
       .filter((id) => !Number.isNaN(id));
   }, [selectedIds, rawItems]);
+
+  const selectedCount = selectedIds.length;
 
   // 필터 활성 여부 (초기화 버튼 노출 조건)
   const isFilterActive =
@@ -138,8 +147,6 @@ export default function WrongNotePage() {
     );
   };
 
-  const selectedCount = selectedIds.length;
-
   // 필터 변경
   const handleChangeFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -193,16 +200,36 @@ export default function WrongNotePage() {
   const handleCreateStory = () => {
     if (selectedCount === 0) return;
 
-    const candidateItems = rawItems.filter(
-      (item) => selectedIds.includes(item.wrongWordId) && !isUsedInStory(item)
+    const selectedItems = rawItems.filter((item) =>
+      selectedIds.includes(item.wrongWordId)
     );
 
-    if (candidateItems.length === 0) {
-      alert("스토리에 사용되지 않은 단어를 선택해 주세요.");
+    const usedSelected = selectedItems.filter((item) =>
+      isUsedInStory(item)
+    );
+    const unusedSelected = selectedItems.filter(
+      (item) => !isUsedInStory(item)
+    );
+
+    // 1) 선택한 것 중에 이미 스토리에 사용된 단어가 하나라도 있으면 → 모달로 안내 후 생성 막기
+    if (usedSelected.length > 0) {
+      setUsedStoryModal({
+        open: true,
+        onlyUsed: unusedSelected.length === 0,
+        usedWords: usedSelected
+          .map((item) => item.word)
+          .filter((w) => typeof w === "string" && w.trim().length > 0),
+      });
       return;
     }
 
-    const ids = candidateItems.map((i) => i.wrongWordId).join(",");
+    // 2) 사용된 단어는 없고, 미사용 단어만 선택된 경우에만 실제 생성 진행
+    if (unusedSelected.length === 0) {
+      // 여기까지 왔는데 이 케이스는 거의 없지만, 안전상 한 번 더 방어
+      return;
+    }
+
+    const ids = unusedSelected.map((i) => i.wrongWordId).join(",");
     navigate(`/stories/create?wrongWordIds=${encodeURIComponent(ids)}`);
   };
 
@@ -218,6 +245,13 @@ export default function WrongNotePage() {
   const showEmptyFiltered =
     !isLoading && !isError && hasAnyItems && !hasProcessedItems;
   const showTable = !isLoading && !isError && hasProcessedItems;
+
+  const closeUsedStoryModal = () => {
+    setUsedStoryModal((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
 
   return (
     <div className="page-container wrongnote-page">
@@ -434,6 +468,37 @@ export default function WrongNotePage() {
             </div>
           )}
         </>
+      )}
+
+      {/* “이미 스토리에 사용된 단어 포함” 안내 모달 */}
+      {usedStoryModal.open && (
+        <div className="wrongnote-modal-backdrop">
+          <div className="wrongnote-modal">
+            <h2 className="wrongnote-modal__title">스토리를 만들 수 없어요</h2>
+
+            <p className="wrongnote-modal__body">
+              {usedStoryModal.onlyUsed
+                ? "선택한 단어가 모두 이미 스토리에 사용된 단어예요.\n새 스토리를 만들려면, 아직 스토리에 쓰지 않은 오답 단어를 선택해 주세요."
+                : "선택한 단어 중에 이미 스토리에 사용된 단어가 있어요.\n새 스토리는 ‘스토리에 미사용’ 단어만 넣을 수 있어요.\n아래 단어를 선택 해제한 뒤 다시 시도해 주세요."}
+            </p>
+
+            {usedStoryModal.usedWords.length > 0 && (
+              <ul className="wrongnote-modal__list">
+                {usedStoryModal.usedWords.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
+            )}
+
+            <button
+              type="button"
+              className="wrongnote-modal__button"
+              onClick={closeUsedStoryModal}
+            >
+              확인
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
