@@ -1,15 +1,17 @@
 // src/components/layout/Header.jsx
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import userIcon from "../../assets/images/common/user-icon.svg";
+import { useAuth } from "@/context/AuthContext";
 
-import Button from "../common/Button";
-import StoryLexLogo from "../../assets/images/StoryLex-logo.svg";
+import Button from "@/components/common/Button";
+import StoryLexLogo from "@/assets/images/StoryLex-logo.svg";
+import userIcon from "@/assets/images/common/user-icon.svg";
 
 import "./Header.css";
-import { useAuth } from "../../context/AuthContext";
 
-// 로그인 후에만 보이는 메뉴
+// ─────────────────────────────────────────────────────────────
+// 상수 데이터
+// ─────────────────────────────────────────────────────────────
 const AUTH_NAV_ITEMS = [
   { to: "/dashboard", label: "대시보드" },
   { to: "/words", label: "단어장" },
@@ -23,22 +25,46 @@ const GUEST_HOME_PATH = "/";
 const getNavClass = ({ isActive }) =>
   "header-nav-link" + (isActive ? " header-nav-link--active" : "");
 
+// ─────────────────────────────────────────────────────────────
+// 컴포넌트
+// ─────────────────────────────────────────────────────────────
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
 
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const accountRef = useRef(null);
 
   const isAuthenticated = !!user;
   const isAuthPage = location.pathname.startsWith("/auth");
   const isLandingGuest = !isAuthenticated && location.pathname === "/";
 
+  // 스크롤 감지 (랜딩 게스트일 때만 캡슐 전환)
+  useEffect(() => {
+    if (!isLandingGuest) {
+      setIsScrolled(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      // 10px만 내려도 반응하도록
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // 초기 로드 시 상태 확인
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLandingGuest]);
+
+  // 페이지 이동 시 계정 드롭다운 닫기
   useEffect(() => {
     setIsAccountMenuOpen(false);
   }, [location.pathname]);
 
+  // 헤더 밖 클릭 시 계정 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (accountRef.current && !accountRef.current.contains(e.target)) {
@@ -55,29 +81,75 @@ export default function Header() {
     };
   }, [isAccountMenuOpen]);
 
+  // 로고 클릭
   const handleLogoClick = () => {
-    if (isAuthenticated) navigate(AUTH_HOME_PATH);
-    else navigate(GUEST_HOME_PATH);
+    if (isAuthenticated) {
+      navigate(AUTH_HOME_PATH);
+      return;
+    }
+
+    if (location.pathname === GUEST_HOME_PATH) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate(GUEST_HOME_PATH);
+    }
   };
 
+  // 로그아웃
   const handleLogoutClick = async () => {
     setIsAccountMenuOpen(false);
     try {
       await logout();
-    } catch {
-      // 무시
+    } catch (e) {
+      // 실패해도 일단 홈으로
+    } finally {
+      navigate(GUEST_HOME_PATH);
     }
   };
 
-  const handleProfileClick = () => {
-    setIsAccountMenuOpen((prev) => !prev);
+  // 랜딩 섹션 스크롤
+  const scrollToSection = (id) => {
+    if (location.pathname !== "/") {
+      navigate("/");
+      setTimeout(() => scrollToSection(id), 100);
+      return;
+    }
+
+    const element = document.getElementById(id);
+    if (!element) return;
+
+    const headerOffset = 100;
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition =
+      elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
   };
 
-  // 로그인/회원가입 페이지에는 로고만 표시 (항상 솔리드 헤더)
+  // ─────────────────────────────────────────────────────────────
+  // 클래스명 결정 (랜딩/회원 모드 + 스크롤 상태)
+  // ─────────────────────────────────────────────────────────────
+  let headerClassName = "header";
+
+  // 1. 페이지 타입에 따른 모드 설정
+  if (isLandingGuest) {
+    headerClassName += " header--landing-mode"; // 투명 시작
+  } else {
+    headerClassName += " header--member-mode"; // 흰색 시작
+  }
+
+  // 2. 스크롤 상태 추가 (랜딩 게스트만 캡슐)
+  if (isLandingGuest && isScrolled) {
+    headerClassName += " header--scrolled";
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 인증 페이지용: 심플 헤더 (로고만 중앙)
+  // ─────────────────────────────────────────────────────────────
   if (isAuthPage) {
     return (
-      <header className="header header--solid">
-        <div className="header-inner">
+      <header className="header header--member-mode">
+        <div className="header-inner header-inner--center">
           <button
             type="button"
             className="header-logo"
@@ -85,7 +157,7 @@ export default function Header() {
           >
             <img
               src={StoryLexLogo}
-              alt="StoryLex 로고"
+              alt="StoryLex"
               className="header-logo-img"
             />
           </button>
@@ -94,100 +166,126 @@ export default function Header() {
     );
   }
 
-  const navItems = isAuthenticated ? AUTH_NAV_ITEMS : [];
-
-  // 비회원+홈: 랜딩 스타일 / 나머지: 솔리드 스타일
-  const headerClassName = `header ${
-    isLandingGuest ? "header--landing" : "header--solid"
-  }`;
-
+  // ─────────────────────────────────────────────────────────────
+  // 일반 헤더 (회원/비회원 공통)
+  // ─────────────────────────────────────────────────────────────
   return (
     <header className={headerClassName}>
       <div className="header-inner">
-        {/* 로고: 로그인 O → /dashboard, 로그인 X → / */}
-        <button
-          type="button"
-          className="header-logo"
-          onClick={handleLogoClick}
-        >
-          <img
-            src={StoryLexLogo}
-            alt="StoryLex 로고"
-            className="header-logo-img"
-          />
-        </button>
+        {/* Left: Logo */}
+        <div className="header-left">
+          <button
+            type="button"
+            className="header-logo"
+            onClick={handleLogoClick}
+          >
+            <img
+              src={StoryLexLogo}
+              alt="StoryLex"
+              className="header-logo-img"
+            />
+          </button>
+        </div>
 
-        {/* 비회원일 때는 nav 자체를 렌더링하지 않음 */}
-        {isAuthenticated && (
-          <nav className="header-nav" aria-label="주요 메뉴">
-            <div className="header-nav-group">
-              {navItems.map((item) => (
-                <NavLink key={item.to} to={item.to} className={getNavClass}>
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
+        {/* Center: Navigation */}
+        <div className="header-center">
+          <nav className="header-nav" aria-label="메인 메뉴">
+            {isAuthenticated ? (
+              // 회원 전용 메뉴 (대시보드/단어장/AI 스토리/학습하기)
+              <div className="header-nav-group">
+                {AUTH_NAV_ITEMS.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={getNavClass}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            ) : isLandingGuest ? (
+              // 비회원 랜딩 전용 메뉴 (섹션 스크롤)
+              <div className="header-nav-landing">
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("how-it-works")}
+                >
+                  학습 과정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollToSection("features")}
+                >
+                  주요 기능
+                </button>
+              </div>
+            ) : null}
           </nav>
-        )}
+        </div>
 
-        <div className="header-actions">
-          {isAuthenticated ? (
-            <div className="header-account" ref={accountRef}>
-              <button
-                type="button"
-                className="header-profile"
-                onClick={handleProfileClick}
-                aria-haspopup="true"
-                aria-expanded={isAccountMenuOpen}
-                aria-label="계정 메뉴 열기"
-              >
-                <img
-                  src={userIcon}
-                  alt="user icon"
-                  className="header-profile-icon"
-                />
-              </button>
-
-              {isAccountMenuOpen && (
-                <div className="header-account-menu">
-                  <button
-                    type="button"
-                    className="header-account-menu-item"
-                    onClick={() => {
-                      setIsAccountMenuOpen(false);
-                      navigate("/account/profile");
-                    }}
-                  >
-                    내 정보 / 계정 설정
-                  </button>
-                  <button
-                    type="button"
-                    className="header-account-menu-item header-account-menu-item--danger"
-                    onClick={handleLogoutClick}
-                  >
-                    로그아웃
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate("/auth/login")}
-              >
-                로그인
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate("/auth/signup")}
-              >
-                회원가입
-              </Button>
-            </>
-          )}
+        {/* Right: Actions */}
+        <div className="header-right">
+          <div className="header-actions">
+            {isAuthenticated ? (
+              // 프로필 / 계정 메뉴
+              <div className="header-account" ref={accountRef}>
+                <button
+                  type="button"
+                  className="header-profile-btn"
+                  onClick={() =>
+                    setIsAccountMenuOpen((prev) => !prev)
+                  }
+                  aria-haspopup="menu"
+                  aria-expanded={isAccountMenuOpen}
+                >
+                  <img
+                    src={userIcon}
+                    alt="프로필"
+                    className="header-profile-img"
+                  />
+                </button>
+                {isAccountMenuOpen && (
+                  <div className="header-dropdown" role="menu">
+                    <button
+                      type="button"
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        navigate("/account/profile");
+                      }}
+                    >
+                      계정 설정
+                    </button>
+                    <button
+                      type="button"
+                      className="header-dropdown-item header-dropdown-item--danger"
+                      onClick={handleLogoutClick}
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // 비회원: 로그인 / 무료 시작 버튼
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/auth/login")}
+                >
+                  로그인
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate("/auth/signup")}
+                >
+                  회원가입
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </header>

@@ -14,6 +14,13 @@ function FilterDropdown({
   const current = options.find((opt) => opt.value === value) || options[0];
   const isSelected = value !== options[0].value;
 
+  const handleSelect = (nextValue) => {
+    // 값 변경
+    onChange(id, nextValue);
+    // 선택 후 드롭다운 닫기 (부모가 토글 방식이라고 가정)
+    onToggle(id);
+  };
+
   return (
     <div className="filter-group">
       {label && <span className="filter-label">{label}</span>}
@@ -37,7 +44,7 @@ function FilterDropdown({
                 className={`dropdown-item ${
                   value === opt.value ? "active" : ""
                 }`}
-                onClick={() => onChange(id, opt.value)}
+                onClick={() => handleSelect(opt.value)}
               >
                 {opt.label}
               </button>

@@ -80,12 +80,15 @@
 
 /* ───── Outline ───── */
 .btn--outline {
-  background: transparent;
-  color: var(--primary-500);
-  border-color: var(--primary-500);
+background-color: transparent;
+  border: 1px solid var(--neutral-300); 
+  color: var(--neutral-700);          
+  transition: all 0.2s ease;
 }
 .btn--outline:hover:not(:disabled) {
-  background: var(--primary-100);
+  border-color: var(--primary-500);     /* 브랜드 보라색 테두리 */
+  color: var(--primary-600);            /* 브랜드 보라색 글자 */
+  background-color: var(--primary-100);
 }
 
 /* ───── Warning ───── */

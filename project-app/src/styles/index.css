@@ -3,6 +3,14 @@
 @import "./tokens.css";
 @import "tailwindcss";
 
+/* ----------------------------------------- */
+/* 전역 레이아웃용 헤더 높이 토큰            */
+/* ----------------------------------------- */
+:root {
+  /* PC 기준 헤더 기본 높이 (Header.css와 맞춤) */
+  --layout-header-offset: 76px;
+}
+
 /* 기본 타이포/배경 */
 html {
   font-size: 100%;
@@ -14,6 +22,9 @@ body {
   line-height: var(--line-height-base);
   background: var(--color-bg);
   color: var(--color-text);
+
+  /* 헤더가 fixed라 본문이 가려지지 않도록 위 여백 확보 */
+  padding-top: var(--layout-header-offset);
 }
 
 a:hover {
@@ -89,4 +100,15 @@ a:hover {
 
 .mt-24 {
   margin-top: 24px;
+}
+
+/* ----------------------------------------- */
+/* 반응형에서 헤더 높이 맞춰 padding 보정    */
+/* ----------------------------------------- */
+/* Header.css에서 max-width: 1024px일 때 헤더 높이를 줄였으므로
+   본문 offset도 같이 줄여서 불필요한 빈 공간 방지 */
+@media (max-width: 1024px) {
+  :root {
+    --layout-header-offset: 64px;
+  }
 }

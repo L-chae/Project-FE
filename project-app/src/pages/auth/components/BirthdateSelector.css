@@ -3,7 +3,7 @@
 .birthdate-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;                 /* 상단 "생년월일" 라벨과 간격 최소화 */
 }
 
 .birthdate-row {
@@ -12,23 +12,33 @@
 }
 
 .birthdate-col {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
-/* 에러일 때 드롭다운 테두리 컬러 강조 (기존 폼 에러 스타일과 맞춤) */
+/* 이 영역 안의 드롭다운은 너무 커 보이지 않게 살짝만 줄이기 */
+.birthdate-col .filter-group {
+  gap: 0;                   /* FilterDropdown 기본 gap 제거 */
+}
+
+/* 필요하면 패딩 소폭 조정 */
+.birthdate-col .dropdown-btn {
+  padding-inline: 14px;
+}
+
+/* 에러일 때 드롭다운 테두리 컬러 강조 */
 .birthdate-group--error .dropdown-btn {
   border-color: var(--danger-300, #fecaca);
   background: var(--danger-50, #fef2f2);
 }
 
 .birthdate-error {
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 0.8rem;
 }
 
-/* 모바일에서도 가로 3등분 유지 */
+/* 모바일 */
 @media (max-width: 480px) {
   .birthdate-row {
-    gap: 6px;
+    gap: 8px;
   }
 }
