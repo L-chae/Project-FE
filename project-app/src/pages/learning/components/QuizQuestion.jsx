@@ -1,5 +1,4 @@
 // src/pages/quiz/components/QuizQuestion.jsx
-import React from "react";
 import "./QuizQuestion.css";
 export function QuizQuestion({
   question,         // { choices: [{id, text}], answerId }

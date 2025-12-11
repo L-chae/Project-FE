@@ -32,6 +32,8 @@ export default function Header() {
   const accountRef = useRef(null);
 
   const isAuthenticated = !!user;
+  const isAuthPage = location.pathname.startsWith("/auth");
+  const isLandingGuest = !isAuthenticated && location.pathname === "/";
 
   useEffect(() => {
     setIsAccountMenuOpen(false);
@@ -71,12 +73,10 @@ export default function Header() {
     setIsAccountMenuOpen((prev) => !prev);
   };
 
-  const isAuthPage = location.pathname.startsWith("/auth");
-
-  // 로그인/회원가입 페이지에는 로고만 표시
+  // 로그인/회원가입 페이지에는 로고만 표시 (항상 솔리드 헤더)
   if (isAuthPage) {
     return (
-      <header className="header">
+      <header className="header header--solid">
         <div className="header-inner">
           <button
             type="button"
@@ -96,8 +96,13 @@ export default function Header() {
 
   const navItems = isAuthenticated ? AUTH_NAV_ITEMS : [];
 
+  // 비회원+홈: 랜딩 스타일 / 나머지: 솔리드 스타일
+  const headerClassName = `header ${
+    isLandingGuest ? "header--landing" : "header--solid"
+  }`;
+
   return (
-    <header className="header">
+    <header className={headerClassName}>
       <div className="header-inner">
         {/* 로고: 로그인 O → /dashboard, 로그인 X → / */}
         <button
@@ -117,11 +122,7 @@ export default function Header() {
           <nav className="header-nav" aria-label="주요 메뉴">
             <div className="header-nav-group">
               {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={getNavClass}
-                >
+                <NavLink key={item.to} to={item.to} className={getNavClass}>
                   {item.label}
                 </NavLink>
               ))}
