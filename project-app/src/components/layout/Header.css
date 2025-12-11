@@ -1,20 +1,21 @@
-/* src/components/layout/Header.css */
+/* =========================================
+      Header 기본 구조
+========================================= */
 
 .header {
   position: sticky;
   top: 0;
   z-index: 40;
-  width: 100%;              /* 풀폭 배경 */
+  width: 100%;
   background-color: var(--neutral-50);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(130, 130, 154, 0.12);
   box-shadow: 0 8px 20px rgba(108, 92, 231, 0.04);
 }
+
 .header-inner {
   max-width: 1200px;
   margin: 0 auto;
-
-  /* 기본은 좌우 여백 없음 */
   padding-inline: 0;
   padding-block: var(--space-2);
 
@@ -25,19 +26,14 @@
   min-height: 64px;
 }
 
+/* =========================================
+      Logo
+========================================= */
 
-
-/* ─ Logo ─ */
 .header-logo {
   grid-area: logo;
-
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
-
-  padding: 0;
-  border: 0;
-  background: none;
   cursor: pointer;
 }
 
@@ -45,26 +41,23 @@
   height: 34px;
 }
 
-/* ─ Navigation ─ */
+/* =========================================
+      Navigation (가운데 메뉴)
+========================================= */
+
 .header-nav {
   grid-area: nav;
-
   display: flex;
   justify-content: center;
-  min-width: 0;
 }
 
-/* pill 컨테이너 */
 .header-nav-group {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-
   padding: 4px;
   background-color: var(--neutral-100);
   border-radius: 999px;
-
-  max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -73,33 +66,18 @@
   display: none;
 }
 
-/* pill 링크 */
 .header-nav-link {
   flex: 0 0 auto;
-  white-space: nowrap;
-
   padding: 8px 20px;
-
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background-color: transparent;
-
   font-size: 0.875rem;
   font-weight: 500;
-  text-decoration: none;
-
   color: var(--neutral-500);
-  cursor: pointer;
-
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.12s ease,
-    border-color 0.18s ease;
+  text-decoration: none;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: 0.18s ease;
 }
 
-/* hover */
 .header-nav-link:hover {
   background-color: var(--surface-1);
   color: var(--primary-500);
@@ -108,7 +86,6 @@
   transform: translateY(-1px);
 }
 
-/* active */
 .header-nav-link--active {
   background-color: var(--surface-1);
   color: var(--neutral-900);
@@ -117,52 +94,33 @@
   transform: translateY(-1px);
 }
 
-.header-nav-link--active:hover {
-  background-color: var(--surface-1);
-  color: var(--neutral-900);
-}
+/* =========================================
+      Account / Profile
+========================================= */
 
-/* focus-visible */
-.header-nav-link:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--focus-ring-color),
-    0 6px 16px rgba(15, 23, 42, 0.18);
-}
-
-/* ─ Right actions (buttons / profile) ─ */
 .header-actions {
   grid-area: actions;
-
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-  flex-shrink: 0;
 }
 
-/* 계정 영역 */
 .header-account {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-/* 프로필 버튼 */
+/* 프로필 아이콘 버튼 */
 .header-profile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  padding: 0;
+  background-color: #fff;
   border-radius: 50%;
-  background-color: #ffffff;
   cursor: pointer;
-  flex-shrink: 0;
-  transition:
-    transform 0.05s ease,
-    box-shadow 0.15s ease,
-    filter 0.15s ease;
+  transition: 0.15s ease;
 }
 
 .header-profile-icon {
@@ -170,22 +128,16 @@
   height: 40px;
 }
 
+/* hover */
 .header-profile:hover {
   filter: brightness(1.03);
   box-shadow: 0 10px 12px rgba(108, 92, 231, 0.3);
 }
 
-.header-profile:active {
-  transform: translateY(1px);
-  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.18);
-}
+/* =========================================
+      Account Dropdown Menu
+========================================= */
 
-.header-profile:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus-ring-color);
-}
-
-/* 계정 드롭다운 */
 .header-account-menu {
   position: absolute;
   top: calc(100% + 8px);
@@ -202,40 +154,87 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 60;
 }
 
+/* === 기본 메뉴 항목 === */
 .header-account-menu-item {
   width: 100%;
-  padding: 8px 10px;
-
-  border-radius: var(--radius-sm);
-  border: 0;
-  background: none;
-
+  padding: 10px 12px;
   font-size: 0.875rem;
-  text-align: left;
   color: var(--neutral-700);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-
-  transition:
-    background-color 0.12s ease,
-    color 0.12s ease;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .header-account-menu-item:hover {
   background-color: var(--neutral-100);
 }
 
-.header-account-menu-item--danger {
+/* === Spilt menu: 내 정보 / 계정 설정 === */
+.header-account-menu-item--split {
+  all: unset;
+  display: flex !important;
+  align-items: center !important;
+  padding: 10px 12px !important;
+  height: 38px;
+  cursor: pointer;
+}
+
+.menu-link {
+  font-size: 0.95rem;
+  color: var(--neutral-700);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.menu-link:hover {
+  color: var(--primary-500);
+}
+
+.menu-divider {
+  margin: 0 6px;
+  color: var(--neutral-400);
+}
+
+/* =========================================
+      Logout (텍스트 기반)
+========================================= */
+
+.menu-link-logout {
+  all: unset;               /* 버튼 스타일 완전 초기화 */
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--danger-200);
+  border-radius: var(--radius-sm);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+/* hover */
+.menu-link-logout:hover {
   color: var(--danger-500);
+  background: transparent !important;
 }
 
-.header-account-menu-item--danger:hover {
-  background-color: var(--danger-50);
+/* active (클릭 시 배경 제거) */
+.menu-link-logout:active {
+  background: transparent !important;
 }
 
-/* ─ Responsive ─ */
+/* focus 제거 */
+.menu-link-logout:focus {
+  outline: none !important;
+}
+
+/* =========================================
+      Responsive
+========================================= */
+
 @media (max-width: 1200px) {
   .header-inner {
     padding-inline: 24px;
@@ -299,4 +298,3 @@
     padding: 6px 10px;
   }
 }
-

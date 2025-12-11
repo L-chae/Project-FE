@@ -1,51 +1,36 @@
 // src/api/aiStoryApi.js
 import httpClient from "./httpClient";
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
-
-const mockDelay = (result, ms = 800) =>
-  new Promise((resolve) => setTimeout(() => resolve(result), ms));
-
 /**
- * 1) AI 스토리 생성 (POST /api/ai/story)
- *    - USE_MOCK = true  → 프론트 목업으로만 동작
- *    - USE_MOCK = false → 실제 서버(/api/ai/story) 호출
+ * AI 스토리 생성 + 저장 요청
+ * POST /api/ai/story
  *
- * Request:
- *   { words: string[], difficulty: string, style: string }
- *
- * Response (예상):
+ * 백엔드 AIStoryRequest:
  *   {
- *     storyEn: string,
- *     storyKo: string,
- *     usedWords?: (string | { text: string })[]
+ *     wrongAnswerLogIds: [Long, Long, ...]
  *   }
  */
-export const generateAiStory = async ({ words, difficulty, style }) => {
-  if (!Array.isArray(words) || words.length === 0) {
-    throw new Error("generateAiStory: words 배열이 비어 있습니다.");
+export const generateAiStory = async ({ wrongAnswerLogIds }) => {
+  if (!Array.isArray(wrongAnswerLogIds) || wrongAnswerLogIds.length === 0) {
+    throw new Error("generateAiStory: wrongAnswerLogIds 배열이 비어 있습니다.");
   }
 
-  if (USE_MOCK) {
-    console.log("[Mock] AI 스토리 생성 요청:", { words, difficulty, style });
+  const payload = {
+    wrongAnswerLogIds,
+  };
 
-    const joined = words.join(", ");
+  console.log("[generateAiStory] 요청 payload:", payload);
 
-    return mockDelay({
-      success: true,
-      message: "스토리 생성 성공(목업)",
-      storyEn: `Once upon a time, ${joined} were used in a magical story.`,
-      storyKo: `옛날 옛적에 ${joined}이(가) 마법 같은 이야기 속에서 사용되었습니다.`,
-      usedWords: words.map((w) => ({ text: w })),
-    });
+  try {
+    const res = await httpClient.post("/api/ai/story", payload);
+    // 기대 응답: { success, message, title, storyEn, storyKo, usedWords, storyId }
+    return res.data;
+  } catch (err) {
+    console.error(
+      "[generateAiStory] 서버 오류:",
+      err.response?.status,
+      err.response?.data
+    );
+    throw err;
   }
-
-  // 실제 서버 호출
-  const res = await httpClient.post("/api/ai/story", {
-    words,
-    difficulty,
-    style,
-  });
-
-  return res.data;
 };

@@ -6,6 +6,7 @@ import SignupPage from "./pages/auth/SignupPage";
 // 대시보드
 import ProfilePage from "./pages/account/ProfilePage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
+import LearningSettingsPage from "./pages/account/LearningSettingsPage";
 
 import StoryCreatePage from "./pages/stories/StoryCreatePage";
 import StoryDetailPage from "./pages/stories/StoryDetailPage";
@@ -25,13 +26,15 @@ function AppRouter() {
   return (
     <Routes>
       {/* 비회원 홈 */}
-      <Route path="/" element={<LandingPage />} />
+     <Route path="/" element={<LandingPage />} />
 
       {/* Auth 페이지 */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/signup" element={<SignupPage />} />
       <Route path="/auth/setup" element={<SetupPage />} />
       <Route path="/auth/find" element={<AccountFindPage />} />
+      <Route path="/account/learning-settings" element={<LearningSettingsPage />} />
+
 
       {/* 보호된 라우트 */}
       <Route element={<ProtectedRoute />}>

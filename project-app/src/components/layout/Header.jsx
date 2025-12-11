@@ -149,23 +149,39 @@ export default function Header() {
 
               {isAccountMenuOpen && (
                 <div className="header-account-menu">
-                  <button
-                    type="button"
-                    className="header-account-menu-item"
-                    onClick={() => {
-                      setIsAccountMenuOpen(false);
-                      navigate("/account/profile");
-                    }}
-                  >
-                    내 정보 / 계정 설정
-                  </button>
-                  <button
-                    type="button"
-                    className="header-account-menu-item header-account-menu-item--danger"
-                    onClick={handleLogoutClick}
-                  >
-                    로그아웃
-                  </button>
+                  <div className="header-account-menu-item header-account-menu-item--split">
+                    <span
+                      className="menu-link"
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        navigate("/account/profile");
+                      }}
+                    >
+                      내 정보
+                    </span>
+
+                    <span className="menu-divider">/</span>
+
+                    <span
+                      className="menu-link"
+                      onClick={() => {
+                        setIsAccountMenuOpen(false);
+                        navigate("/account/learning-settings");
+                      }}
+                    >
+                      계정 설정
+                    </span>
+                  </div>
+
+                  <div
+                  className="header-account-menu-item header-account-menu-item--danger menu-link-logout"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    handleLogoutClick();
+                  }}
+                >
+                  로그아웃
+                  </div>
                 </div>
               )}
             </div>

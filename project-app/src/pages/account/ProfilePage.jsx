@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import FilterDropdown from "../../components/common/FilterDropdown";
 import { Calendar } from "lucide-react";
+import BirthdateSelector from "../auth/components/BirthdateSelector";
 import "./ProfilePage.css";
 
 // 관심 분야 옵션 (회원가입 SetupPage와 의미 맞춰서 사용)
@@ -176,7 +177,7 @@ const ProfilePage = () => {
       <div className="profile-grid mt-24">
         {/* 기본 정보 & 학습 설정 카드 */}
         <section className="card profile-card">
-          <h2 className="card-title">기본 정보 & 학습 설정</h2>
+          <h2 className="card-title">기본 정보</h2>
 
           <form onSubmit={submitProfile}>
             {/* 기본 정보 섹션 */}
@@ -193,8 +194,7 @@ const ProfilePage = () => {
                   fullWidth
                 />
               </div>
-
-              <div className="form-field">
+               <div className="form-field">
                 <label className="form-label">이름</label>
                 <Input
                   type="text"
@@ -219,75 +219,14 @@ const ProfilePage = () => {
                   />
                 </div>
 
-                <div className="form-field form-field--with-icon">
-                  <label className="form-label" htmlFor="userBirth">
-                    생년월일
-                  </label>
-                  <Input
-                    id="userBirth"
-                    type="date"
-                    name="userBirth"
-                    value={profileForm.userBirth}
-                    onChange={handleProfileChange}
-                    leftIcon={<Calendar size={18} />}
-                    fullWidth
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 학습 설정 섹션 */}
-            <div className="profile-section">
-              <h3 className="profile-section-title">학습 설정</h3>
-
-              <div className="form-field">
-                <label className="form-label" htmlFor="goal">
-                  나의 다짐 (Goal)
-                </label>
-                <Input
-                  id="goal"
-                  type="text"
-                  name="goal"
-                  placeholder="예: 올해 안에 토익 900점"
-                  value={profileForm.goal}
-                  onChange={handleProfileChange}
-                  fullWidth
+                 <div className="form-field">
+                <BirthdateSelector
+                  name="userBirth"
+                  value={profileForm.userBirth}
+                  onChange={(e) => handleProfileChange(e)}
                 />
               </div>
-
-              <div className="form-row">
-                <div className="form-field">
-                  <label className="form-label" htmlFor="dailyWordGoal">
-                    일일 목표 단어 수
-                  </label>
-                  <Input
-                    id="dailyWordGoal"
-                    type="number"
-                    name="dailyWordGoal"
-                    value={profileForm.dailyWordGoal}
-                    onChange={handleProfileChange}
-                    fullWidth
-                  />
-                </div>
-
-                <div className="form-field">
-                  <FilterDropdown
-                    id="preference"
-                    label="관심 분야"
-                    options={INTEREST_OPTIONS}
-                    value={profileForm.preference}
-                    isOpen={openDropdown === "preference"}
-                    onToggle={handleDropdownToggle}
-                    onChange={handlePreferenceChange}
-                  />
-                </div>
               </div>
-            </div>
-
-            <div className="form-actions mt-24">
-              <Button type="submit" variant="primary" size="md">
-                변경사항 저장
-              </Button>
             </div>
           </form>
         </section>

@@ -166,20 +166,32 @@
 }
 
 /* =========================================
-   6. 이메일 도움/성공 메시지
+   6. 유효성 안내 메시지 (에러/도움/성공 공통 스타일)
    ========================================= */
-.form-help {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: var(--neutral-500);
-}
-
+.form-error,
+.form-help,
 .form-success {
   margin-top: 4px;
   font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--success-600, #16a34a);
+  line-height: 1.4;
 }
+
+/* 에러 메시지 */
+.form-error {
+  color: var(--danger-600, #dc2626);
+}
+
+/* 안내(헬프) 메시지 */
+.form-help {
+  color: var(--neutral-500);
+}
+
+/* 성공(유효) 메시지 */
+.form-success {
+  color: var(--success-600, #16a34a);
+  font-weight: 500;
+}
+
 
 /* =========================================
    7. 반응형 처리
@@ -247,5 +259,31 @@
 
   .google-btn {
     font-size: 0.85rem;
+  }
+}
+
+/* =========================================
+   6-1. 이메일 행 (인풋 + 중복 확인 버튼)
+   ========================================= */
+.signup-email-row {
+  display: flex;
+  align-items: flex-end; /* 인풋 하단 라인 기준 정렬 */
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.signup-email-input {
+  flex: 1; /* 인풋이 가로 대부분 차지 */
+}
+
+.signup-email-btn-wrap .btn {
+  white-space: nowrap;      /* "중복 확인" 줄바꿈 방지 */
+  padding-inline: 12px;     /* 살짝 좁게 */
+}
+
+/* 모바일에서 너무 붙어 보이면 필요 시 조정 */
+@media (max-width: 480px) {
+  .signup-email-row {
+    gap: 6px;
   }
 }

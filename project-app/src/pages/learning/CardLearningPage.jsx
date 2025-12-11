@@ -30,13 +30,31 @@ export default function CardLearningPage() {
   const limit = Number(searchParams.get("limit") || 20);
 
   // UI 표시용
-  const rawLevel = searchParams.get("level") || "All";
-  const rawDomain = searchParams.get("domain") || "All";
+// 분야(domain)
+const rawDomain = searchParams.get("domain") || "All";
 
-  const levelLabel = rawLevel === "All" ? "All" : rawLevel;
-  const domainLabel = rawDomain;
+const DOMAIN_LABEL_MAP = {
+  All: "전체 분야",
+  "Daily Life": "일상생활",
+  "People & Feelings": "사람/감정",
+  Business: "직장/비즈니스",
+  "School & Learning": "학교/학습",
+  Travel: "여행/교통",
+  "Food & Health": "음식/건강",
+  Technology: "기술/IT",
+};
 
-  const badgeText = `${domainLabel} | Lv.${levelLabel}`;
+const domainLabel = DOMAIN_LABEL_MAP[rawDomain] || rawDomain;
+
+// 레벨(level)
+const rawLevel = searchParams.get("level");
+const rawLevelLower = rawLevel ? rawLevel.toLowerCase() : null;
+
+const levelLabel =
+  !rawLevelLower || rawLevelLower === "all" ? "All" : rawLevel;
+
+// 최종 라벨 텍스트
+const badgeText = `${domainLabel} | Lv.${levelLabel}`;
   const isWrongMode = source === "wrong-note";
 
   // API용
