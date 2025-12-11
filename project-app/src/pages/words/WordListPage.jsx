@@ -22,6 +22,7 @@ import Pagination from "../../components/common/Pagination";
 import Spinner from "../../components/common/Spinner";
 import FilterDropdown from "../../components/common/FilterDropdown";
 import EmptyState from "../../components/common/EmptyState";
+import { toKoreanPOS } from "@/utils/posUtils";
 import "./WordListPage.css";
 
 // =========================================
@@ -352,6 +353,25 @@ function WordListPage() {
 };
 
   const isEmptyAll = !isLoading && !errorMessage && words.length === 0;
+// 영어 분야명을 한글로 변환하는 매핑
+const DOMAIN_LABEL_MAP = {
+  "Daily Life": "일상생활",
+  "People & Feelings": "사람/감정",
+  "Business": "직장/비즈니스",
+  "School & Learning": "학교/학습",
+  "Travel": "여행/교통",
+  "Food & Health": "음식/건강",
+  "Technology": "기술/IT",
+
+  // 혹시 DB에서 소문자나 언더바로 오면 대비
+  "daily_life": "일상생활",
+  "people_feelings": "사람/감정",
+  "business": "직장/비즈니스",
+  "school_learning": "학교/학습",
+  "travel": "여행/교통",
+  "food_health": "음식/건강",
+  "technology": "기술/IT",
+};
 
   // =========================================
   // 렌더링
@@ -530,16 +550,19 @@ function WordListPage() {
                         {typeof w.level === "number" && (
                           <span className="tag tag-level">Lv.{w.level}</span>
                         )}
+
                         {w.partOfSpeech && (
                           <span className="tag tag-pos">
-                            {w.partOfSpeech}
+                            {toKoreanPOS(w.partOfSpeech)}
                           </span>
                         )}
+
                         {w.category && (
-                          <span className="tag tag-domain">{w.category}</span>
+                          <span className="tag tag-domain">
+                            {DOMAIN_LABEL_MAP[w.category] || w.category}
+                          </span>
                         )}
                       </div>
-
                       {/* 뜻 */}
                       <div className="word-meaning-row">
                         <p className="word-meaning">{meaningPreview}</p>

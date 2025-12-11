@@ -191,6 +191,9 @@
   padding: 32px;
   position: relative;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+
 }
 
 /* 배경 장식 아이콘 */
@@ -300,26 +303,35 @@
   display: flex;
   justify-content: flex-end;
 }
-
-/* 토큰 기반 삭제 버튼 스타일 */
 .story-delete-btn {
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid var(--primary-200);
-  background-color: var(--primary-100);
-  color: var(--primary-600);
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: #ffe5e5;
+  border: 1px solid #ffbcbc;
+  color: #d22e2e;
+
   font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 14px;
+
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease,
-    box-shadow 0.15s ease, transform 0.1s ease;
+  transition: all 0.2s ease;
 }
 
 .story-delete-btn:hover {
-  background-color: var(--primary-600);
-  color: var(--neutral-50);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  background: #ffd6d6;
+  border-color: #ff9c9c;
+  transform: translateY(-2px);
+}
+
+.story-delete-btn:active {
+  transform: translateY(0);
+}
+
+.story-delete-btn svg {
+  stroke-width: 2.2; /* 아이콘 조금 더 존재감 있게 */
 }
 
 /* 모바일 대응 */

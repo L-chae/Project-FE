@@ -18,7 +18,8 @@ import {
   addWordFromCluster,
 } from "../../api/wordApi";
 import { getClustersByCenter, createCluster } from "../../api/wordClusterApi";
-import Button from "../../components/common/Button"; // ✅ 공통 버튼 추가
+import Button from "../../components/common/Button"; 
+import { toKoreanPOS } from "../../utils/posUtils";
 import "./WordDetailPage.css";
 
 function WordDetailPage() {
@@ -245,6 +246,26 @@ const handleBack = () => {
     (clusterData.similar && clusterData.similar.length > 0) ||
     (clusterData.opposite && clusterData.opposite.length > 0);
 
+    // 영어 → 한글 분야 변환 매핑
+const DOMAIN_LABEL_MAP = {
+  "Daily Life": "일상생활",
+  "People & Feelings": "사람/감정",
+  "Business": "직장/비즈니스",
+  "School & Learning": "학교/학습",
+  "Travel": "여행/교통",
+  "Food & Health": "음식/건강",
+  "Technology": "기술/IT",
+
+  // 혹시 DB가 이렇게 내려오면 대비
+  "daily_life": "일상생활",
+  "people_feelings": "사람/감정",
+  "business": "직장/비즈니스",
+  "school_learning": "학교/학습",
+  "travel": "여행/교통",
+  "food_health": "음식/건강",
+  "technology": "기술/IT",
+};
+
   // ------------------------------------------------
   // 렌더링
   // ------------------------------------------------
@@ -288,10 +309,14 @@ const handleBack = () => {
                 <span className="tag tag-level">Lv.{displayLevel}</span>
               )}
               {partOfSpeech && (
-                <span className="tag tag-pos">{partOfSpeech}</span>
+                <span className="tag tag-pos">
+                  {toKoreanPOS(partOfSpeech)}
+                </span>
               )}
               {displayDomain && (
-                <span className="tag tag-domain">{displayDomain}</span>
+                <span className="tag tag-domain">
+                  {DOMAIN_LABEL_MAP[displayDomain] || displayDomain}
+                </span>
               )}
             </div>
 

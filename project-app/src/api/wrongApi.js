@@ -198,6 +198,13 @@ export const getWrongList = async () => {
  * StoryCreatePage 등에서 사용.
  * 여기서는 단순 필드만 리턴.
  */
+/**
+ * 스토리에 아직 사용되지 않은 오답 목록
+ * GET /api/wrong/unused
+ *
+ * StoryCreatePage 등에서 사용.
+ * 여기서는 단순 필드만 리턴.
+ */
 export const getUnusedWrongLogs = async () => {
   if (USE_MOCK) {
     console.log("[Mock] 스토리 미사용 오답 목록 조회");
@@ -205,24 +212,44 @@ export const getUnusedWrongLogs = async () => {
 
     return mockWrongList
       .filter((item) => item.isUsedInStory === "N")
+      // ⭐ wrongAt 기준 최신순 정렬
+      .sort((a, b) => {
+        if (!a.wrongAt || !b.wrongAt) return 0;
+        return new Date(b.wrongAt) - new Date(a.wrongAt);
+      })
       .map((item) => ({
         wrongWordId: item.wrongWordId,
         wordId: item.wordId,
         word: item.word,
         meaning: item.meaning,
+        wrongAt: item.wrongAt, // ⭐ 정렬에 쓸 필드 유지
       }));
   }
 
   const res = await httpClient.get("/api/wrong/unused");
   const arr = Array.isArray(res.data) ? res.data : [];
 
-  return arr.map((raw) => ({
+  // ⭐ 백엔드에서 내려온 시간 필드를 모아서 wrongAt으로 통일
+  const mapped = arr.map((raw) => ({
     wrongWordId: raw.wrongWordId ?? raw.wrongLogId ?? raw.id,
     wordId: raw.wordId,
     word: raw.word,
     meaning: raw.meaning,
+    wrongAt:
+      raw.wrongAt ??
+      raw.lastWrongAt ??
+      raw.wrong_at ??
+      raw.createdAt ??
+      null,
   }));
+
+  // ⭐ 여기서 최신순 정렬
+  return mapped.sort((a, b) => {
+    if (!a.wrongAt || !b.wrongAt) return 0;
+    return new Date(b.wrongAt) - new Date(a.wrongAt);
+  });
 };
+
 
 /**
  * 최근 퀴즈 오답 (대시보드/홈 등에서 사용)

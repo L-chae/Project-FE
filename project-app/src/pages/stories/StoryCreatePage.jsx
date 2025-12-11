@@ -46,19 +46,26 @@ const StoryCreatePage = () => {
       try {
         const res = await getUnusedWrongLogs();
 
+        // 1) API 응답을 화면에서 쓸 형태로 변환
         const mapped = (res || []).map((item) => {
           const rawWord = item.word;
 
           // 서버에서 word가 문자열 / 객체 둘 다 올 수 있음
           const wordText =
-            typeof rawWord === "string"
-              ? rawWord
-              : rawWord?.word ?? "";
+            typeof rawWord === "string" ? rawWord : rawWord?.word ?? "";
 
           const meaningText =
             item.meaning ??
             (typeof rawWord === "object" ? rawWord?.meaning : "") ??
             "";
+
+          // 🔹 최신순 정렬을 위해 시간 정보도 함께 보존
+          const wrongAt =
+            item.wrongAt ||
+            item.lastWrongAt ||
+            item.wrong_at ||
+            item.createdAt ||
+            null;
 
           return {
             // 오답 로그 PK
@@ -76,10 +83,18 @@ const StoryCreatePage = () => {
 
             word: wordText,
             meaning: meaningText,
+            wrongAt,        // ⭐ 정렬용 필드 추가
           };
         });
 
-        setMistakePool(mapped);
+        // 2) wrongAt 기준으로 최신순(내림차순) 정렬
+        const sorted = mapped.slice().sort((a, b) => {
+          if (!a.wrongAt || !b.wrongAt) return 0;
+          return new Date(b.wrongAt) - new Date(a.wrongAt);
+        });
+
+        // 3) 정렬된 리스트를 상태로 저장
+        setMistakePool(sorted);
       } catch (e) {
         console.error("오답 목록 로딩 실패:", e);
       } finally {
@@ -89,6 +104,7 @@ const StoryCreatePage = () => {
 
     fetchMistakes();
   }, []);
+
 
   // 2) Quiz / WrongNote 에서 넘어온 단어 자동 선택
   useEffect(() => {

@@ -4,11 +4,20 @@ import { useState } from "react";
 import { updateUserInfo } from "../../../api/userApi";
 
 export function useLearningSettingsForm(initial = {}) {
-  // 🔒 undefined-safe 초기값 처리
+
+  // 서버는 문자열로 preference 를 저장하므로
+  // 불러올 때 문자열이면 배열로 변환
+  const parsedPreference =
+    typeof initial.preference === "string"
+      ? initial.preference.split(",").filter(Boolean)
+      : Array.isArray(initial.preference)
+      ? initial.preference
+      : [];
+
   const safeInitial = {
     dailyWordGoal: initial.dailyWordGoal ?? 20,
     goal: initial.goal ?? "",
-    preference: Array.isArray(initial.preference) ? initial.preference : [],
+    preference: parsedPreference,
   };
 
   const [level, setLevel] = useState(safeInitial.dailyWordGoal);
@@ -36,7 +45,7 @@ export function useLearningSettingsForm(initial = {}) {
       await updateUserInfo({
         goal,
         dailyWordGoal: level,
-        preference: selected,
+        preference: selected.join(","), // ← ★ 핵심: 문자열로 변환해 서버로 전송
       });
     } catch (err) {
       setError("저장 중 오류가 발생했습니다.");
