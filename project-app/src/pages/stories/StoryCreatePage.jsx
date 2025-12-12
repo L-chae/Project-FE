@@ -279,21 +279,26 @@ const StoryCreatePage = () => {
         throw new Error(aiResult?.message || "AI 스토리 생성에 실패했습니다.");
       }
 
-      navigate(`/stories/${aiResult.storyId}`, {
-        state: {
-          story: {
-            storyId: aiResult.storyId,
-            title: aiResult.title,
-            storyEn: aiResult.storyEn,
-            storyKo: aiResult.storyKo,
-            createdAt: new Date().toISOString(),
-            words:
-              aiResult.usedWords?.map((w) =>
-                typeof w === "string" ? { text: w } : w
-              ) || [],
+          navigate(`/stories/${aiResult.storyId}`, {
+          state: {
+            story: {
+              storyId: aiResult.storyId,
+
+              // ✅ 여기 핵심
+              title: aiResult.title,     // 영어 제목
+              titleKo: aiResult.titleKo,   // 한글 제목
+
+              storyEn: aiResult.storyEn,
+              storyKo: aiResult.storyKo,
+              createdAt: new Date().toISOString(),
+              words:
+                aiResult.usedWords?.map((w) =>
+                  typeof w === "string" ? { text: w } : w
+                ) || [],
+            },
           },
-        },
-      });
+        });
+
     } catch (e) {
       console.error("스토리 생성 실패:", e);
       alert(e.message || "스토리를 생성하는 중 오류가 발생했습니다.");

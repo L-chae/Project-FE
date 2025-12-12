@@ -9,9 +9,8 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 let mockStories = [
   {
     storyId: 1,
-    titleEn: "First Snow in Seoul",
+    title: "First Snow in Seoul",
     titleKo: "서울의 첫눈",
-    title: "First Snow in Seoul", // 리스트/구버전 호환용(기본 표시 타이틀)
     storyEn:
       "On the first snowy morning, I finally used every word I had studied this week.",
     storyKo:
@@ -20,9 +19,9 @@ let mockStories = [
   },
   {
     storyId: 2,
-    titleEn: "The Coffee Shop",
-    titleKo: "커피숍에서",
     title: "The Coffee Shop",
+    titleKo: "커피숍에서",
+
     storyEn:
       "The aroma of roasted beans filled the air as I waited for my order.",
     storyKo:
@@ -33,7 +32,7 @@ let mockStories = [
 
 // -------------------------
 // 공통: 스토리 응답 정규화
-// - 제목이 한글/영어/둘다 섞여 와도 titleEn/titleKo 분리 가능한 만큼 분리
+// - 제목이 한글/영어/둘다 섞여 와도 title/titleKo 분리 가능한 만큼 분리
 // - 화면에서 기본으로 쓸 title(대표 타이틀)도 안정적으로 세팅
 // -------------------------
 const normalizeStory = (raw) => {
@@ -49,14 +48,14 @@ const normalizeStory = (raw) => {
     raw.createdAt ?? raw.created_at ?? raw.created ?? raw.createdDate ?? "";
 
   // title 분리 케이스(백엔드가 제공하는 경우)
-  let titleEn = (raw.titleEn ?? raw.title_en ?? raw.enTitle ?? "").trim();
+  let title = (raw.title ?? raw.title_en ?? raw.enTitle ?? "").trim();
   let titleKo = (raw.titleKo ?? raw.title_ko ?? raw.koTitle ?? "").trim();
 
   // title 단일 필드 케이스
   const rawTitle = (raw.title ?? raw.storyTitle ?? "").trim();
 
   // title 하나에 둘 다 들어오는 경우(줄바꿈) → 분리 시도
-  if ((!titleEn && !titleKo) && rawTitle && rawTitle.includes("\n")) {
+  if ((!title && !titleKo) && rawTitle && rawTitle.includes("\n")) {
     const parts = rawTitle
       .split(/\r?\n/)
       .map((s) => s.trim())
@@ -65,20 +64,19 @@ const normalizeStory = (raw) => {
     // 보통 [영문, 한글] 또는 [한글, 영문] 형태로 옴
     if (parts.length >= 2) {
       // 언어 판별을 완벽히 못하니 "둘 다 제공"만 목표로 두고
-      // 1줄/2줄을 각각 titleEn/titleKo로 배치(표시는 StoryDetailPage에서 처리)
-      titleEn = parts[0];
+      // 1줄/2줄을 각각 title/titleKo로 배치(표시는 StoryDetailPage에서 처리)
+      title = parts[0];
       titleKo = parts[1];
     }
   }
 
   // 분리된게 없고 rawTitle만 있으면 대표 타이틀로 사용
-  const titlePrimary = titleEn || titleKo || rawTitle || "Untitled";
+  const titlePrimary = title || titleKo || rawTitle || "Untitled";
 
   return {
     ...raw,
     storyId: Number(storyId) || storyId,
     title: titlePrimary,     // 리스트/기존 컴포넌트 호환용 대표 타이틀
-    titleEn: titleEn || "",  // 상세에서 영/한 분리 표시용
     titleKo: titleKo || "",
     storyEn,
     storyKo,
@@ -173,9 +171,8 @@ export const getStoryDetail = async (storyId) => {
 
     return normalizeStory({
       storyId: idNum,
-      titleEn: "Mock Story",
-      titleKo: "목업 스토리",
       title: "Mock Story",
+      titleKo: "목업 스토리",
       storyEn:
         "This is a mock story generated for testing. Feel free to replace it with a real one.",
       storyKo:
@@ -219,14 +216,13 @@ export const getStoryWords = async (storyId) => {
  * POST /api/story
  *
  * ✅ title이 한글/영문/둘다로 흔들리는 문제를 줄이려면
- *    백엔드가 titleEn/titleKo를 지원하도록 바꾸는 게 정석.
+ *    백엔드가 title/titleKo를 지원하도록 바꾸는 게 정석.
  *
- * Request(권장): { titleEn?, titleKo?, title?, storyEn, storyKo, wrongLogIds? }
- * Response:      { storyId, title/titleEn/titleKo, storyEn, storyKo, createdAt }
+ * Request(권장): { title?, titleKo?, title?, storyEn, storyKo, wrongLogIds? }
+ * Response:      { storyId, title/title/titleKo, storyEn, storyKo, createdAt }
  */
 export const saveStory = async ({
   title,
-  titleEn,
   titleKo,
   storyEn,
   storyKo,
@@ -235,7 +231,6 @@ export const saveStory = async ({
   if (USE_MOCK) {
     console.log("[Mock] 스토리 저장 요청:", {
       title,
-      titleEn,
       titleKo,
       storyEn,
       storyKo,
@@ -245,12 +240,11 @@ export const saveStory = async ({
     const now = new Date().toISOString();
     const newStoryId = Date.now();
 
-    const primaryTitle = (titleEn || titleKo || title || "Mock Story").trim();
+    const primaryTitle = (title || titleKo || title || "Mock Story").trim();
 
     const newStory = normalizeStory({
       storyId: newStoryId,
       title: primaryTitle,
-      titleEn: (titleEn || "").trim(),
       titleKo: (titleKo || "").trim(),
       storyEn: storyEn || "",
       storyKo: storyKo || "",
@@ -261,14 +255,14 @@ export const saveStory = async ({
     return newStory;
   }
 
-  // 서버가 titleEn/titleKo를 지원하면 함께 보내고,
+  // 서버가 title/titleKo를 지원하면 함께 보내고,
   // 지원 안 하면(엄격 DTO) 백엔드에서 ignoreUnknownProperties 설정 필요.
   const payload = {
-    title: (titleEn || titleKo || title || "").trim(),
+    title: (title || titleKo || title || "").trim(),
     storyEn,
     storyKo,
     wrongLogIds,
-    ...(titleEn ? { titleEn: titleEn.trim() } : {}),
+    ...(title ? { title: title.trim() } : {}),
     ...(titleKo ? { titleKo: titleKo.trim() } : {}),
   };
 
