@@ -1,76 +1,7 @@
 /* src/pages/auth/SignupPage.css */
 
-/* =========================================
-   1. 전체 카드 레이아웃
-   ========================================= */
-.signup-card {
-  display: flex;
-  width: 100%;
-  max-width: 1180px;
-
-  /* 🔹 화면 높이에 따라 자연스럽게 변화 */
-  min-height: clamp(560px, 78vh, 720px);
-  margin: clamp(24px, 6vh, 48px) auto;
-
-  background: var(--surface-1);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
-}
-
-/* =========================================
-   2. 왼쪽 비주얼 영역
-   ========================================= */
-.signup-visual {
-  flex: 1;
-  background: linear-gradient(135deg, var(--surface-3), var(--surface-2));
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-.signup-visual-inner {
-  position: relative;
-  width: 86%;
-  max-width: 450px;
-  height: 88%;
-  margin: 0 auto;
-}
-
-/* 일러스트 */
-.signup-visual-graphic {
-  position: absolute;
-  bottom: -6px;
-  left: 30%;
-  width: 82%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 5;
-}
-
-/* =========================================
-   3. 오른쪽 폼 영역
-   ========================================= */
-.signup-form-area {
-  flex: 1;
-  padding: 48px 56px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 제목 */
-.signup-title {
-  font-size: 1.75rem; /* 28px */
-  font-weight: 700;
-  color: var(--neutral-900);
-  margin-bottom: 28px;
-}
-
-/* 폼 컨테이너 */
-.signup-form {
-  width: 100%;
-}
+/* 카드/비주얼은 AuthCommon.css의 .auth-card / .auth-visual 사용 */
+/* 여기서는 회원가입 전용 요소만 정의 */
 
 /* 전역 에러 메시지 위치 */
 .signup-error-global {
@@ -83,71 +14,46 @@
   margin-top: var(--space-4);
 }
 
-/* =========================================
-   4. OR 구분선 & 구글 버튼
-   ========================================= */
-.signup-divider {
+/* 이메일 행 (인풋 + 중복 확인 버튼) */
+.signup-email-row {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 28px 0;
-  color: var(--neutral-500);
-  font-size: 0.8125rem;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
-.signup-divider::before,
-.signup-divider::after {
-  content: "";
+.signup-email-input {
   flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
 }
 
-/* 구글 버튼 (로그인과 일관된 스타일) */
-.google-btn {
-  width: 100%;
-  padding: var(--space-3);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: var(--neutral-800);
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.1s ease;
+.signup-email-btn-wrap .btn {
+  white-space: nowrap;
+  padding-inline: 12px;
 }
 
-.google-btn img {
-  width: 20px;
-  height: 20px;
+/* 유효성 안내 메시지 (에러/도움/성공) */
+.form-error,
+.form-help,
+.form-success {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
-.google-btn:hover:not(:disabled) {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-soft);
+.form-error {
+  color: var(--danger-600, #dc2626);
 }
 
-.google-btn:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: none;
+.form-help {
+  color: var(--neutral-500);
 }
 
-.google-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.form-success {
+  color: var(--success-600, #16a34a);
+  font-weight: 500;
 }
 
-/* =========================================
-   5. 하단 텍스트 / 링크
-   ========================================= */
+/* 하단 텍스트 / 링크 (네이밍 유지) */
 .signup-footer-text {
   margin-top: var(--space-4);
   font-size: 0.875rem;
@@ -165,76 +71,9 @@
   text-decoration: underline;
 }
 
-/* =========================================
-   6. 유효성 안내 메시지 (에러/도움/성공 공통 스타일)
-   ========================================= */
-.form-error,
-.form-help,
-.form-success {
-  margin-top: 4px;
-  font-size: 0.8rem;
-  line-height: 1.4;
-}
-
-/* 에러 메시지 */
-.form-error {
-  color: var(--danger-600, #dc2626);
-}
-
-/* 안내(헬프) 메시지 */
-.form-help {
-  color: var(--neutral-500);
-}
-
-/* 성공(유효) 메시지 */
-.form-success {
-  color: var(--success-600, #16a34a);
-  font-weight: 500;
-}
-
-
-/* =========================================
-   7. 반응형 처리
-   ========================================= */
-@media (max-width: 1024px) {
-  .signup-card {
-    max-width: 960px;
-    min-height: clamp(520px, 82vh, 680px);
-  }
-
-  .signup-form-area {
-    padding: 40px 40px;
-  }
-
-  .signup-title {
-    font-size: 1.6rem;
-    margin-bottom: 24px;
-  }
-}
-
+/* 반응형에서 회원가입 전용 조정 */
 @media (max-width: 768px) {
-  .signup-card {
-    flex-direction: column;
-    border-radius: 20px;
-    margin: 20px auto;
-    min-height: auto;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
-  }
-
-  .signup-visual {
-    display: none; /* 모바일에서는 폼 집중 */
-  }
-
-  .signup-form-area {
-    padding: 28px 20px 32px;
-  }
-
-  .signup-title {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-  }
-
-  .signup-divider {
+  .auth-card--signup .auth-divider {
     margin: 24px 0;
   }
 
@@ -244,46 +83,7 @@
 }
 
 @media (max-width: 480px) {
-  .signup-card {
+  .auth-card--signup {
     margin: 16px auto;
-    border-radius: 16px;
-  }
-
-  .signup-form-area {
-    padding: 24px 16px 28px;
-  }
-
-  .signup-title {
-    font-size: 1.4rem;
-  }
-
-  .google-btn {
-    font-size: 0.85rem;
-  }
-}
-
-/* =========================================
-   6-1. 이메일 행 (인풋 + 중복 확인 버튼)
-   ========================================= */
-.signup-email-row {
-  display: flex;
-  align-items: flex-end; /* 인풋 하단 라인 기준 정렬 */
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.signup-email-input {
-  flex: 1; /* 인풋이 가로 대부분 차지 */
-}
-
-.signup-email-btn-wrap .btn {
-  white-space: nowrap;      /* "중복 확인" 줄바꿈 방지 */
-  padding-inline: 12px;     /* 살짝 좁게 */
-}
-
-/* 모바일에서 너무 붙어 보이면 필요 시 조정 */
-@media (max-width: 480px) {
-  .signup-email-row {
-    gap: 6px;
   }
 }

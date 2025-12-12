@@ -21,18 +21,17 @@
 /* 2. 전체 레이아웃 (Grid) */
 .profile-grid {
   display: grid;
-  grid-template-columns: 1fr; /* 모바일: 1열 */
+  grid-template-columns: 2fr 1fr;   /* 🔥 왼쪽 / 오른쪽 */
   gap: var(--space-6);
   align-items: start;
 }
 
-/* PC 화면(1024px 이상): 왼쪽 2 : 오른쪽 1 비율 */
-@media (min-width: 1024px) {
+/* 태블릿 & 모바일: 세로 스택 */
+@media (max-width: 1024px) {
   .profile-grid {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
-
 /* 2-1. 카드 공통 스타일 (약간 더 입체감) */
 .profile-card,
 .password-card {
@@ -114,12 +113,87 @@
   margin-top: var(--space-6);
 }
 
+/* 하루 목표 단어 수 슬라이더 */
+.daily-goal-slider {
+  --track-h: 8px;
+  --thumb: 18px;
+
+  width: 100%;
+  height: var(--thumb);          /* ✅ thumb 높이만큼 확보 */
+  background: transparent;       /* ✅ 배경은 트랙에 줄 거라 투명 */
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+/* WebKit track (Chrome/Edge/Safari) */
+.daily-goal-slider::-webkit-slider-runnable-track {
+  height: var(--track-h);
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--primary-500) 0%,
+    var(--primary-500) var(--percent),
+    var(--neutral-200) var(--percent),
+    var(--neutral-200) 100%
+  );
+}
+
+/* WebKit thumb */
+.daily-goal-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+
+  width: var(--thumb);
+  height: var(--thumb);
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--primary-500);
+
+  /* ✅ 중앙 정렬 핵심: (트랙높이 - thumb)/2 만큼 위로 */
+  margin-top: calc((var(--track-h) - var(--thumb)) / 2);
+}
+
+/* Firefox track */
+.daily-goal-slider::-moz-range-track {
+  height: var(--track-h);
+  border-radius: 999px;
+  background: var(--neutral-200);
+}
+
+/* Firefox progress (채워지는 부분) */
+.daily-goal-slider::-moz-range-progress {
+  height: var(--track-h);
+  border-radius: 999px;
+  background: var(--primary-500);
+}
+
+/* Firefox thumb */
+.daily-goal-slider::-moz-range-thumb {
+  width: var(--thumb);
+  height: var(--thumb);
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--primary-500);
+}
+
+/* 하단 힌트 */
+.daily-goal-hint {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+}
+
+
+
 /* 7. 반응형 약간 보완 */
 @media (max-width: 768px) {
-  .profile-card,
-  .password-card {
-    padding: var(--space-4);
-  }
+  .profile-card {
+  margin-inline: auto;
+  width: 100%;
+}
 
   .profile-header {
     margin-bottom: var(--space-6);

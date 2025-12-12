@@ -60,7 +60,7 @@
   cursor: not-allowed;
   pointer-events: none;
 
-  background: var(--disabled-bg) !important;
+  background: var(--surface-1) !important;
   color: var(--disabled-text) !important;
   border-color: transparent !important;
   box-shadow: none !important;

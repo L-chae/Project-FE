@@ -5,8 +5,11 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 /**
  * WRONG_ANSWER_LOG 공통 normalize
- * - 백엔드에서 필드명이 조금씩 달라도
- *   프론트에서는 동일 구조로 쓰기 위함
+ * - 백엔드 필드명이 달라도 프론트에서는 동일 구조로 쓰기 위함
+ * - 12/12 핵심 수정:
+ *   1) raw.meaningKo / raw.meaning_ko / raw.korean 우선 반영
+ *   2) exampleSentenceKo로 meaning을 대체하지 않음(뜻 오염/반복 원인)
+ *   3) word가 객체로 내려오는 케이스 안전 처리 유지
  */
 const normalizeWrongItem = (raw) => {
   if (!raw || typeof raw !== "object") {
@@ -25,6 +28,18 @@ const normalizeWrongItem = (raw) => {
     raw.isUsedInStory === "Y" ||
     raw.isUsedInStory === "y";
 
+  // meaning 정규화 (예문으로 대체 금지)
+  const meaning =
+    raw.meaningKo ??
+    raw.meaning_ko ??
+    raw.meaning ??
+    raw.korean ??
+    wordObj?.meaningKo ??
+    wordObj?.meaning_ko ??
+    wordObj?.meaning ??
+    wordObj?.korean ??
+    "";
+
   return {
     // PK
     wrongWordId: raw.wrongWordId ?? raw.wrongLogId ?? raw.id,
@@ -35,12 +50,7 @@ const normalizeWrongItem = (raw) => {
       typeof raw.word === "string"
         ? raw.word
         : wordObj?.word ?? wordObj?.text ?? "",
-    meaning:
-      raw.meaning ??
-      wordObj?.meaning ??
-      wordObj?.meaningKo ??
-      wordObj?.exampleSentenceKo ??
-      "",
+    meaning,
 
     // 난이도
     wordLevel:
@@ -163,9 +173,7 @@ export const deleteWrongLog = async (wordId) => {
     console.log("[Mock] 오답 기록 삭제:", wordId);
     initMockWrongList();
 
-    mockWrongList = mockWrongList.filter(
-      (i) => i.wordId !== Number(wordId)
-    );
+    mockWrongList = mockWrongList.filter((i) => i.wordId !== Number(wordId));
     return { success: true };
   }
 
@@ -197,13 +205,10 @@ export const getWrongList = async () => {
  *
  * StoryCreatePage 등에서 사용.
  * 여기서는 단순 필드만 리턴.
- */
-/**
- * 스토리에 아직 사용되지 않은 오답 목록
- * GET /api/wrong/unused
  *
- * StoryCreatePage 등에서 사용.
- * 여기서는 단순 필드만 리턴.
+ * 추가 수정:
+ * - 백엔드가 word를 객체로 내려주는 경우에도 깨지지 않게 normalizeWrongItem 사용
+ * - meaningKo/meaning_ko/korean도 정상 반영
  */
 export const getUnusedWrongLogs = async () => {
   if (USE_MOCK) {
@@ -212,44 +217,27 @@ export const getUnusedWrongLogs = async () => {
 
     return mockWrongList
       .filter((item) => item.isUsedInStory === "N")
-      // ⭐ wrongAt 기준 최신순 정렬
-      .sort((a, b) => {
-        if (!a.wrongAt || !b.wrongAt) return 0;
-        return new Date(b.wrongAt) - new Date(a.wrongAt);
-      })
       .map((item) => ({
         wrongWordId: item.wrongWordId,
         wordId: item.wordId,
         word: item.word,
         meaning: item.meaning,
-        wrongAt: item.wrongAt, // ⭐ 정렬에 쓸 필드 유지
       }));
   }
 
   const res = await httpClient.get("/api/wrong/unused");
   const arr = Array.isArray(res.data) ? res.data : [];
 
-  // ⭐ 백엔드에서 내려온 시간 필드를 모아서 wrongAt으로 통일
-  const mapped = arr.map((raw) => ({
-    wrongWordId: raw.wrongWordId ?? raw.wrongLogId ?? raw.id,
-    wordId: raw.wordId,
-    word: raw.word,
-    meaning: raw.meaning,
-    wrongAt:
-      raw.wrongAt ??
-      raw.lastWrongAt ??
-      raw.wrong_at ??
-      raw.createdAt ??
-      null,
-  }));
-
-  // ⭐ 여기서 최신순 정렬
-  return mapped.sort((a, b) => {
-    if (!a.wrongAt || !b.wrongAt) return 0;
-    return new Date(b.wrongAt) - new Date(a.wrongAt);
-  });
+  return arr
+    .map(normalizeWrongItem)
+    .filter(Boolean)
+    .map((item) => ({
+      wrongWordId: item.wrongWordId,
+      wordId: item.wordId,
+      word: item.word,
+      meaning: item.meaning,
+    }));
 };
-
 
 /**
  * 최근 퀴즈 오답 (대시보드/홈 등에서 사용)
@@ -280,16 +268,20 @@ export const getRecentWrongLogs = async () => {
   const res = await httpClient.get("/api/quiz/recent-wrong");
   const arr = Array.isArray(res.data) ? res.data : [];
 
-  // 백엔드 응답을 normalize 한 뒤, 예전 사용 형태에 맞게 필드만 축약해서 리턴
-  return arr
-    .map(normalizeWrongItem)
-    .filter(Boolean)
-    .map((item) => ({
-      wrongLogId: item.wrongWordId,
-      wordId: item.wordId,
-      word: item.word,
-      meaning: item.meaning,
-    }));
+  // RecentWrongResponse는 이미 평평한 형태라 normalize 쓰지 않고 안전 매핑
+  return arr.map((raw) => ({
+    wrongLogId: raw.wrongLogId ?? raw.wrongWordId ?? raw.id,
+    wordId: raw.wordId ?? null,
+    word: typeof raw.word === "string" ? raw.word : raw.word?.word ?? "",
+    meaning:
+      raw.meaningKo ??
+      raw.meaning_ko ??
+      raw.meaning ??
+      raw.korean ??
+      raw.word?.meaningKo ??
+      raw.word?.meaning ??
+      "",
+  }));
 };
 
 /**

@@ -182,31 +182,6 @@
 .story-card:hover .read-more {
   text-decoration: underline;
 }
-/* Card 스타일과 자연스럽게 통일되도록 최소 스타일만 추가 */
-.story-card .story-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.story-card .story-tag {
-  background: var(--neutral-100);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  color: var(--neutral-600);
-}
-
-.story-card .read-more {
-  margin-top: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--primary-600);
-  font-weight: 600;
-  font-size: 0.85rem;
-}
 
 
 /* =========================================

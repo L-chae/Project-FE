@@ -183,8 +183,8 @@ export default function WrongNotePage() {
     if (selectedWordIds.length === 0) return;
     const ids = selectedWordIds.join(",");
     navigate(
-  `/learning/quiz?source=wrong-note&from=wrong-note&wordIds=${encodeURIComponent(ids)}`
-);
+      `/learning/quiz?source=wrong-note&wordIds=${encodeURIComponent(ids)}`
+    );
   };
 
   // 액션: 카드 (선택한 wordId 기반)
@@ -192,9 +192,8 @@ export default function WrongNotePage() {
     if (selectedWordIds.length === 0) return;
     const ids = selectedWordIds.join(",");
     navigate(
-  `/learning/card?source=wrong-note&from=wrong-note&wordIds=${encodeURIComponent(ids)}`
-);
-
+      `/learning/card?source=wrong-note&wordIds=${encodeURIComponent(ids)}`
+    );
   };
 
   // 액션: 스토리 만들기 (wrongWordId 기반)
@@ -231,10 +230,7 @@ export default function WrongNotePage() {
     }
 
     const ids = unusedSelected.map((i) => i.wrongWordId).join(",");
-    navigate(
-  `/stories/create?from=wrong-note&wrongWordIds=${encodeURIComponent(ids)}`
-);
-
+    navigate(`/stories/create?wrongWordIds=${encodeURIComponent(ids)}`);
   };
 
   const handleRowClick = (item) => {
@@ -340,10 +336,13 @@ export default function WrongNotePage() {
                 <Layers size={16} />
                 <span>카드로 보기</span>
               </button>
-                <button
+
+              <button
                 type="button"
                 disabled={selectedCount === 0}
-                className="sl-btn"
+                className={`sl-btn sl-btn--story ${
+                  activeAction === "story" ? "sl-btn-primary" : ""
+                }`}
                 onClick={() => {
                   handleCreateStory();
                   setActiveAction("story");

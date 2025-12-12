@@ -37,7 +37,7 @@ export default function CardLearningPage() {
   const rawDomain = searchParams.get("domain") || "All";
 
   const DOMAIN_LABEL_MAP = {
-    All: "전체 분야",
+    All: "전체",
     "Daily Life": "일상생활",
     "People & Feelings": "사람/감정",
     Business: "직장/비즈니스",
@@ -57,7 +57,7 @@ export default function CardLearningPage() {
     !rawLevelLower || rawLevelLower === "all" ? "All" : rawLevel;
 
   // 최종 라벨 텍스트
-  const badgeText = `${domainLabel} | Lv.${levelLabel}`;
+  const badgeText = `${domainLabel} ${levelLabel}`;
 
   const isWrongMode = source === "wrong-note";
 

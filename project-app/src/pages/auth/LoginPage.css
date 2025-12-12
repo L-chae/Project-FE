@@ -1,99 +1,30 @@
 /* src/pages/auth/LoginPage.css */
 
-/* =========================================
-   1. 전체 카드 레이아웃
-   ========================================= */
-.login-card {
-  display: flex;
-  width: 100%;
-  max-width: 1180px;
-
-  /* 🔹 화면 높이에 따라 자연스럽게 변하는 높이/여백 */
-  min-height: clamp(560px, 78vh, 700px);
-  margin: clamp(24px, 6vh, 48px) auto;
-
-  background: var(--surface-1);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-}
-
-/* =========================================
-   2. 왼쪽 비주얼 영역
-   ========================================= */
-.login-visual {
-  flex: 1;
-  background: linear-gradient(135deg, var(--surface-3), var(--surface-2));
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
-
-.login-visual-inner {
-  position: relative;
-  width: 86%;
-  max-width: 460px;
-  height: 88%;
-  margin: 0 auto;
-}
-
-/* 캐릭터 일러스트 */
-.login-visual-graphic {
-  position: absolute;
-  bottom: -6px;
-  left: 30%;
+/* 로그인 카드 전용 비주얼 폭 */
+.auth-card--login .auth-visual-graphic {
   width: 62%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 5;
 }
 
-/* =========================================
-   3. 오른쪽 로그인 폼
-   ========================================= */
-.login-form-area {
-  flex: 1;
-  padding: 48px 56px;
-  display: flex;
-  flex-direction: column;
-}
-
-.login-title {
-  font-size: 1.75rem; /* 28px */
-  font-weight: 700;
-  color: var(--neutral-900);
-  margin-bottom: var(--space-5); /* 20px */
-}
-
-/* 로그인 폼 컨테이너 */
-.login-form {
-  width: 100%;
-}
-
-/* 에러 메시지 (위치는 form-error 스타일 + 간격만 조정) */
+/* 에러 메시지 간격 */
 .login-error {
-  margin-top: var(--space-2);   /* 8px */
-  margin-bottom: var(--space-3); /* 12px */
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
-/* =========================================
-   4. 옵션 영역 (이메일 저장 + 찾기 링크)
-   ========================================= */
+/* 옵션 영역 (이메일 저장 + 찾기 링크) */
 .login-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-4); /* 16px */
+  margin-bottom: var(--space-4);
   font-size: 0.875rem;
   color: var(--neutral-700);
 }
 
-/* 이메일 저장 체크박스 */
 .login-checkbox {
   display: flex;
   align-items: center;
-  gap: var(--space-1); /* 4px */
+  gap: var(--space-1);
   font-size: 0.875rem;
   color: var(--neutral-700);
 }
@@ -102,11 +33,10 @@
   accent-color: var(--primary-500);
 }
 
-/* 이메일/비밀번호 찾기 링크 영역 */
 .login-links {
   display: flex;
   align-items: center;
-  gap: var(--space-1); /* 4px */
+  gap: var(--space-1);
   font-size: 0.8125rem;
 }
 
@@ -124,154 +54,16 @@
   text-decoration: underline;
 }
 
-/* =========================================
-   5. 버튼 / OR 구분선 / 구글 버튼
-   ========================================= */
-.login-btn,
-.signup-btn {
-  margin-bottom: var(--space-2); /* 8px */
+/* 로그인 버튼 영역 */
+.login-btn {
+  margin-bottom: var(--space-2);
 }
 
-/* OR 구분선 */
-.login-divider {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2); /* 8px */
-  margin: var(--space-5) 0;     /* 20px 0 */
-  color: var(--neutral-500);
-  font-size: 0.8125rem;
-}
-
-.login-divider::before,
-.login-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-
-/* 구글 로그인 버튼 */
-.google-btn {
-  width: 100%;
-  padding: var(--space-3);       /* 12px */
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);           /* 8px */
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: var(--neutral-800);
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.1s ease;
-}
-
-.google-btn img {
-  width: 20px;
-  height: 20px;
-}
-
-.google-btn:hover:not(:disabled) {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-soft);
-}
-
-.google-btn:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: none;
-}
-
-.google-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* =========================================
-   6. 하단 회원가입 문구
-   ========================================= */
-.signup-footer-text {
-  margin-top: var(--space-4);  /* 16px */
-  font-size: 0.875rem;
-  color: var(--neutral-600);
-  text-align: center;
-}
-
-.signup-link {
-  color: var(--primary-500);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.signup-link:hover {
-  text-decoration: underline;
-}
-
-/* =========================================
-   7. 반응형 처리
-   ========================================= */
-@media (max-width: 1024px) {
-  .login-card {
-    max-width: 960px;
-    min-height: clamp(520px, 82vh, 680px);
-  }
-
-  .login-form-area {
-    padding: 40px 40px;
-  }
-
-  .login-title {
-    font-size: 1.6rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .login-card {
-    flex-direction: column;
-    border-radius: 20px;
-    margin: 20px auto;
-    min-height: auto;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-  }
-
-  .login-visual {
-    display: none; /* 모바일에서는 비주얼 숨기고 폼만 */
-  }
-
-  .login-form-area {
-    padding: 28px 20px 32px;
-  }
-
-  .login-title {
-    font-size: 1.5rem;
-    margin-bottom: var(--space-4);
-  }
-
-  .login-divider {
-    margin: var(--space-4) 0;
-  }
-}
-
+/* 모바일에서 옵션 영역 정렬 조정 */
 @media (max-width: 480px) {
-  .login-card {
-    margin: 16px auto;
-    border-radius: 16px;
-  }
-
-  .login-form-area {
-    padding: 24px 16px 28px;
-  }
-
-  .login-title {
-    font-size: 1.4rem;
-  }
-
-  .google-btn {
-    font-size: 0.85rem;
+  .login-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
   }
 }

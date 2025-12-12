@@ -68,7 +68,7 @@ const QuizPage = () => {
   // 분야(domain)
   const rawDomain = searchParams.get("domain") || "All";
   const DOMAIN_LABEL_MAP = {
-    All: "전체 분야",
+    All: "전체",
     "Daily Life": "일상생활",
     "People & Feelings": "사람/감정",
     Business: "직장/비즈니스",
@@ -83,7 +83,7 @@ const QuizPage = () => {
   const categoryForApi = rawDomain === "All" ? null : rawDomain;
 
   // 배지에 찍을 텍스트
-  const badgeText = `${domainLabel} | Lv.${levelLabel}`;
+  const badgeText = `${domainLabel} ${levelLabel}`;
 
   // 선택된 단어 id들 (오답노트/카드 결과에서 넘어온 경우)
   const wordIdsParam = searchParams.get("wordIds");

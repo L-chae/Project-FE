@@ -33,15 +33,12 @@ function Card({
       onClick={onClick}
       {...rest}
     >
-      {/* 미디어 영역 */}
       {media && <div className="card-media">{media}</div>}
 
-      {/* 헤더 블록 */}
       {(eyebrow || title || subtitle || badge || meta) && (
         <div className="card-header">
           <div className="card-header-main">
             {eyebrow && <div className="card-eyebrow">{eyebrow}</div>}
-
             {(title || subtitle) && (
               <div className="card-title-block">
                 {title && <h3 className="card-title">{title}</h3>}
@@ -52,27 +49,14 @@ function Card({
 
           {(badge || meta) && (
             <div className="card-header-meta">
-              {badge && (
-                <span className="card-badge">
-                  {badge}
-                </span>
-              )}
-              {meta && (
-                <span className="card-meta">
-                  {meta}
-                </span>
-              )}
+              {badge && <span className="card-badge">{badge}</span>}
+              {meta && <span className="card-meta">{meta}</span>}
             </div>
           )}
         </div>
       )}
 
-      {/* 카드 바디 */}
-      {children && (
-        <div className="card-body">
-          {children}
-        </div>
-      )}
+      {children && <div className="card-body">{children}</div>}
     </Component>
   );
 }

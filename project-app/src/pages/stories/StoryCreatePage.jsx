@@ -31,36 +31,10 @@ const StoryCreatePage = () => {
   const state = location.state || {};
   const hasQuizWords =
     Array.isArray(state.wrongWords) && state.wrongWords.length > 0;
-  const fromQuiz = state.from === "quiz" || state.from === "wrong-quiz";
 
-const handleBack = () => {
-  // ✅ 퀴즈에서 바로 넘어온 경우 → 학습 홈으로
-  if (fromQuiz) {
-    navigate("/learning", { replace: true });
-    return;
-  }
-
-  // 기존 동작 유지
-  if (window.history.length > 1) {
-    navigate(-1);
-  } else {
-    navigate("/stories");
-  }
-};
-useEffect(() => {
-  if (!fromQuiz) return;
-
-  const onPopState = () => {
-    navigate("/learning", { replace: true });
+  const handleBack = () => {
+      navigate("/stories");
   };
-
-  window.addEventListener("popstate", onPopState);
-
-  return () => {
-    window.removeEventListener("popstate", onPopState);
-  };
-}, [fromQuiz, navigate]);
-
 
   // 1) 스토리에 아직 사용되지 않은 오답 목록 로딩
   useEffect(() => {
@@ -68,26 +42,19 @@ useEffect(() => {
       try {
         const res = await getUnusedWrongLogs();
 
-        // 1) API 응답을 화면에서 쓸 형태로 변환
         const mapped = (res || []).map((item) => {
           const rawWord = item.word;
 
           // 서버에서 word가 문자열 / 객체 둘 다 올 수 있음
           const wordText =
-            typeof rawWord === "string" ? rawWord : rawWord?.word ?? "";
+            typeof rawWord === "string"
+              ? rawWord
+              : rawWord?.word ?? "";
 
           const meaningText =
             item.meaning ??
             (typeof rawWord === "object" ? rawWord?.meaning : "") ??
             "";
-
-          // 🔹 최신순 정렬을 위해 시간 정보도 함께 보존
-          const wrongAt =
-            item.wrongAt ||
-            item.lastWrongAt ||
-            item.wrong_at ||
-            item.createdAt ||
-            null;
 
           return {
             // 오답 로그 PK
@@ -105,18 +72,10 @@ useEffect(() => {
 
             word: wordText,
             meaning: meaningText,
-            wrongAt,        // ⭐ 정렬용 필드 추가
           };
         });
 
-        // 2) wrongAt 기준으로 최신순(내림차순) 정렬
-        const sorted = mapped.slice().sort((a, b) => {
-          if (!a.wrongAt || !b.wrongAt) return 0;
-          return new Date(b.wrongAt) - new Date(a.wrongAt);
-        });
-
-        // 3) 정렬된 리스트를 상태로 저장
-        setMistakePool(sorted);
+        setMistakePool(mapped);
       } catch (e) {
         console.error("오답 목록 로딩 실패:", e);
       } finally {
@@ -126,7 +85,6 @@ useEffect(() => {
 
     fetchMistakes();
   }, []);
-
 
   // 2) Quiz / WrongNote 에서 넘어온 단어 자동 선택
   useEffect(() => {
