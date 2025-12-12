@@ -132,10 +132,9 @@ httpClient.interceptors.response.use(
         }
       );
 
-      // ✅ 백엔드 응답이 {accessToken, refreshToken} 이든 {access, refresh} 이든 모두 처리
       const data = refreshResponse.data || {};
-      const newAccessToken = data.accessToken ?? data.access;
-      const newRefreshToken = data.refreshToken ?? data.refresh;
+      const newAccessToken = data.accessToken;
+      const newRefreshToken = data.refreshToken;
 
       if (!newAccessToken) {
         isRefreshing = false;

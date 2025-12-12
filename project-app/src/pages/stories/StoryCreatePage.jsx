@@ -31,14 +31,36 @@ const StoryCreatePage = () => {
   const state = location.state || {};
   const hasQuizWords =
     Array.isArray(state.wrongWords) && state.wrongWords.length > 0;
+  const fromQuiz = state.from === "quiz" || state.from === "wrong-quiz";
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/stories");
-    }
+const handleBack = () => {
+  // ✅ 퀴즈에서 바로 넘어온 경우 → 학습 홈으로
+  if (fromQuiz) {
+    navigate("/learning", { replace: true });
+    return;
+  }
+
+  // 기존 동작 유지
+  if (window.history.length > 1) {
+    navigate(-1);
+  } else {
+    navigate("/stories");
+  }
+};
+useEffect(() => {
+  if (!fromQuiz) return;
+
+  const onPopState = () => {
+    navigate("/learning", { replace: true });
   };
+
+  window.addEventListener("popstate", onPopState);
+
+  return () => {
+    window.removeEventListener("popstate", onPopState);
+  };
+}, [fromQuiz, navigate]);
+
 
   // 1) 스토리에 아직 사용되지 않은 오답 목록 로딩
   useEffect(() => {

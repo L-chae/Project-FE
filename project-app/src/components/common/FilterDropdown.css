@@ -60,6 +60,8 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   z-index: 20;
   padding: 6px;
+    max-height: 230px;
+  overflow-y: auto;
 }
 
 /* 옵션 항목 */

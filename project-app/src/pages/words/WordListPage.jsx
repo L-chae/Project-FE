@@ -22,24 +22,25 @@ import Pagination from "../../components/common/Pagination";
 import Spinner from "../../components/common/Spinner";
 import FilterDropdown from "../../components/common/FilterDropdown";
 import EmptyState from "../../components/common/EmptyState";
-import { toKoreanPOS } from "@/utils/posUtils";
 import "./WordListPage.css";
 
 // =========================================
 // 필터 옵션
 // =========================================
+
+// 품사 필터
 const CATEGORY_OPTIONS = [
   { label: "전체 품사", value: "All" },
-  { label: "명사", value: "Noun" },
-  { label: "동사", value: "Verb" },
-  { label: "형용사", value: "Adj" },
-  { label: "부사", value: "Adv" },
-
-  { label: "기능어", value: "function" },
-  { label: "관사", value: "article" },
-  { label: "특수 동사", value: "specialVerb" },
-  { label: "수사", value: "numberGroup" },
+  { label: "명사 (Noun)", value: "Noun" },
+  { label: "동사 (Verb)", value: "Verb" },
+  { label: "형용사 (Adj)", value: "Adj" },
+  { label: "부사 (Adv)", value: "Adv" },
+   { label: "기능어", value: "Function" },
+  { label: "관사", value: "Article" },
+  { label: "특수 동사", value: "SpecialVerb" },
+  { label: "수사", value: "NumberGroup" },
 ];
+
 // 분야 필터 (값은 category 컬럼과 동일)
 const DOMAIN_OPTIONS = [
   { label: "전체 분야", value: "All" },
@@ -62,21 +63,6 @@ const LEVEL_OPTIONS = [
   { label: "Lv.5", value: 5 },
   { label: "Lv.6", value: 6 },
 ];
-// 품사 그룹 매핑
-const POS_GROUPS = {
-  function: [
-    "Preposition",
-    "Conjunction",
-    "Interjection",
-    "Exclamation",
-    "Pronoun",
-    "Determiner",
-  ],
-  article: ["Definite article", "Indefinite article"],
-  specialVerb: ["Modal verb", "Linking verb", "Infinitive marker"],
-  numberGroup: ["Number", "Ordinal number"],
-};
-
 
 const FILTER_INITIAL = { category: "All", domain: "All", level: "All" };
 const WORDS_QUERY_KEY = ["words", "list"];
@@ -288,20 +274,9 @@ function WordListPage() {
 
     result = result.filter((w) => {
       // 품사 필터
-      if (filter.category !== "All") {
-        const selected = filter.category;
+      if (filter.category !== "All" && w.partOfSpeech !== filter.category)
+        return false;
 
-        const pos = (w.partOfSpeech || "").toLowerCase();
-
-        // 그룹 필터
-        if (POS_GROUPS[selected]) {
-          const groupList = POS_GROUPS[selected].map((p) => p.toLowerCase());
-          if (!groupList.includes(pos)) return false;
-        } else {
-          // 단일 필터
-          if (pos !== selected.toLowerCase()) return false;
-        }
-      }
       // 분야 필터 (category 컬럼 사용)
       if (filter.domain !== "All" && w.category !== filter.domain) return false;
 
@@ -353,25 +328,6 @@ function WordListPage() {
 };
 
   const isEmptyAll = !isLoading && !errorMessage && words.length === 0;
-// 영어 분야명을 한글로 변환하는 매핑
-const DOMAIN_LABEL_MAP = {
-  "Daily Life": "일상생활",
-  "People & Feelings": "사람/감정",
-  "Business": "직장/비즈니스",
-  "School & Learning": "학교/학습",
-  "Travel": "여행/교통",
-  "Food & Health": "음식/건강",
-  "Technology": "기술/IT",
-
-  // 혹시 DB에서 소문자나 언더바로 오면 대비
-  "daily_life": "일상생활",
-  "people_feelings": "사람/감정",
-  "business": "직장/비즈니스",
-  "school_learning": "학교/학습",
-  "travel": "여행/교통",
-  "food_health": "음식/건강",
-  "technology": "기술/IT",
-};
 
   // =========================================
   // 렌더링
@@ -550,19 +506,16 @@ const DOMAIN_LABEL_MAP = {
                         {typeof w.level === "number" && (
                           <span className="tag tag-level">Lv.{w.level}</span>
                         )}
-
                         {w.partOfSpeech && (
                           <span className="tag tag-pos">
-                            {toKoreanPOS(w.partOfSpeech)}
+                            {w.partOfSpeech}
                           </span>
                         )}
-
                         {w.category && (
-                          <span className="tag tag-domain">
-                            {DOMAIN_LABEL_MAP[w.category] || w.category}
-                          </span>
+                          <span className="tag tag-domain">{w.category}</span>
                         )}
                       </div>
+
                       {/* 뜻 */}
                       <div className="word-meaning-row">
                         <p className="word-meaning">{meaningPreview}</p>

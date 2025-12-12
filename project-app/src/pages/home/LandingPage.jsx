@@ -1,248 +1,244 @@
-import { useNavigate } from "react-router-dom";
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Button from "@/components/common/Button";
 import "./LandingPage.css";
+
 import mainBg from "@/assets/images/main-bg.png";
 import main2 from "@/assets/images/main-2.svg";
-import StoryLexLogo from "@/assets/images/StoryLex-logo.svg";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-
   const goLogin = () => navigate("/auth/login");
 
   useEffect(() => {
-    const handleScroll = () => {
-      const reveals = document.querySelectorAll(".reveal");
+    // 뷰포트에 10%만 보여도 애니메이션 시작 (더 반응성 좋게)
+    const observerOptions = {
+      root: null,
+      rootMargin: "0px",
+      threshold: 0.1, 
+    };
 
-      reveals.forEach((el) => {
-        const windowHeight = window.innerHeight;
-        const elementTop = el.getBoundingClientRect().top;
-        const elementBottom = el.getBoundingClientRect().bottom;
-
-        if (elementTop < windowHeight - 80 && elementBottom > 80) {
-          el.classList.add("active");
-        } else {
-          el.classList.remove("active");
+    const observerCallback = (entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("lp-reveal--active");
+          observer.unobserve(entry.target); // 한 번만 실행
         }
       });
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const revealElements = document.querySelectorAll(".lp-reveal");
+    revealElements.forEach((el) => observer.observe(el));
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <div className="landing-page-wrapper">
+    <div className="lp-root">
       <main>
-        {/* Hero Section */}
-        <section className="hero-section">
-          <div className="hero-main-band reveal fade-up">
-            <div className="landing-container">
-              <div className="hero-layout">
-                <div className="hero-content">
-                  <span className="tag-pill">AI 기반 맞춤형 학습</span>
-                  <h1 className="hero-title">
-                    실수는 줄이고
-                    <br />
-                    <span className="text-purple">기억은 영원히.</span>
-                  </h1>
-                  <p className="hero-desc">
-                    무작정 외우는 단어장은 이제 그만.
-                    <br />
-                    AI가 당신의 오답을 분석해 '나만의 스토리'를 만듭니다.
-                  </p>
-                  <button
-                    type="button"
-                    className="hero-primary-btn"
+        {/* ============= HERO SECTION ============= */}
+        <section className="lp-hero" id="home">
+          <div className="lp-hero-bg" />
+
+          <div className="page-container">
+            <div className="lp-hero-layout">
+              {/* Left: Text Content */}
+              <div className="lp-hero-content lp-reveal lp-fade-up">
+                <div className="lp-ai-badge">
+                  <span className="lp-ai-badge-dot" />
+                  <span>StoryLex · AI 스토리 영어 단어장</span>
+                </div>
+
+                <h1 className="lp-hero-title">
+                  외우지 말고 이해하는
+                  <br />
+                  <span className="lp-hero-title-accent">
+                    AI 스토리 기반 단어 학습
+                  </span>
+                </h1>
+
+                <div className="lp-hero-actions">
+                  <Button
+                    variant="primary"
+                    size="lg"
                     onClick={goLogin}
                   >
                     지금 시작하기
-                    <i className="fa-solid fa-arrow-right"></i>
-                  </button>
+                    <span className="btn__icon btn__icon--right">
+                      <i className="fa-solid fa-arrow-right" />
+                    </span>
+                  </Button>
+
+                  <span className="lp-hero-caption">
+                    회원가입 후 AI 맞춤형 스토리를 체험해보세요.
+                  </span>
                 </div>
-                <div className="hero-visual-wrapper">
-                  <div className="blob-bg"></div>
-                  <img src={mainBg} alt="Hero Visual" className="hero-img" />
+              </div>
+
+              {/* Right: Visual Image */}
+              <div className="lp-hero-visual lp-reveal lp-fade-up lp-delay-1">
+                <div className="lp-hero-orbit">
+                  <div className="lp-hero-orbit-ring" />
+                  <img
+                    src={mainBg}
+                    alt="AI 단어 학습 시각화"
+                    className="lp-hero-image"
+                  />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Process Section */}
-        <section className="how-section reveal fade-up">
-          <div className="landing-container how-container">
-            {/* 문제 제기 */}
-            <div className="how-header">
-              <h2>어떻게 작동하나요?</h2>
-              <p>AI가 단어를 더 오래 기억하게 만드는 과정입니다.</p>
+        {/* ============= PROCESS SECTION ============= */}
+        <section className="lp-section lp-section--white" id="how-it-works">
+          <div className="page-container">
+            <div className="lp-section-header lp-reveal lp-fade-up">
+              <p className="lp-section-kicker">HOW IT WORKS</p>
+              <h2 className="lp-section-title">3단계로 끝내는 학습 루틴</h2>
+              <p className="lp-section-description">
+                단순 암기가 아닌, 문맥 속에서 자연스럽게 습득합니다.
+              </p>
             </div>
 
-            {/* 3단계 흐름 */}
-            <div className="how-steps">
-              <div className="how-step">
-                <div className="how-icon purple">
-                  <i className="fa-solid fa-pencil"></i>
+            <div className="lp-process-grid lp-reveal lp-fade-up lp-delay-1">
+              {/* Step 1 */}
+              <article className="lp-process-card">
+                <div className="lp-process-icon lp-process-icon--subtle">
+                  <i className="fa-solid fa-pencil" />
                 </div>
-                <h3>문제 풀기</h3>
-                <p>틀린 단어가 자동으로 기록됩니다.</p>
-              </div>
-              <div className="how-line"></div>
-              <div className="how-step">
-                <div className="how-icon gradient">
-                  <i className="fa-solid fa-robot"></i>
-                </div>
-                <h3>AI 분석 & 스토리 생성</h3>
-                <p>
-                  오답 패턴을 분석해 자연스러운 스토리를 만들어줍니다.
+                <h3 className="lp-process-title">1. 문제 풀기</h3>
+                <p className="lp-process-text">
+                  단어 퀴즈를 풀면 정답과 오답이 자동으로 기록되고,
+                  취약한 단어들이 데이터로 쌓입니다.
                 </p>
-              </div>
-              <div className="how-line"></div>
-              <div className="how-step">
-                <div className="how-icon purple">
-                  <i className="fa-solid fa-book-open"></i>
+              </article>
+
+              {/* Step 2 */}
+              <article className="lp-process-card lp-process-card--accent">
+                <div className="lp-process-icon lp-process-icon--accent">
+                  <i className="fa-solid fa-robot" />
                 </div>
-                <h3>문맥 속 재학습</h3>
-                <p>스토리 속 단어를 반복적으로 만나 장기기억으로 전환합니다.</p>
-              </div>
+                <h3 className="lp-process-title">2. AI 분석 & 스토리</h3>
+                <p className="lp-process-text">
+                  나의 오답 단어들을 포함한 나만의 영어 스토리를
+                  AI가 즉시 생성해 줍니다.
+                </p>
+              </article>
+
+              {/* Step 3 */}
+              <article className="lp-process-card">
+                <div className="lp-process-icon lp-process-icon--subtle">
+                  <i className="fa-solid fa-book-open" />
+                </div>
+                <h3 className="lp-process-title">3. 문맥 재학습</h3>
+                <p className="lp-process-text">
+                  흥미로운 이야기 속에서 단어를 다시 마주치며,
+                  뜻과 뉘앙스를 확실하게 각인시킵니다.
+                </p>
+              </article>
             </div>
-            {/* 결과 문구 */}
-            <p className="how-footer">
-              단어를 외우지 않아도 자연스럽게 이해되는 학습 흐름입니다.
-            </p>
           </div>
         </section>
-        {/* 기능 소개 섹션 */}
-        <section className="landing-intro-section reveal fade-up">
-          <div className="landing-container intro-center">
-            <section className="landing-features">
-              <div className="landing-container">
-                <div className="feature-row">
-                  {/* 왼쪽 텍스트 영역 */}
-                  <div className="feature-left">
-                    <h2 className="lf-title">
-                      단어를 외우지 말고, 이해하세요.
-                    </h2>
-                    <p className="lf-sub">
-                      AI가 당신의 학습 패턴을 분석해 더 오래 기억되는 학습
-                      경험을 제공합니다.
-                    </p>
 
-                    <div className="lf-list">
-                      <div className="lf-item">
-                        <div className="lf-icon">
-                          <i className="fa-solid fa-share-nodes"></i>
-                        </div>
-                        <div>
-                          <h3>단어 클러스터</h3>
-                          <p>
-                            단어 간 의미적 관계를 시각적으로 연결해
-                            보여줍니다.
-                          </p>
-                        </div>
-                      </div>
+        {/* ============= FEATURES SECTION ============= */}
+        <section className="lp-section lp-section--tint" id="features">
+          <div className="page-container">
+            <div className="lp-feature-layout">
+              {/* Text Content */}
+              <div className="lp-feature-content lp-reveal lp-fade-left">
+                <p className="lp-section-kicker">FEATURES</p>
+                <h2 className="lp-section-title">
+                  나에게 꼭 맞춘
+                  <br />
+                  스마트한 단어장
+                </h2>
 
-                      <div className="lf-item">
-                        <div className="lf-icon">
-                          <i className="fa-solid fa-book-open"></i>
-                        </div>
-                        <div>
-                          <h3>나만의 단어장 생성</h3>
-                          <p>
-                            AI가 학습 패턴을 기반으로 필요한 단어를 자동
-                            큐레이션합니다.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="lf-item">
-                        <div className="lf-icon">
-                          <i className="fa-solid fa-robot"></i>
-                        </div>
-                        <div>
-                          <h3>AI 스토리 기반 재학습</h3>
-                          <p>
-                            오답 단어를 자연스러운 이야기 속에서 반복
-                            학습합니다.
-                          </p>
-                        </div>
-                      </div>
+                <div className="lp-feature-list">
+                  <div className="lp-feature-item">
+                    <div className="lp-feature-icon">
+                      <i className="fa-solid fa-share-nodes" />
+                    </div>
+                    <div>
+                      <h3>단어 클러스터</h3>
+                      <p>
+                        비슷한 의미를 가진 유의어들을 묶어서 학습하여
+                        표현력을 더 풍부하게 만듭니다.
+                      </p>
                     </div>
                   </div>
 
-                  {/* 오른쪽 이미지 영역 */}
-                  <div className="feature-right">
-                    <img src={main2} alt="Feature Visual" />
+                  <div className="lp-feature-item">
+                    <div className="lp-feature-icon">
+                      <i className="fa-solid fa-layer-group" />
+                    </div>
+                    <div>
+                      <h3>맞춤형 단어장</h3>
+                      <p>
+                        비즈니스, 여행, 일상 등 내 관심사와 레벨에 맞는
+                        필수 단어만 골라 학습하세요.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="lp-feature-item">
+                    <div className="lp-feature-icon">
+                      <i className="fa-solid fa-chart-pie" />
+                    </div>
+                    <div>
+                      <h3>학습 현황 대시보드</h3>
+                      <p>
+                        오늘의 학습량과 오답률 변화를 그래프로 확인하고
+                        꾸준한 학습 습관을 만드세요.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </section>
+
+              {/* Image Content */}
+              <div className="lp-feature-visual lp-reveal lp-fade-right lp-delay-1">
+                <div className="lp-feature-orbit">
+                  <img
+                    src={main2}
+                    alt="AI 학습 기능 화면"
+                    className="lp-feature-image"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
-        {/* Banner Section */}
-        <section className="banner reveal fade-up">
-          <div className="landing-container">
-            <div className="banner-box">
-             <h2 className="banner-title">
-                  외워도 금방 잊는다면,<br />
-                  이제는 방법을 바꿔야 할 때입니다.
+
+        {/* ============= BANNER SECTION ============= */}
+        <section className="lp-section lp-banner-section">
+          <div className="page-container">
+            <div className="lp-banner lp-reveal lp-fade-up">
+              <div className="lp-banner-text">
+                <h2 className="lp-banner-title">
+                  단어장은 그대로, <br /> 학습 방식은 새롭게
                 </h2>
-                <p className="banner-sub">
-                  AI 스토리 학습으로 오래 남는 단어 경험을 만들어보세요.
+                <p className="lp-banner-subtitle">
+                  지금 바로 StoryLex와 함께 기억에 오래 남는 영어 학습을 시작해보세요.
                 </p>
-              <button
-                type="button"
-                className="btn-white"
-                onClick={goLogin}
-              >
-                AI 학습 시작하기
-              </button>
+              </div>
+              <div className="lp-banner-actions">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={goLogin}
+                >
+                  무료로 시작하기
+                </Button>
+                <p className="lp-banner-caption">
+                  * 이메일로 간편하게 가입하세요.
+                </p>
+              </div>
             </div>
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="landing-footer">
-          <div className="footer-content">
-            <div className="footer-col" style={{ flex: 1.5 }}>
-              <div className="footer-logo">
-                <img src={StoryLexLogo} alt="StoryLex Logo" />
-              </div>
-              <p
-                style={{
-                  color: "var(--text-gray)",
-                  fontSize: "0.9rem",
-                  lineHeight: "1.6",
-                  maxWidth: "300px",
-                }}
-              >
-                AI 기술을 활용하여 가장 효율적인
-                <br />
-                외국어 학습 경험을 제공합니다.
-              </p>
-            </div>
-
-            <div className="footer-col">
-              <h4>서비스</h4>
-              <a href="#features">기능 소개</a>
-              <a href="#pricing">가격 정책</a>
-              <a href="#enterprise">기업용 플랜</a>
-            </div>
-
-            <div className="footer-col">
-              <h4>지원</h4>
-              <a href="#faq">자주 묻는 질문</a>
-              <a href="#cs">고객센터</a>
-              <a href="#terms">이용약관</a>
-            </div>
-            <div className="copyright">
-            &copy; 2025 StoryLex Inc. All rights reserved.
-            </div>
-          </div>
-      </footer>
     </div>
   );
 };
