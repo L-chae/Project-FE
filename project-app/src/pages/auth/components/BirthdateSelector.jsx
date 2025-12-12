@@ -73,6 +73,7 @@ export default function BirthdateSelector({
   const handleToggle = (id) => {
     setOpenId((prev) => (prev === id ? null : id));
   };
+  const handleClose = () => setOpenId(null);
 
   const handleChangeDropdown = (id, nextValue) => {
     if (id === "year") setYear(nextValue);
@@ -115,6 +116,7 @@ export default function BirthdateSelector({
             value={year}
             isOpen={openId === "year"}
             onToggle={handleToggle}
+              onClose={handleClose} 
             onChange={handleChangeDropdown}
           />
         </div>
@@ -126,6 +128,7 @@ export default function BirthdateSelector({
             value={month}
             isOpen={openId === "month"}
             onToggle={handleToggle}
+              onClose={handleClose} 
             onChange={handleChangeDropdown}
           />
         </div>
@@ -137,6 +140,7 @@ export default function BirthdateSelector({
             value={day}
             isOpen={openId === "day"}
             onToggle={handleToggle}
+              onClose={handleClose} 
             onChange={handleChangeDropdown}
           />
         </div>

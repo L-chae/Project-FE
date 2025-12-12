@@ -651,6 +651,6 @@ export const addWordFromCluster = async ({ text, level = 1 }) => {
     return mockDelay(mapWordFromApi(newWord));
   }
 
-  console.warn("addWordFromCluster: 실서버 모드에서는 아직 미구현입니다.");
-  throw new Error("addWordFromCluster is not implemented on real server yet.");
+  const res = await httpClient.post("/api/words/from-cluster", { text, level });
+  return mapWordFromApi(res.data);
 };
