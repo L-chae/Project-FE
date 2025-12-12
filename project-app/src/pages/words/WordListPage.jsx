@@ -7,11 +7,7 @@ import {
   Search,
   Star,
 } from "lucide-react";
-import {
-  addFavorite,
-  removeFavorite,
-  getAllWords,
-} from "../../api/wordApi";
+import { addFavorite, removeFavorite, getAllWords } from "../../api/wordApi";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,21 +21,78 @@ import EmptyState from "../../components/common/EmptyState";
 import "./WordListPage.css";
 
 // =========================================
-// 필터 옵션
+// 품사 그룹 필터 (UI 6~7개로 축소)
 // =========================================
 
-// 품사 필터
+// 드롭다운 옵션(그룹)
 const CATEGORY_OPTIONS = [
   { label: "전체 품사", value: "All" },
-  { label: "명사 (Noun)", value: "Noun" },
-  { label: "동사 (Verb)", value: "Verb" },
-  { label: "형용사 (Adj)", value: "Adj" },
-  { label: "부사 (Adv)", value: "Adv" },
-   { label: "기능어", value: "Function" },
-  { label: "관사", value: "Article" },
-  { label: "특수 동사", value: "SpecialVerb" },
-  { label: "수사", value: "NumberGroup" },
+  { label: "명사", value: "NOUN" },
+  { label: "동사", value: "VERB" },
+  { label: "형용사·부사", value: "ADJ_ADV" },
+  { label: "기능어(문법)", value: "FUNC" },
+  { label: "수·서수", value: "NUM" },
+  { label: "감탄·기타", value: "ETC" },
 ];
+
+// DB partOfSpeech 값 → 그룹키 매핑
+const POS_TO_GROUP = {
+  noun: "NOUN",
+
+  verb: "VERB",
+  "linking verb": "VERB",
+  "modal verb": "VERB",
+
+  adjective: "ADJ_ADV",
+  adverb: "ADJ_ADV",
+
+  pronoun: "FUNC",
+  preposition: "FUNC",
+  conjunction: "FUNC",
+  determiner: "FUNC",
+  "definite article": "FUNC",
+  "indefinite article": "FUNC",
+  "infinitive marker": "FUNC",
+
+  number: "NUM",
+  "ordinal number": "NUM",
+
+  exclamation: "ETC",
+};
+
+// 안전한 그룹 변환
+const getPosGroup = (posRaw) => {
+  const pos = String(posRaw ?? "").trim().toLowerCase();
+  return POS_TO_GROUP[pos] ?? "ETC";
+};
+
+// 그룹키 → 표시 라벨(한글)
+const POS_GROUP_LABEL = {
+  NOUN: "명사",
+  VERB: "동사",
+  ADJ_ADV: "형용사·부사",
+  FUNC: "기능어",
+  NUM: "수·서수",
+  ETC: "감탄·기타",
+};
+
+const getPosLabel = (posRaw) => {
+  const group = getPosGroup(posRaw);
+  return POS_GROUP_LABEL[group] ?? "감탄·기타";
+};
+
+// 분야 표시 라벨(한글)
+const DOMAIN_LABEL = {
+  "Daily Life": "일상생활",
+  "People & Feelings": "사람/감정",
+  Business: "직장/비즈니스",
+  "School & Learning": "학교/학습",
+  Travel: "여행/교통",
+  "Food & Health": "음식/건강",
+  Technology: "기술/IT",
+};
+
+const getDomainLabel = (v) => DOMAIN_LABEL[v] ?? v;
 
 // 분야 필터 (값은 category 컬럼과 동일)
 const DOMAIN_OPTIONS = [
@@ -87,11 +140,11 @@ function WordListPage() {
   const [search, setSearch] = useState(initialSearch);
   const [mode, setMode] = useState(initialMode); // all | favorite
   const [filter, setFilter] = useState({
-    category: initialCategory,
+    category: initialCategory, // 그룹키 (NOUN/VERB/...)
     domain: initialDomain,
     level: initialLevel,
   });
-  const [sortKey, setSortKey] = useState(initialSortKey); // default | alphabet | level (확장용)
+  const [sortKey, setSortKey] = useState(initialSortKey); // default | alphabet | level
   const [openDropdown, setOpenDropdown] = useState(null);
 
   // 공통: 쿼리 파라미터 업데이트 헬퍼
@@ -106,6 +159,7 @@ function WordListPage() {
     });
     setSearchParams(next);
   };
+
   // =========================================
   // 데이터 로딩 (전체 단어 /api/words/all)
   // =========================================
@@ -168,7 +222,7 @@ function WordListPage() {
     navigate(`/words/${wordId}`, {
       state: {
         from: "word-list",
-        search: location.search, // 현재 ?... 그대로 저장
+        search: location.search,
       },
     });
 
@@ -180,6 +234,7 @@ function WordListPage() {
       isFavorite: word.isFavorite,
     });
   };
+
   const handleModeChange = (type) => {
     setMode(type);
     updateSearchParams({ page: 0, mode: type });
@@ -197,7 +252,6 @@ function WordListPage() {
     });
   };
 
-
   const handleFilterReset = () => {
     setFilter(FILTER_INITIAL);
     updateSearchParams({
@@ -207,6 +261,7 @@ function WordListPage() {
       level: undefined,
     });
   };
+
   const resetFilters = () => {
     setFilter(FILTER_INITIAL);
     setSearch("");
@@ -221,7 +276,6 @@ function WordListPage() {
       sort: undefined,
     });
   };
-
 
   // =========================================
   // 파생 값 (카운트/필터링/정렬)
@@ -273,9 +327,11 @@ function WordListPage() {
     });
 
     result = result.filter((w) => {
-      // 품사 필터
-      if (filter.category !== "All" && w.partOfSpeech !== filter.category)
-        return false;
+      // 품사(그룹) 필터: DB partOfSpeech → 그룹으로 변환해서 비교
+      if (filter.category !== "All") {
+        const group = getPosGroup(w.partOfSpeech);
+        if (group !== filter.category) return false;
+      }
 
       // 분야 필터 (category 컬럼 사용)
       if (filter.domain !== "All" && w.category !== filter.domain) return false;
@@ -322,10 +378,10 @@ function WordListPage() {
     startIdx + PAGE_SIZE
   );
 
- const handlePageChange = (nextIndex) => {
-  updateSearchParams({ page: nextIndex });
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+  const handlePageChange = (nextIndex) => {
+    updateSearchParams({ page: nextIndex });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const isEmptyAll = !isLoading && !errorMessage && words.length === 0;
 
@@ -351,13 +407,12 @@ function WordListPage() {
                   <button
                     key={key}
                     type="button"
-                    className={`stat-card no-select ${mode === key ? "active" : ""
-                      } ${color}`}
+                    className={`stat-card no-select ${
+                      mode === key ? "active" : ""
+                    } ${color}`}
                     onClick={() => handleModeChange(key)}
                   >
-                    <div className={`stat-icon-wrapper bg-${color}`}>
-                      {icon}
-                    </div>
+                    <div className={`stat-icon-wrapper bg-${color}`}>{icon}</div>
                     <div className="stat-info">
                       <span className="stat-label">{label}</span>
                       <span className="stat-count">{count}</span>
@@ -421,7 +476,6 @@ function WordListPage() {
                 }}
                 aria-label="단어 검색"
               />
-
             </div>
           </div>
         </section>
@@ -484,12 +538,11 @@ function WordListPage() {
                       meta={
                         <button
                           type="button"
-                          className={`star-btn no-select ${w.isFavorite ? "active" : ""
-                            }`}
+                          className={`star-btn no-select ${
+                            w.isFavorite ? "active" : ""
+                          }`}
                           onClick={(e) => handleToggleFavorite(w, e)}
-                          title={
-                            w.isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"
-                          }
+                          title={w.isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
                         >
                           <Star
                             size={18}
@@ -506,14 +559,13 @@ function WordListPage() {
                         {typeof w.level === "number" && (
                           <span className="tag tag-level">Lv.{w.level}</span>
                         )}
-                        {w.partOfSpeech && (
-                          <span className="tag tag-pos">
-                            {w.partOfSpeech}
-                          </span>
-                        )}
-                        {w.category && (
-                          <span className="tag tag-domain">{w.category}</span>
-                        )}
+                     {w.partOfSpeech && (
+  <span className="tag tag-pos">{getPosLabel(w.partOfSpeech)}</span>
+)}
+{w.category && (
+  <span className="tag tag-domain">{getDomainLabel(w.category)}</span>
+)}
+
                       </div>
 
                       {/* 뜻 */}
@@ -524,8 +576,7 @@ function WordListPage() {
                       {/* 하단 링크 */}
                       <div className="word-card-footer">
                         <div className="view-detail">
-                          More{" "}
-                          <ArrowRight size={14} className="arrow-icon" />
+                          More <ArrowRight size={14} className="arrow-icon" />
                         </div>
                       </div>
                     </Card>

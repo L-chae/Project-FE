@@ -270,7 +270,7 @@ weeklyDataSorted.forEach((day) => {
         <section className="dashboard-card status-card">
           <div className="status-header">
             <h3 className="section-title">오늘의 학습 목표</h3>
-             <p className="section-subtitle status-subtitle">
+             <p className="section-subtitle">
       퀴즈에서 완료된 단어 기준으로 계산됩니다.
     </p>
           </div>
@@ -284,15 +284,7 @@ weeklyDataSorted.forEach((day) => {
                     <span className="slash">/</span>
                     <span className="goal-text">{goal} 단어</span>
                   </div>
-                  <p className="remaining-text">
-                    {remaining > 0 ? (
-                      <>
-                        목표까지 <strong>{remaining}개</strong> 남았어요.
-                      </>
-                    ) : (
-                      "오늘의 목표 달성! 🎉"
-                    )}
-                  </p>
+              
                 </div>
 
                 <div className="status-percent-area">
@@ -341,9 +333,6 @@ weeklyDataSorted.forEach((day) => {
   <div className="action-top">
     <div>
       <h3 className="section-title">이번 주 출석 현황</h3>
-            <p className="section-subtitle action-subtitle">
-        퀴즈·카드에서 1회 이상 학습하면 출석으로 표시됩니다.
-      </p>
     </div>
     <div className="mini-calendar">
       {weekDays.map((day, i) => (

@@ -1,6 +1,13 @@
 // src/pages/words/WordDetailPage.jsx
-import { ArrowLeft, BookOpen, Check, CheckCircle, Plus, Star } from "lucide-react";
-import { useEffect, useRef, useState, useMemo } from "react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Check,
+  CheckCircle,
+  Plus,
+  Star,
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -12,43 +19,160 @@ import {
   removeFavorite,
   addWordFromCluster,
 } from "../../api/wordApi";
-import { getClustersByCenter, createCluster } from "../../api/wordClusterApi";
-import Button from "../../components/common/Button";
+import { getClustersByCenter, createCluster } from "@/api/wordClusterApi";
+import Button from "@/components/common/Button";
 import "./WordDetailPage.css";
+
+const WORDS_QUERY_KEY = ["words", "list"];
+// ================================
+// 표시용 라벨(품사/분야) 변환 유틸
+// ================================
+
+const POS_TO_GROUP = {
+  noun: "NOUN",
+
+  verb: "VERB",
+  "linking verb": "VERB",
+  "modal verb": "VERB",
+
+  adjective: "ADJ_ADV",
+  adverb: "ADJ_ADV",
+
+  pronoun: "FUNC",
+  preposition: "FUNC",
+  conjunction: "FUNC",
+  determiner: "FUNC",
+  "definite article": "FUNC",
+  "indefinite article": "FUNC",
+  "infinitive marker": "FUNC",
+
+  number: "NUM",
+  "ordinal number": "NUM",
+
+  exclamation: "ETC",
+};
+
+const getPosGroup = (posRaw) => {
+  const pos = String(posRaw ?? "").trim().toLowerCase();
+  return POS_TO_GROUP[pos] ?? "ETC";
+};
+
+const POS_GROUP_LABEL = {
+  NOUN: "명사",
+  VERB: "동사",
+  ADJ_ADV: "형용사·부사",
+  FUNC: "기능어",
+  NUM: "수·서수",
+  ETC: "감탄·기타",
+};
+
+const getPosLabel = (posRaw) => POS_GROUP_LABEL[getPosGroup(posRaw)] ?? "감탄·기타";
+
+const DOMAIN_LABEL = {
+  "Daily Life": "일상생활",
+  "People & Feelings": "사람/감정",
+  Business: "직장/비즈니스",
+  "School & Learning": "학교/학습",
+  Travel: "여행/교통",
+  "Food & Health": "음식/건강",
+  Technology: "기술/IT",
+};
+
+const getDomainLabel = (v) => DOMAIN_LABEL[v] ?? v;
+
+
+// ---- util: 병렬 제한 실행 ----
+const runWithConcurrency = async (tasks, concurrency = 3) => {
+  const results = [];
+  let idx = 0;
+
+  const worker = async () => {
+    while (idx < tasks.length) {
+      const cur = idx++;
+      results[cur] = await tasks[cur]();
+    }
+  };
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, tasks.length) },
+    () => worker()
+  );
+  await Promise.all(workers);
+  return results;
+};
+
+// ---- Chip 컴포넌트 (memo) ----
+const ClusterChip = React.memo(function ClusterChip({
+  item,
+  isPending,
+  onAdd,
+}) {
+  return (
+    <div
+      className={`word-chip ${
+        item.inMyList ? "word-chip--selected" : "word-chip--unselected"
+      }`}
+    >
+      <div className="chip-main">
+        <div className="chip-header-row">
+          <span className="chip-word">{item.text}</span>
+          {/* ✅ 레벨 뱃지 제거 -> 뜻을 우측(또는 같은 row)에 한 줄로 */}
+          <span className="chip-meaning-inline" title={item.meaning || ""}>
+            {item.meaning?.trim() ? item.meaning : "-"}
+          </span>
+        </div>
+
+        {/* ✅ 기존 아래 meaning 블록 제거 (원하면 유지 가능)
+            - 아래 줄을 살리고 싶으면 주석 해제:
+            {item.meaning && <p className="chip-meaning">{item.meaning}</p>}
+        */}
+      </div>
+
+      {item.inMyList ? (
+        <span className="chip-check">
+          <Check size={14} />
+        </span>
+      ) : (
+        <button
+          className="chip-add-btn"
+          onClick={() => onAdd(item.text)}
+          disabled={isPending}
+          title={isPending ? "추가 중..." : "단어장에 추가"}
+        >
+          <Plus size={14} />
+        </button>
+      )}
+    </div>
+  );
+});
 
 function WordDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ------------------------------
-  // 기본 단어 정보
-  // ------------------------------
   const [word, setWord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favLoading, setFavLoading] = useState(false);
 
-  // ------------------------------
-  // 클러스터 상태 (정돈: 상태 머신)
-  // ------------------------------
   const [clusterTab, setClusterTab] = useState("전체");
   const [clusterData, setClusterData] = useState({ similar: [], opposite: [] });
-  const [clusterStatus, setClusterStatus] = useState("idle"); // "idle" | "loading" | "creating" | "ready" | "error"
+  const [clusterStatus, setClusterStatus] = useState("idle");
   const [clusterError, setClusterError] = useState(null);
 
-  // 같은 id에 대해 자동 로딩 중복 방지
   const autoClusterLoadedRef = useRef(null);
-
-  // ✅ stale 응답 방지 토큰
   const clusterReqSeqRef = useRef(0);
-
-  // ✅ empty라서 auto-create는 id당 1회만
   const autoCreateTriedRef = useRef(new Set());
 
-  // ------------------------------------------------
-  // 단어 상세 + 즐겨찾기/학습완료
-  // ------------------------------------------------
+  // ✅ 추가 중 중복 클릭 방지 (text 기준)
+  const [pendingAddSet, setPendingAddSet] = useState(() => new Set());
+
+  const queryClient = useQueryClient();
+
+  // ------------------------------
+  // 단어 상세 로드
+  // ------------------------------
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -68,16 +192,18 @@ function WordDetailPage() {
         const detail = detailRes || {};
         const wordId = Number(detail.wordId);
 
-        const favoriteIds = new Set((favoriteRes || []).map((f) => Number(f.wordId)));
-        const completedIds = new Set((completedRes || []).map((c) => Number(c.wordId)));
+        const favoriteIds = new Set(
+          (favoriteRes || []).map((f) => Number(f.wordId))
+        );
+        const completedIds = new Set(
+          (completedRes || []).map((c) => Number(c.wordId))
+        );
 
-        const merged = {
+        setWord({
           ...detail,
           isFavorite: favoriteIds.has(wordId) || !!detail.isFavorite,
           isCompleted: completedIds.has(wordId) || !!detail.isCompleted,
-        };
-
-        setWord(merged);
+        });
         setError(null);
       } catch (e) {
         if (cancelled) return;
@@ -89,114 +215,111 @@ function WordDetailPage() {
     };
 
     fetchBase();
-
     return () => {
       cancelled = true;
     };
   }, [id]);
 
-  // ------------------------------------------------
-  // 즐겨찾기 캐시 데이터 낙관적 업데이트
-  // ------------------------------------------------
-  const queryClient = useQueryClient();
-  const WORDS_QUERY_KEY = useMemo(() => ["words", "list"], []);
-
-  // ------------------------------------------------
-  // ✅ id 변경 시 클러스터 요청 무효화 + 상태 초기화
-  // ------------------------------------------------
+  // ------------------------------
+  // id 변경 시 클러스터 초기화
+  // ------------------------------
   useEffect(() => {
     if (!id) return;
 
-    // 진행 중/대기 중이던 모든 클러스터 요청을 stale 처리
     clusterReqSeqRef.current += 1;
 
-    // 새 단어로 이동 시 잔상 제거
     setClusterData({ similar: [], opposite: [] });
     setClusterStatus("idle");
     setClusterError(null);
 
-    // 자동 로딩 중복 방지 키 초기화
     autoClusterLoadedRef.current = null;
+
+    // ✅ pending도 초기화
+    setPendingAddSet(new Set());
   }, [id]);
 
-  // ------------------------------------------------
-  // 클러스터 조회 (GET)
-  // ------------------------------------------------
-  const fetchClusters = async ({ useCache = true, centerId = id } = {}) => {
-    if (!centerId) return null;
+  // ------------------------------
+  // 클러스터 조회
+  // ------------------------------
+  const fetchClusters = useCallback(
+    async ({ useCache = true, centerId = id } = {}) => {
+      if (!centerId) return null;
 
-    const mySeq = ++clusterReqSeqRef.current;
+      const mySeq = ++clusterReqSeqRef.current;
 
-    try {
-      setClusterError(null);
-      setClusterStatus("loading");
+      try {
+        setClusterError(null);
+        setClusterStatus("loading");
 
-      const grouped = await getClustersByCenter(centerId, { useCache });
+        const grouped = await getClustersByCenter(centerId, { useCache });
 
-      if (mySeq !== clusterReqSeqRef.current) return null;
-      if (String(centerId) !== String(id)) return null;
+        if (mySeq !== clusterReqSeqRef.current) return null;
+        if (String(centerId) !== String(id)) return null;
 
-      setClusterData({
-        similar: grouped?.similar || [],
-        opposite: grouped?.opposite || [],
-      });
+        setClusterData({
+          similar: grouped?.similar || [],
+          opposite: grouped?.opposite || [],
+        });
 
-      setClusterStatus("ready");
-      return grouped;
-    } catch (e) {
-      if (mySeq !== clusterReqSeqRef.current) return null;
-      if (String(centerId) !== String(id)) return null;
+        setClusterStatus("ready");
+        return grouped;
+      } catch (e) {
+        if (mySeq !== clusterReqSeqRef.current) return null;
+        if (String(centerId) !== String(id)) return null;
 
-      console.error("연관 단어 로딩 실패", e);
-      setClusterError("연관 단어를 불러오지 못했습니다.");
-      setClusterStatus("error");
-      return null;
-    }
-  };
+        console.error("연관 단어 로딩 실패", e);
+        setClusterError("연관 단어를 불러오지 못했습니다.");
+        setClusterStatus("error");
+        return null;
+      }
+    },
+    [id]
+  );
 
-  // ------------------------------------------------
-  // 클러스터 생성 (POST -> GET)
-  // ------------------------------------------------
-  const runCreateCluster = async (centerId = id) => {
-    if (!centerId) return null;
+  // ------------------------------
+  // 클러스터 생성
+  // ------------------------------
+  const runCreateCluster = useCallback(
+    async (centerId = id) => {
+      if (!centerId) return null;
 
-    const mySeq = ++clusterReqSeqRef.current;
+      const mySeq = ++clusterReqSeqRef.current;
 
-    try {
-      setClusterError(null);
-      setClusterStatus("creating");
+      try {
+        setClusterError(null);
+        setClusterStatus("creating");
 
-      const grouped = await createCluster(centerId);
+        const grouped = await createCluster(centerId);
 
-      if (mySeq !== clusterReqSeqRef.current) return null;
-      if (String(centerId) !== String(id)) return null;
+        if (mySeq !== clusterReqSeqRef.current) return null;
+        if (String(centerId) !== String(id)) return null;
 
-      setClusterData({
-        similar: grouped?.similar || [],
-        opposite: grouped?.opposite || [],
-      });
+        setClusterData({
+          similar: grouped?.similar || [],
+          opposite: grouped?.opposite || [],
+        });
 
-      setClusterStatus("ready");
-      return grouped;
-    } catch (e) {
-      if (mySeq !== clusterReqSeqRef.current) return null;
+        setClusterStatus("ready");
+        return grouped;
+      } catch (e) {
+        if (mySeq !== clusterReqSeqRef.current) return null;
 
-      console.error("연관 단어 생성 실패", e);
-      setClusterError("연관 단어 생성 중 오류가 발생했습니다.");
-      setClusterStatus("error");
-      return null;
-    }
-  };
+        console.error("연관 단어 생성 실패", e);
+        setClusterError("연관 단어 생성 중 오류가 발생했습니다.");
+        setClusterStatus("error");
+        return null;
+      }
+    },
+    [id]
+  );
 
-  // ------------------------------------------------
-  // ✅ 페이지 진입 시 자동 처리: GET -> empty면 자동 POST
-  // (요청하신대로: "연관 단어 생성하기" 버튼 제거)
-  // ------------------------------------------------
+  // ------------------------------
+  // 자동: GET -> empty면 POST
+  // ------------------------------
   useEffect(() => {
     if (!id) return;
-    if (loading) return; // 상세 렌더 우선
+    if (loading) return;
 
-    // 같은 id에서 중복 자동 호출 방지
     if (autoClusterLoadedRef.current === String(id)) return;
     autoClusterLoadedRef.current = String(id);
 
@@ -211,11 +334,11 @@ function WordDetailPage() {
       if (!grouped) return;
 
       const empty =
-        (grouped.similar?.length ?? 0) === 0 && (grouped.opposite?.length ?? 0) === 0;
+        (grouped.similar?.length ?? 0) === 0 &&
+        (grouped.opposite?.length ?? 0) === 0;
 
       if (!empty) return;
 
-      // empty면 자동 생성 (id당 1회만)
       if (autoCreateTriedRef.current.has(String(id))) return;
       autoCreateTriedRef.current.add(String(id));
 
@@ -235,12 +358,11 @@ function WordDetailPage() {
       }
       if (timeoutHandle) window.clearTimeout(timeoutHandle);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, loading]);
+  }, [id, loading, fetchClusters, runCreateCluster]);
 
-  // ------------------------------------------------
-  // 즐겨찾기 토글 (낙관적 업데이트 + 롤백)
-  // ------------------------------------------------
+  // ------------------------------
+  // 즐겨찾기 토글
+  // ------------------------------
   const handleToggleFavorite = async () => {
     if (!word || favLoading) return;
     const wordId = Number(word.wordId);
@@ -249,14 +371,14 @@ function WordDetailPage() {
     setFavLoading(true);
     const current = !!word.isFavorite;
 
-    // WordDetail 낙관적 업데이트
     setWord((prev) => (prev ? { ...prev, isFavorite: !current } : prev));
 
-    // WordList 캐시도 낙관적 업데이트 (캐시가 있을 때만)
     const previousWords = queryClient.getQueryData(WORDS_QUERY_KEY);
     if (previousWords) {
       queryClient.setQueryData(WORDS_QUERY_KEY, (old = []) =>
-        old.map((w) => (Number(w.wordId) === wordId ? { ...w, isFavorite: !current } : w))
+        old.map((w) =>
+          Number(w.wordId) === wordId ? { ...w, isFavorite: !current } : w
+        )
       );
     }
 
@@ -264,70 +386,92 @@ function WordDetailPage() {
       if (current) await removeFavorite(wordId);
       else await addFavorite(wordId);
 
-      // 서버와 동기화(백그라운드)
       queryClient.invalidateQueries({ queryKey: WORDS_QUERY_KEY });
     } catch (e) {
       console.error("즐겨찾기 실패", e);
-
-      // 롤백
       setWord((prev) => (prev ? { ...prev, isFavorite: current } : prev));
       if (previousWords) queryClient.setQueryData(WORDS_QUERY_KEY, previousWords);
-
       alert("오류가 발생했습니다.");
     } finally {
       setFavLoading(false);
     }
   };
 
-  // ------------------------------------------------
-  // 연관 단어 → 단어장에 추가
-  // ------------------------------------------------
-  const handleAddClusterWord = async (targetWord, level = 1) => {
-    try {
-      await addWordFromCluster({ text: targetWord, level });
+  // ------------------------------
+  // ✅ 연관 단어 추가 (최적화: 중복 클릭 방지 + callback 고정)
+  // - text만 받게 바꿈 (레벨 제거)
+  // ------------------------------
+const handleAddClusterWord = useCallback(async (targetWord) => {
+  const key = String(targetWord || "").trim();
+  if (!key) return;
 
-      setClusterData((prev) => {
-        const updateGroup = (group) =>
-          group.map((item) =>
-            item.text === targetWord ? { ...item, inMyList: true } : item
-          );
+  let shouldRun = false;
 
-        return {
-          ...prev,
-          similar: updateGroup(prev.similar),
-          opposite: updateGroup(prev.opposite),
-        };
-      });
+  setPendingAddSet((prev) => {
+    if (prev.has(key)) return prev;        // 이미 pending이면 그대로
+    const next = new Set(prev);
+    next.add(key);
+    shouldRun = true;                      // 이번 요청은 실행
+    return next;
+  });
 
-      alert(`${targetWord} 단어를 단어장에 추가했습니다!`);
-    } catch (err) {
-      console.error("연관 단어 추가 실패", err);
-      alert("단어 추가 실패!");
-    }
-  };
+  if (!shouldRun) return;
 
-  const handleAddAll = (groupKey) => {
-    const group = clusterData[groupKey];
-    if (!group) return;
+  try {
+    await addWordFromCluster({ text: key });
+    setClusterData((prev) => {
+      const mark = (group) =>
+        group.map((item) => (item.text === key ? { ...item, inMyList: true } : item));
+      return { ...prev, similar: mark(prev.similar), opposite: mark(prev.opposite) };
+    });
+  } catch (err) {
+    console.error("연관 단어 추가 실패", err);
+    alert("단어 추가 실패!");
+  } finally {
+    setPendingAddSet((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }
+}, []);
 
-    group
-      .filter((w) => !w.inMyList)
-      .forEach((w) => {
-        handleAddClusterWord(w.text, w.level);
-      });
-  };
+
+  // ✅ 모두 추가: 병렬 제한(3개씩)
+  const handleAddAll = useCallback(
+    async (groupKey) => {
+      const group = clusterData[groupKey];
+      if (!group?.length) return;
+
+      const targets = group.filter((w) => !w.inMyList).map((w) => w.text);
+
+      const tasks = targets.map((t) => () => handleAddClusterWord(t));
+      await runWithConcurrency(tasks, 3);
+    },
+    [clusterData, handleAddClusterWord]
+  );
 
   const handleBack = () => {
     const fromList = location.state?.from === "word-list";
     const search = location.state?.search || "";
-
     if (fromList) navigate(`/words${search}`);
     else navigate("/words");
   };
 
-  // ------------------------------------------------
-  // 로딩 / 에러 처리
-  // ------------------------------------------------
+  const hasAnyCluster =
+    (clusterData.similar?.length ?? 0) > 0 ||
+    (clusterData.opposite?.length ?? 0) > 0;
+
+  // ✅ 렌더용 리스트는 memo (탭 변화만 반영)
+  const viewSimilar = useMemo(
+    () => (clusterTab === "전체" || clusterTab === "similar" ? clusterData.similar : []),
+    [clusterTab, clusterData.similar]
+  );
+  const viewOpposite = useMemo(
+    () => (clusterTab === "전체" || clusterTab === "opposite" ? clusterData.opposite : []),
+    [clusterTab, clusterData.opposite]
+  );
+
   if (loading)
     return (
       <div className="detail-loading">
@@ -353,16 +497,9 @@ function WordDetailPage() {
   const displayDomain = domain || category || "";
   const displayLevel = typeof level === "number" ? level : "-";
 
-  const hasAnyCluster =
-    (clusterData.similar?.length ?? 0) > 0 || (clusterData.opposite?.length ?? 0) > 0;
-
-  // ------------------------------------------------
-  // 렌더링
-  // ------------------------------------------------
   return (
     <div className="page-container">
       <div className="detail-page">
-        {/* 상단 네비게이션 */}
         <div className="detail-nav">
           <button onClick={handleBack} className="back-btn">
             <ArrowLeft size={18} />
@@ -370,7 +507,6 @@ function WordDetailPage() {
           </button>
         </div>
 
-        {/* 메인 헤더 */}
         <header className="detail-header">
           <div className="header-top-row">
             <div className="header-content">
@@ -398,8 +534,13 @@ function WordDetailPage() {
               {typeof level === "number" && (
                 <span className="tag tag-level">Lv.{displayLevel}</span>
               )}
-              {partOfSpeech && <span className="tag tag-pos">{partOfSpeech}</span>}
-              {displayDomain && <span className="tag tag-domain">{displayDomain}</span>}
+{partOfSpeech && (
+  <span className="tag tag-pos">{getPosLabel(partOfSpeech)}</span>
+)}
+{displayDomain && (
+  <span className="tag tag-domain">{getDomainLabel(displayDomain)}</span>
+)}
+
             </div>
 
             <div className={`status-badge ${isCompleted ? "done" : "todo"}`}>
@@ -409,9 +550,7 @@ function WordDetailPage() {
           </div>
         </header>
 
-        {/* 본문 2단 그리드 */}
         <div className="detail-grid">
-          {/* 왼쪽: 예문 */}
           <div className="detail-left-col">
             <section className="detail-card example-section">
               <div className="card-label">
@@ -429,7 +568,6 @@ function WordDetailPage() {
             </section>
           </div>
 
-          {/* 오른쪽: 연관 단어(클러스터) */}
           <div className="detail-right-col">
             <section className="detail-card cluster-section">
               <div className="cluster-header">
@@ -448,7 +586,6 @@ function WordDetailPage() {
               </div>
 
               <div className="cluster-content">
-                {/* 로딩/생성 스피너 */}
                 {(clusterStatus === "loading" || clusterStatus === "creating") && (
                   <div className="cluster-loading">
                     <div className="spinner small" />
@@ -460,10 +597,11 @@ function WordDetailPage() {
                   </div>
                 )}
 
-                {/* 에러 */}
                 {clusterStatus === "error" && (
                   <div className="cluster-empty-box">
-                    <p className="no-data-text">{clusterError || "오류가 발생했습니다."}</p>
+                    <p className="no-data-text">
+                      {clusterError || "오류가 발생했습니다."}
+                    </p>
                     <Button
                       type="button"
                       variant="ghost"
@@ -475,7 +613,6 @@ function WordDetailPage() {
                   </div>
                 )}
 
-                {/* 성공: 데이터 없음 */}
                 {clusterStatus === "ready" && !hasAnyCluster && (
                   <div className="cluster-empty-box">
                     <p className="no-data-text">연관 단어가 없습니다.</p>
@@ -490,10 +627,8 @@ function WordDetailPage() {
                   </div>
                 )}
 
-                {/* 성공: 데이터 있음 */}
                 {clusterStatus === "ready" && hasAnyCluster && (
                   <>
-                    {/* 유의어 */}
                     {(clusterTab === "전체" || clusterTab === "similar") && (
                       <div className="cluster-group">
                         <div className="group-title-row">
@@ -506,44 +641,18 @@ function WordDetailPage() {
                           </button>
                         </div>
                         <div className="chip-grid">
-                          {clusterData.similar.map((item) => (
-                            <div
-                              className={`word-chip ${
-                                item.inMyList ? "word-chip--selected" : "word-chip--unselected"
-                              }`}
+                          {viewSimilar.map((item) => (
+                            <ClusterChip
                               key={item.id ?? item.text}
-                            >
-                              <div className="chip-main">
-                                <div className="chip-header-row">
-                                  <span className="chip-word">{item.text}</span>
-                                  {typeof item.level === "number" && (
-                                    <span className={`chip-lv chip-lv--${item.level}`}>
-                                      Lv.{item.level}
-                                    </span>
-                                  )}
-                                </div>
-                                {item.meaning && <p className="chip-meaning">{item.meaning}</p>}
-                              </div>
-
-                              {item.inMyList ? (
-                                <span className="chip-check">
-                                  <Check size={14} />
-                                </span>
-                              ) : (
-                                <button
-                                  className="chip-add-btn"
-                                  onClick={() => handleAddClusterWord(item.text, item.level)}
-                                >
-                                  <Plus size={14} />
-                                </button>
-                              )}
-                            </div>
+                              item={item}
+                              isPending={pendingAddSet.has(String(item.text))}
+                              onAdd={handleAddClusterWord}
+                            />
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* 반의어 */}
                     {(clusterTab === "전체" || clusterTab === "opposite") && (
                       <div className="cluster-group">
                         <div className="group-title-row">
@@ -556,38 +665,13 @@ function WordDetailPage() {
                           </button>
                         </div>
                         <div className="chip-grid">
-                          {clusterData.opposite.map((item) => (
-                            <div
-                              className={`word-chip ${
-                                item.inMyList ? "word-chip--selected" : "word-chip--unselected"
-                              }`}
+                          {viewOpposite.map((item) => (
+                            <ClusterChip
                               key={item.id ?? item.text}
-                            >
-                              <div className="chip-main">
-                                <div className="chip-header-row">
-                                  <span className="chip-word">{item.text}</span>
-                                  {typeof item.level === "number" && (
-                                    <span className={`chip-lv chip-lv--${item.level}`}>
-                                      Lv.{item.level}
-                                    </span>
-                                  )}
-                                </div>
-                                {item.meaning && <p className="chip-meaning">{item.meaning}</p>}
-                              </div>
-
-                              {item.inMyList ? (
-                                <span className="chip-check">
-                                  <Check size={14} />
-                                </span>
-                              ) : (
-                                <button
-                                  className="chip-add-btn"
-                                  onClick={() => handleAddClusterWord(item.text, item.level)}
-                                >
-                                  <Plus size={14} />
-                                </button>
-                              )}
-                            </div>
+                              item={item}
+                              isPending={pendingAddSet.has(String(item.text))}
+                              onAdd={handleAddClusterWord}
+                            />
                           ))}
                         </div>
                       </div>
@@ -595,7 +679,6 @@ function WordDetailPage() {
                   </>
                 )}
 
-                {/* idle */}
                 {clusterStatus === "idle" && (
                   <div className="cluster-loading">
                     <div className="spinner small" />
