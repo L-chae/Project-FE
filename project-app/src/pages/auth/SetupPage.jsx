@@ -27,11 +27,11 @@ export default function SetupPage() {
     level,
     setLevel,
     setGoal,
-    selected,
+    selected,          // ✅ string(단일)로 바꿔야 함
     goal,
     submitting,
     error,
-    toggleField,
+    toggleField,       // ✅ (value) => void / 단일 선택 setter로 동작
     handleComplete,
     handleSkip,
   } = useSetupForm();
@@ -61,25 +61,24 @@ export default function SetupPage() {
 
             {/* 관심 분야 선택 */}
             <div className="setup-section">
-              <label className="setup-label">
-                관심 분야를 선택해주세요
-              </label>
+              <label className="setup-label">관심 분야를 선택해주세요</label>
 
               <div className="setup-tags">
-                {FIELD_OPTIONS.map((field) => (
-                  <button
-                    type="button"
-                    key={field.value}
-                    className={
-                      "setup-tag" +
-                      (selected.includes(field.value) ? " active" : "")
-                    }
-                    onClick={() => toggleField(field.value)}
-                    disabled={submitting}
-                  >
-                    {field.label}
-                  </button>
-                ))}
+                {FIELD_OPTIONS.map((field) => {
+                  const isActive = selected === field.value; // ✅ 단일 비교
+                  return (
+                    <button
+                      type="button"
+                      key={field.value}
+                      className={"setup-tag" + (isActive ? " active" : "")}
+                      onClick={() => toggleField(field.value)} // ✅ 클릭 시 단일 선택
+                      disabled={submitting}
+                      aria-pressed={isActive}
+                    >
+                      {field.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -142,9 +141,7 @@ export default function SetupPage() {
               onClick={handleComplete}
               disabled={submitting}
             >
-              {submitting
-                ? "가입 처리 중..."
-                : "설정 완료하고 시작하기 →"}
+              {submitting ? "가입 처리 중..." : "설정 완료하고 시작하기 →"}
             </Button>
 
             <button
