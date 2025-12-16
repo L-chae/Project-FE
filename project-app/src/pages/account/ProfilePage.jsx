@@ -5,7 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
 import FilterDropdown from "../../components/common/FilterDropdown";
-import { Calendar } from "lucide-react";
+
+import BirthdateSelector from "@/components/common/BirthdateSelector";
 import "./ProfilePage.css";
 
 const INTEREST_OPTIONS = [
@@ -89,54 +90,54 @@ const ProfilePage = () => {
     setOpenDropdown(null);
   };
 
-const submitProfile = async (e) => {
-  e.preventDefault();
+  const submitProfile = async (e) => {
+    e.preventDefault();
 
-  try {
-    /* 1️⃣ 기본 정보 + 학습 설정 저장 */
-    const updated = await updateUserInfo(profileForm);
+    try {
+      /* 1️⃣ 기본 정보 + 학습 설정 저장 */
+      const updated = await updateUserInfo(profileForm);
 
-    updateProfileState({
-      nickname: updated?.nickname ?? profileForm.nickname,
-      preference: updated?.preference ?? profileForm.preference,
-      goal: updated?.goal ?? profileForm.goal,
-      dailyWordGoal:
-        updated?.dailyWordGoal ?? profileForm.dailyWordGoal,
-      userBirth: updated?.userBirth ?? profileForm.userBirth,
-    });
+      updateProfileState({
+        nickname: updated?.nickname ?? profileForm.nickname,
+        preference: updated?.preference ?? profileForm.preference,
+        goal: updated?.goal ?? profileForm.goal,
+        dailyWordGoal:
+          updated?.dailyWordGoal ?? profileForm.dailyWordGoal,
+        userBirth: updated?.userBirth ?? profileForm.userBirth,
+      });
 
-    /* 2️⃣ 비밀번호 입력이 있으면 비밀번호 변경 */
-    const hasPasswordInput =
-      passwordForm.currentPassword ||
-      passwordForm.newPassword ||
-      passwordForm.confirmPassword;
+      /* 2️⃣ 비밀번호 입력이 있으면 비밀번호 변경 */
+      const hasPasswordInput =
+        passwordForm.currentPassword ||
+        passwordForm.newPassword ||
+        passwordForm.confirmPassword;
 
-    if (hasPasswordInput) {
-      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        alert("새 비밀번호가 일치하지 않습니다.");
-        return;
+      if (hasPasswordInput) {
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+          alert("새 비밀번호가 일치하지 않습니다.");
+          return;
+        }
+
+        await changePassword({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          confirmNewPassword: passwordForm.confirmPassword,
+        });
+
+        // 비밀번호 입력값 초기화
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
       }
 
-      await changePassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-        confirmNewPassword: passwordForm.confirmPassword,
-      });
-
-      // 비밀번호 입력값 초기화
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      alert("변경사항이 저장되었습니다.");
+    } catch (error) {
+      console.error(error);
+      alert("저장 중 오류가 발생했습니다.");
     }
-
-    alert("변경사항이 저장되었습니다.");
-  } catch (error) {
-    console.error(error);
-    alert("저장 중 오류가 발생했습니다.");
-  }
-};
+  };
 
 
   /* 비밀번호 변경 */
@@ -176,13 +177,12 @@ const submitProfile = async (e) => {
       <div className="profile-grid mt-24">
         {/* 기본 정보 & 비밀번호 설정 */}
         <section className="card profile-card">
-          <h2 className="card-title">기본 정보 & 비밀번호 설정</h2>
+          <h2 className="card-title">개인 정보 설정</h2>
 
           {/* 하나의 form만 사용 */}
           <form onSubmit={submitProfile}>
             {/* ================= 기본 정보 ================= */}
             <div className="profile-section">
-              <h3 className="profile-section-title">기본 정보</h3>
 
               <div className="form-field">
                 <label className="form-label">이메일</label>
@@ -224,14 +224,12 @@ const submitProfile = async (e) => {
                   <label className="form-label" htmlFor="userBirth">
                     생년월일
                   </label>
-                  <Input
-                    id="userBirth"
-                    type="date"
+
+                  <BirthdateSelector
                     name="userBirth"
                     value={profileForm.userBirth}
                     onChange={handleProfileChange}
-                    leftIcon={<Calendar size={18} />}
-                    fullWidth
+                    error={null}
                   />
                 </div>
               </div>
@@ -239,7 +237,6 @@ const submitProfile = async (e) => {
 
             {/* ================= 비밀번호 변경 ================= */}
             <div className="profile-section">
-              <h3 className="profile-section-title">비밀번호 변경</h3>
 
               <div className="form-field">
                 <label className="form-label" htmlFor="currentPassword">
@@ -328,7 +325,7 @@ const submitProfile = async (e) => {
             {/* 하루 목표 단어 수 */}
             <div className="form-field daily-goal-field">
               <div className="daily-goal-header">
-                <span className="form-label">하루 목표 단어 수</span>
+                <span className="form-label">하루 목표 단어 수 :  </span>
                 <strong className="daily-goal-number">
                   {profileForm.dailyWordGoal}
                 </strong>
