@@ -45,6 +45,7 @@ export default function CardLearningPage() {
   const navigate = useNavigate();
 
   const source = searchParams.get("source") || "card";
+  const isWrongMode = source === "wrong-note";
 
   // ✅ limit 쿼리(선택): 없으면 기본 20
   const limitParam = searchParams.get("limit");
@@ -67,8 +68,12 @@ export default function CardLearningPage() {
       ? parsedLimit
       : DEFAULT_LIMIT;
 
-  // UI 표시용 domain/level
-  const rawDomain = searchParams.get("domain") || "All";
+  // ----------------------------
+  // UI 표시용 domain/level + badgeLabel (선택 안 했으면 숨김)
+  // ----------------------------
+  const rawDomainParam = searchParams.get("domain"); // ✅ 파라미터 자체(없을 수 있음)
+  const rawDomain = rawDomainParam || "All";
+
   const DOMAIN_LABEL_MAP = {
     All: "전체",
     "Daily Life": "일상생활",
@@ -81,17 +86,24 @@ export default function CardLearningPage() {
   };
   const domainLabel = DOMAIN_LABEL_MAP[rawDomain] || rawDomain;
 
-  const rawLevel = searchParams.get("level");
-  const rawLevelLower = rawLevel ? rawLevel.toLowerCase() : null;
+  const rawLevelParam = searchParams.get("level"); // ✅ 파라미터 자체(없을 수 있음)
+  const rawLevelLower = rawLevelParam ? rawLevelParam.toLowerCase() : null;
+  const levelLabel = toLevelBadgeLabel(rawLevelParam);
 
-  // ✅ 여기만 변경: 뱃지에 1/2/3 대신 초급/중급/고급
-  const levelLabel = toLevelBadgeLabel(rawLevel);
+  // ✅ “선택했는지” 판정 (없음 / All 이면 미선택)
+  const hasDomainFilter = !!rawDomainParam && rawDomain !== "All";
+  const hasLevelFilter = !!rawLevelParam && rawLevelLower !== "all";
 
-  const badgeText = `${domainLabel} | ${levelLabel}`;
-  const isWrongMode = source === "wrong-note";
+  // ✅ 선택한 것만 조합, 아무것도 없으면 undefined(= 뱃지 숨김)
+  const badgeLabel = (() => {
+    const parts = [];
+    if (hasDomainFilter) parts.push(domainLabel);
+    if (hasLevelFilter) parts.push(levelLabel);
+    return parts.length ? parts.join(" | ") : undefined;
+  })();
 
   // API용 (null/All/all이면 undefined로 제거)
-  const apiLevel = !rawLevelLower || rawLevelLower === "all" ? undefined : rawLevel;
+  const apiLevel = !rawLevelLower || rawLevelLower === "all" ? undefined : rawLevelParam;
   const apiCategory = rawDomain === "All" ? undefined : rawDomain;
 
   // 상태값
@@ -132,7 +144,7 @@ export default function CardLearningPage() {
         const data = await fetchCardItems({
           source,
           wordIds,
-          limit: resolvedLimit, // ✅ 여기 추가
+          limit: resolvedLimit,
           level: apiLevel,
           category: apiCategory,
         });
@@ -183,7 +195,7 @@ export default function CardLearningPage() {
           <LearningProgressHeader
             title={isWrongMode ? "오답 카드 학습" : "카드 학습"}
             subtitle="학습 카드를 불러오는 중입니다."
-            badgeLabel={badgeText}
+            badgeLabel={badgeLabel} // ✅ 선택 안 했으면 undefined -> 안 보이게
             badgeVariant={isWrongMode ? "orange" : "purple"}
             showBackButton
             onBack={() => navigate("/learning")}
@@ -204,7 +216,7 @@ export default function CardLearningPage() {
           <LearningProgressHeader
             title={isWrongMode ? "오답 카드 학습" : "카드 학습"}
             subtitle="학습할 카드가 없습니다. 조건을 바꿔 다시 시도해 보세요."
-            badgeLabel={badgeText}
+            badgeLabel={badgeLabel} // ✅
             badgeVariant={isWrongMode ? "orange" : "purple"}
             showBackButton
             onBack={() => navigate("/learning")}
@@ -273,7 +285,7 @@ export default function CardLearningPage() {
                 ? "틀렸던 단어들을 다시 카드로 복습해 보세요."
                 : "플래시 카드로 단어를 빠르게 암기해 보세요."
             }
-            badgeLabel={badgeText}
+            badgeLabel={badgeLabel} // ✅
             badgeVariant={isWrongMode ? "orange" : "purple"}
             progressText={`${currentIndex + 1} / ${total}`}
             progressVariant={isWrongMode ? "warning" : "primary"}
