@@ -57,7 +57,9 @@ function redirectToLogin() {
 httpClient.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
-    if (token && !config.headers?.Authorization) {
+    const hasAuth =
+     Boolean(config.headers) && Object.prototype.hasOwnProperty.call(config.headers, "Authorization");
+     if (token && !hasAuth) {
       setAuthHeader(config, token);
     }
     return config;
@@ -133,8 +135,10 @@ httpClient.interceptors.response.use(
       );
 
       const data = refreshResponse.data || {};
-      const newAccessToken = data.accessToken;
-      const newRefreshToken = data.refreshToken;
+       const newAccessToken =
+       data.accessToken ?? data.access_token ?? data.token ?? data?.data?.accessToken ?? data?.data?.access_token;
+      const newRefreshToken =
+       data.refreshToken ?? data.refresh_token ?? data?.data?.refreshToken ?? data?.data?.refresh_token;
 
       if (!newAccessToken) {
         isRefreshing = false;
@@ -146,6 +150,7 @@ httpClient.interceptors.response.use(
       if (newRefreshToken) {
         setRefreshToken(newRefreshToken);
       }
+      httpClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
 
       isRefreshing = false;
       onRefreshed(newAccessToken);
