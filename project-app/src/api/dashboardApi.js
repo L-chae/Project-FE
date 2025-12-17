@@ -130,7 +130,7 @@ export const getDashboardStats = async () => {
   const d = res?.data ?? {};
 
   return {
-    totalLearnedWords: toNum(d.totalLearnedWords ?? d.completedWords, 0),
+     totalLearnedWords: toNum(d.completedWords ?? d.totalLearnedWords, 0),
     wrongWords: toNum(d.wrongWords ?? d.wrongAnswers, 0),
     streakDays: toNum(d.streakDays ?? d.streak, 0),
   };

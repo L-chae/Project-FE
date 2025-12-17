@@ -223,6 +223,7 @@ export const getUnusedWrongLogs = async () => {
         wordId: item.wordId,
         word: item.word,
         meaning: item.meaning,
+        wrongAt: item.wrongAt,
       }));
   }
 

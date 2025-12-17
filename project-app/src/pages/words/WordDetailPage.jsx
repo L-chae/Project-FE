@@ -6,7 +6,6 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import {
   addFavorite,
-  getCompletedList,
   getFavoriteList,
   getWordDetail,
   removeFavorite,
