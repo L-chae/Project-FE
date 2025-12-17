@@ -3,7 +3,7 @@ import "./AccountFindPage.css";
 
 import Button from "@/components/common/Button";
 import Input from "@/components/common/Input";
-import Logo from "@/assets/images/StoryLex-logo.svg";
+import Logo from "@/assets/images/StoryLexLogo.svg";
 import { useAccountFindForm } from "./hooks/useAccountFindForm";
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 

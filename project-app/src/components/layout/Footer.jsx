@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import "./Footer.css";
-import StoryLexLogo from "@/assets/images/StoryLex-logo.svg";
+import StoryLexLogo from "@/assets/images/StoryLexLogo.svg";
 
 const AUTH_FOOTER_ITEMS = [
   { to: "/dashboard", label: "대시보드" },

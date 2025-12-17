@@ -4,7 +4,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 import Button from "@/components/common/Button";
-import StoryLexLogo from "@/assets/images/StoryLex-logo.svg";
+import StoryLexLogo from "@/assets/images/StoryLexLogo.svg";
 import userIcon from "@/assets/images/common/user-icon.svg";
 
 import "./Header.css";
