@@ -180,7 +180,7 @@ export default function WrongNotePage() {
                 {hintText}
                 {storyLimitReached && (
                   <span style={{ marginLeft: 6, color: "#b91c1c", fontWeight: 800 }}>
-                    (최대 5개)
+                    (최대 10개)
                   </span>
                 )}
               </span>

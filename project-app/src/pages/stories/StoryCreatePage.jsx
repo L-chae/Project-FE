@@ -9,7 +9,7 @@ import "./StoryCreatePage.css";
 import { generateAiStory } from "../../api/aiStoryApi";
 import { getUnusedWrongLogs } from "../../api/wrongApi";
 
-const MAX_SELECTED_WORDS = 5;
+const MAX_SELECTED_WORDS = 10;
 const MAX_VISIBLE_MISTAKES = 15;
 
 const StoryCreatePage = () => {

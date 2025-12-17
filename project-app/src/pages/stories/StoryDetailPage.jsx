@@ -171,7 +171,7 @@ const StoryDetailPage = () => {
               <span className="nav-badge">{words.length}</span>
             </div>
               <p className="vocab-desc">
-              이 스토리에 사용된 핵심 단어입니다.
+              이 스토리에 사용된 단어입니다.
               <br />
               문맥 속에서 의미를 확인해보세요.
             </p>

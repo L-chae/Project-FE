@@ -1,7 +1,7 @@
 // src/pages/quiz/QuizPage.jsx
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import Button from "../../components/common/Button";
 import Spinner from "../../components/common/Spinner";
@@ -84,7 +84,22 @@ const extractWordFromQuestion = (q) => {
 
 const QuizPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  const handleBackToPrevious = () => {
+    // react-router 히스토리 idx (없으면 직접 진입/새탭 등)
+    const idx = window.history?.state?.idx;
+    if (typeof idx === "number" && idx > 0) {
+      navigate(-1);
+      return;
+    }
+    // (선택) 호출부에서 backTo를 넘겼다면 fallback으로 사용
+    const backTo = location.state?.backTo;
+    if (typeof backTo === "string" && backTo) {
+      navigate(backTo); return;
+    }
+    navigate("/learning");
+  };
 
   const source = searchParams.get("source") || "quiz"; // "quiz" | "wrong-note"
   const isWrongMode = source === "wrong-note";
@@ -139,9 +154,9 @@ const QuizPage = () => {
   const wordIdsParam = searchParams.get("wordIds");
   const wordIds = wordIdsParam
     ? wordIdsParam
-        .split(",")
-        .map((x) => Number(x))
-        .filter((n) => !Number.isNaN(n))
+      .split(",")
+      .map((x) => Number(x))
+      .filter((n) => !Number.isNaN(n))
     : undefined;
 
   // ✅ 핵심: wordIds가 있으면 "선택 개수"만큼만 출제되게 limit을 덮어씀
@@ -149,8 +164,8 @@ const QuizPage = () => {
     Array.isArray(wordIds) && wordIds.length > 0
       ? wordIds.length
       : Number.isFinite(parsedLimit) && parsedLimit > 0
-      ? parsedLimit
-      : DEFAULT_LIMIT;
+        ? parsedLimit
+        : DEFAULT_LIMIT;
 
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -240,7 +255,7 @@ const QuizPage = () => {
             <h3>오류 발생</h3>
             <p>{error}</p>
             <div className="quiz-error-actions">
-              <Button variant="secondary" size="md" onClick={() => navigate(-1)}>
+              <Button variant="secondary" size="md" onClick={handleBackToPrevious}>
                 뒤로 가기
               </Button>
             </div>
@@ -306,12 +321,12 @@ const QuizPage = () => {
         // 레벨 (✅ Lv.all 방지: 숫자만 추출)
         const resolvedLevel = parseLevelNumber(
           currentQ.level ??
-            currentQ.wordLevel ??
-            currentQ.word_level ??
-            currentQ.difficulty ??
-            currentQ.levelId ??
-            rawLevel ??
-            null
+          currentQ.wordLevel ??
+          currentQ.word_level ??
+          currentQ.difficulty ??
+          currentQ.levelId ??
+          rawLevel ??
+          null
         );
 
         return [
@@ -408,7 +423,7 @@ const QuizPage = () => {
               badgeLabel={badgeLabel} // ✅ 선택 안 했으면 undefined -> 숨김
               badgeVariant={isWrongMode ? "orange" : "purple"}
               showBackButton
-              onBack={handleGoLearningHome}
+              onBack={handleBackToPrevious}
               progressText={`${currentStep} / ${totalCount}`}
               progressVariant={isWrongMode ? "warning" : "primary"}
               progressBar={
@@ -487,7 +502,7 @@ const QuizPage = () => {
               getUnknownMeaning={(w) =>
                 w.meaningKo || w.meaning_ko || w.meaning || w.korean || ""
               }
-            
+
               buildMoreHintMessage={(restCount) =>
                 `그 외 ${restCount}개 단어는 오답 노트에서 계속 확인할 수 있어요.`
               }

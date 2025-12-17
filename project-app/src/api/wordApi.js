@@ -656,3 +656,19 @@ export const addWordFromCluster = async ({ text, level = 1 }) => {
   const res = await httpClient.post("/api/words/from-cluster", { text, level });
   return mapWordFromApi(res.data);
 };
+// =====================================================
+// 10. 단어별 학습 통계 조회
+// =====================================================
+export const getStudyLog = async (wordId) => {
+  if (USE_MOCK) {
+    return {
+      wordId: Number(wordId),
+      totalCorrect: 0,
+      totalWrong: 0,
+      lastStudyAt: null,
+    };
+  }
+
+  const res = await httpClient.get(`/api/study/${wordId}`);
+  return res.data;
+};

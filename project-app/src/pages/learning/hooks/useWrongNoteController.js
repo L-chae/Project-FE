@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getWrongList } from "@/api/wrongApi";
 
 const PAGE_SIZE = 10;
-const STORY_MAX_SELECT = 5;
+const STORY_MAX_SELECT = 10;
 
 /** normalize 기준: "Y" */
 const isUsedInStory = (item) => item?.isUsedInStory === "Y";

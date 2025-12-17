@@ -39,11 +39,23 @@ const getTimeBasedGreeting = () => {
   return "오늘 하루도 수고하셨어요,";
 };
 
+// ✅ 날짜 문자열(YYYY-MM-DD) 안정 처리
+const toYmdLocal = (d = new Date()) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${da}`;
+};
+
 const formatDateLabel = (dateStr) => {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  const s = String(dateStr).slice(0, 10); // "YYYY-MM-DD"
+  const parts = s.split("-");
+  if (parts.length !== 3) return s;
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (!Number.isFinite(m) || !Number.isFinite(d)) return s;
+  return `${m}/${d}`;
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -155,10 +167,7 @@ const DashboardPage = () => {
 
   if (isLoading || !dailyGoalData) {
     return (
-      <Spinner
-        fullHeight={true}
-        message="대시보드를 불러오는 중입니다..."
-      />
+      <Spinner fullHeight={true} message="대시보드를 불러오는 중입니다..." />
     );
   }
 
@@ -177,40 +186,57 @@ const DashboardPage = () => {
   }
 
   // -----------------------------
-  // 파생 데이터 계산
+  // 주간 데이터 정렬/파생 (✅ 날짜 파싱 이슈 방지)
+  // -----------------------------
+  const weeklyDataSorted = [...(weeklyStudyData ?? [])].sort((a, b) =>
+    String(a?.date ?? "").slice(0, 10).localeCompare(String(b?.date ?? "").slice(0, 10))
+  );
+
+  const chartData = weeklyDataSorted.map((d) => ({
+    date: formatDateLabel(d.date),
+    learned: d.learnedCount ?? 0,
+    wrong: d.wrongCount ?? 0,
+  }));
+
+  // ✅ 오늘 학습 수 = 주간 데이터에서 오늘 learnedCount (-> 차트와 동일)
+  const todayYmd = toYmdLocal();
+  const todayFromWeekly = weeklyDataSorted.find(
+    (d) => String(d?.date ?? "").slice(0, 10) === todayYmd
+  );
+
+  // -----------------------------
+  // 파생 데이터 계산 (✅ 기준 통일)
   // -----------------------------
   const goal = dailyGoalData.dailyGoal || 50;
-  const learned = dailyGoalData.todayProgress || 0;
-  const progressPercent = Math.min(dailyGoalData.percentage || 0, 100);
+
+  // ✅ 여기 핵심: dailyGoalData.todayProgress 쓰지 않음
+  const learned = todayFromWeekly?.learnedCount ?? 0;
+
+  // ✅ 퍼센트도 동일 기준으로 프론트 계산
+  const progressPercent = Math.min(
+    Math.round((learned / (goal || 1)) * 100),
+    100
+  );
+
   const remaining = Math.max(goal - learned, 0);
 
   const totalWords = statsData?.totalLearnedWords ?? 0;
   const streak = statsData?.streakDays ?? 0;
 
-  const weeklyDataSorted = [...(weeklyStudyData ?? [])].sort(
-    (a, b) => new Date(a.date) - new Date(b.date)
-  );
+  // 요일별 출석 여부 (0: 일 ~ 6: 토) ✅ 안정 파싱
+  const attendanceByWeekday = Array(7).fill(false);
 
-  const chartData = weeklyDataSorted.map((d) => ({
-    date: formatDateLabel(d.date),
-    learned: d.learnedCount,
-    wrong: d.wrongCount,
-  }));
+  weeklyDataSorted.forEach((day) => {
+    const s = String(day?.date ?? "").slice(0, 10);
+    const [yy, mm, dd] = s.split("-").map(Number);
+    if (!yy || !mm || !dd) return;
 
-// 요일별 출석 여부 (0: 일 ~ 6: 토)
-const attendanceByWeekday = Array(7).fill(false);
-
-weeklyDataSorted.forEach((day) => {
-  const date = new Date(day.date);
-  if (Number.isNaN(date.getTime())) return;
-
-  const weekday = date.getDay(); // 0: 일 ~ 6: 토
-  attendanceByWeekday[weekday] = day.learnedCount > 0;
-});
-
+    const weekday = new Date(yy, mm - 1, dd).getDay();
+    attendanceByWeekday[weekday] = (day.learnedCount ?? 0) > 0;
+  });
 
   const totalLearned7 = weeklyDataSorted.reduce(
-    (acc, cur) => acc + cur.learnedCount,
+    (acc, cur) => acc + (cur.learnedCount ?? 0),
     0
   );
 
@@ -218,14 +244,12 @@ weeklyDataSorted.forEach((day) => {
     weeklyDataSorted.length > 0
       ? weeklyDataSorted.reduce(
           (best, cur) =>
-            cur.learnedCount > (best?.learnedCount ?? -1) ? cur : best,
+            (cur.learnedCount ?? 0) > (best?.learnedCount ?? -1) ? cur : best,
           null
         )
       : null;
 
-  const bestStudyDayLabel = bestStudyDay
-    ? formatDateLabel(bestStudyDay.date)
-    : "-";
+  const bestStudyDayLabel = bestStudyDay ? formatDateLabel(bestStudyDay.date) : "-";
   const bestStudyDayCount = bestStudyDay?.learnedCount ?? 0;
 
   const wrongWordsList = wrongTop5Data ?? [];
@@ -257,10 +281,7 @@ weeklyDataSorted.forEach((day) => {
                 onClick={() => navigate("/account/profile")}
               >
                 관심 분야 설정하기
-                <ArrowRight
-                  size={14}
-                  className="btn__icon btn__icon--right"
-                />
+                <ArrowRight size={14} className="btn__icon btn__icon--right" />
               </Button>
             </div>
           </section>
@@ -270,9 +291,7 @@ weeklyDataSorted.forEach((day) => {
         <section className="dashboard-card status-card">
           <div className="status-header">
             <h3 className="section-title">오늘의 학습 목표</h3>
-             <p className="section-subtitle">
-      퀴즈에서 완료된 단어 기준으로 계산됩니다.
-    </p>
+            <p className="section-subtitle">학습 완료된 단어 기준으로 계산됩니다.</p>
           </div>
 
           <div className="status-body">
@@ -284,7 +303,6 @@ weeklyDataSorted.forEach((day) => {
                     <span className="slash">/</span>
                     <span className="goal-text">{goal} 단어</span>
                   </div>
-              
                 </div>
 
                 <div className="status-percent-area">
@@ -309,9 +327,7 @@ weeklyDataSorted.forEach((day) => {
                 </div>
                 <div>
                   <span className="metric-label">누적 학습</span>
-                  <div className="metric-value">
-                    {totalWords.toLocaleString()}
-                  </div>
+                  <div className="metric-value">{totalWords.toLocaleString()}</div>
                 </div>
               </div>
 
@@ -328,48 +344,45 @@ weeklyDataSorted.forEach((day) => {
           </div>
         </section>
 
-{/* 2. 이번 주 출석 현황 */}
-<section className="dashboard-card action-card">
-  <div className="action-top">
-    <div>
-      <h3 className="section-title">이번 주 출석 현황</h3>
-    </div>
-    <div className="mini-calendar">
-      {weekDays.map((day, i) => (
-        <div
-          key={day + i}
-          className={`calendar-day ${
-            attendanceByWeekday[i] ? "checked" : ""
-          }`}
-        >
-          {day}
-        </div>
-      ))}
-    </div>
-  </div>
+        {/* 2. 이번 주 출석 현황 */}
+        <section className="dashboard-card action-card">
+          <div className="action-top">
+            <div>
+              <h3 className="section-title">이번 주 출석 현황</h3>
+            </div>
+            <div className="mini-calendar">
+              {weekDays.map((day, i) => (
+                <div
+                  key={day + i}
+                  className={`calendar-day ${attendanceByWeekday[i] ? "checked" : ""}`}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+          </div>
 
-  <div className="action-bottom">
-    <Button
-      variant="primary"
-      size="md"
-      full
-      onClick={() => navigate("/learning/quiz?source=quiz")}
-    >
-      학습 시작하기
-      <ArrowRight size={16} className="btn__icon btn__icon--right" />
-    </Button>
-  </div>
-</section>
-
+          <div className="action-bottom">
+            <Button
+              variant="primary"
+              size="md"
+              full
+              onClick={() => navigate("/learning/quiz?source=quiz")}
+            >
+              학습 시작하기
+              <ArrowRight size={16} className="btn__icon btn__icon--right" />
+            </Button>
+          </div>
+        </section>
 
         {/* 3. 주간 학습 분석 */}
         <section className="dashboard-card chart-card">
           <div className="card-header">
             <div>
-               <h3 className="section-title">주간 학습 활동량</h3>
-      <p className="section-subtitle">
-        이번 주 퀴즈·카드에서 학습한 횟수 기준입니다.
-      </p>
+              <h3 className="section-title">주간 학습 활동량</h3>
+              <p className="section-subtitle">
+                이번 주 퀴즈·카드에서 학습한 횟수 기준입니다.
+              </p>
             </div>
             <div className="chart-legend">
               <div className="legend-item">
@@ -399,20 +412,10 @@ weeklyDataSorted.forEach((day) => {
                   dy={10}
                 />
                 <YAxis hide />
-                <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{ opacity: 0.1 }}
-                />
-                <Bar
-                  dataKey="learned"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={32}
-                >
+                <Tooltip content={<CustomTooltip />} cursor={{ opacity: 0.1 }} />
+                <Bar dataKey="learned" radius={[4, 4, 0, 0]} maxBarSize={32}>
                   {chartData.map((_, index) => (
-                    <Cell
-                      key={`learned-${index}`}
-                      fill="var(--primary-500)"
-                    />
+                    <Cell key={`learned-${index}`} fill="var(--primary-500)" />
                   ))}
                 </Bar>
                 <Bar
@@ -447,10 +450,7 @@ weeklyDataSorted.forEach((day) => {
                 <span className="kpi-main-text">
                   <strong>{bestStudyDayCount}</strong>개
                   {bestStudyDayLabel !== "-" && (
-                    <span className="kpi-sub-date">
-                      {" "}
-                      ({bestStudyDayLabel})
-                    </span>
+                    <span className="kpi-sub-date"> ({bestStudyDayLabel})</span>
                   )}
                 </span>
               </div>
@@ -465,9 +465,7 @@ weeklyDataSorted.forEach((day) => {
             <Button
               variant="text"
               size="sm"
-              onClick={() =>
-                navigate("/learning/quiz?source=wrong-note")
-              }
+              onClick={() => navigate("/learning/quiz?source=wrong-note")}
               style={{ padding: 0, height: "auto" }}
             >
               복습하기
@@ -484,9 +482,7 @@ weeklyDataSorted.forEach((day) => {
             ) : (
               wrongWordsList.map((item, index) => (
                 <li key={item.wordId ?? index} className="wrong-item">
-                  <span
-                    className={`rank-badge ${index === 0 ? "top1" : ""}`}
-                  >
+                  <span className={`rank-badge ${index === 0 ? "top1" : ""}`}>
                     {index + 1}
                   </span>
                   <div className="word-info">
