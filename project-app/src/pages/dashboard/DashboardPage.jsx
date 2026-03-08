@@ -1,7 +1,7 @@
 // src/pages/dashboard/DashboardPage.jsx
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Spinner from "../../components/common/Spinner";
 import Button from "../../components/common/Button";
 import PageHeader from "../../components/common/PageHeader";
@@ -159,6 +159,27 @@ const DashboardPage = () => {
   const hasError =
     isDailyError || isStatsError || isWeeklyError || isWrongError;
 
+  const [wrongWordsSortBy, setWrongWordsSortBy] = useState("count");
+  const sortedWrongWords = useMemo(() => {
+    const list = [...(wrongTop5Data ?? [])];
+
+    if (wrongWordsSortBy === "word") {
+      return list.sort((a, b) =>
+        String(a?.word ?? "").localeCompare(String(b?.word ?? ""), undefined, {
+          sensitivity: "base",
+        })
+      );
+    }
+
+    return list.sort((a, b) => {
+      const countDiff = (b?.count ?? 0) - (a?.count ?? 0);
+      if (countDiff !== 0) return countDiff;
+      return String(a?.word ?? "").localeCompare(String(b?.word ?? ""), undefined, {
+        sensitivity: "base",
+      });
+    });
+  }, [wrongTop5Data, wrongWordsSortBy]);
+
   if (!user) {
     return (
       <Spinner fullHeight={true} message="로그인 정보를 확인하는 중입니다..." />
@@ -218,8 +239,6 @@ const DashboardPage = () => {
     100
   );
 
-  const remaining = Math.max(goal - learned, 0);
-
   const totalWords = statsData?.totalLearnedWords ?? 0;
   const streak = statsData?.streakDays ?? 0;
 
@@ -251,8 +270,6 @@ const DashboardPage = () => {
 
   const bestStudyDayLabel = bestStudyDay ? formatDateLabel(bestStudyDay.date) : "-";
   const bestStudyDayCount = bestStudyDay?.learnedCount ?? 0;
-
-  const wrongWordsList = wrongTop5Data ?? [];
 
   return (
     <div className="page-container mt-24 fade-in">
@@ -325,7 +342,7 @@ const DashboardPage = () => {
                 <div className="metric-icon">
                   <BookOpen size={20} />
                 </div>
-                <div>
+                <div className="metric-text">
                   <span className="metric-label">누적 학습</span>
                   <div className="metric-value">{totalWords.toLocaleString()}</div>
                 </div>
@@ -335,7 +352,7 @@ const DashboardPage = () => {
                 <div className="metric-icon warn">
                   <Flame size={20} />
                 </div>
-                <div>
+                <div className="metric-text">
                   <span className="metric-label">연속 학습</span>
                   <div className="metric-value highlight">{streak}일째</div>
                 </div>
@@ -460,40 +477,99 @@ const DashboardPage = () => {
 
         {/* 4. 자주 틀리는 단어 Top 5 */}
         <section className="dashboard-card wrong-card">
-          <div className="card-header">
+          <div className="card-header wrong-card-header">
             <h3 className="section-title">자주 틀리는 단어</h3>
-            <Button
-              variant="text"
-              size="sm"
-              onClick={() => navigate("/learning/quiz?source=wrong-note")}
-              style={{ padding: 0, height: "auto" }}
-            >
-              복습하기
-              <ArrowRight size={14} className="btn__icon btn__icon--right" />
-            </Button>
+            <div className="wrong-header-actions">
+              <div
+                className="wrong-sort-buttons"
+                role="group"
+                aria-label="자주 틀리는 단어 정렬"
+              >
+                <button
+                  type="button"
+                  className={`wrong-sort-btn ${wrongWordsSortBy === "count" ? "active" : ""}`}
+                  onClick={() => setWrongWordsSortBy("count")}
+                  aria-label="틀린 횟수순 정렬"
+                  aria-pressed={wrongWordsSortBy === "count"}
+                >
+                  틀린 횟수순
+                </button>
+                <button
+                  type="button"
+                  className={`wrong-sort-btn ${wrongWordsSortBy === "word" ? "active" : ""}`}
+                  onClick={() => setWrongWordsSortBy("word")}
+                  aria-label="단어순 정렬"
+                  aria-pressed={wrongWordsSortBy === "word"}
+                >
+                  단어순
+                </button>
+              </div>
+              <Button
+                variant="text"
+                size="sm"
+                onClick={() => navigate("/learning/quiz?source=wrong-note")}
+                style={{ padding: 0, height: "auto" }}
+              >
+                복습하기
+                <ArrowRight size={14} className="btn__icon btn__icon--right" />
+              </Button>
+            </div>
           </div>
 
-          <ul className="wrong-list">
-            {wrongWordsList.length === 0 ? (
-              <li className="empty-state">
-                <CalendarCheck size={24} className="empty-icon" />
-                틀린 단어가 없습니다!
-              </li>
-            ) : (
-              wrongWordsList.map((item, index) => (
-                <li key={item.wordId ?? index} className="wrong-item">
-                  <span className={`rank-badge ${index === 0 ? "top1" : ""}`}>
-                    {index + 1}
-                  </span>
-                  <div className="word-info">
-                    <span className="word-en">{item.word}</span>
-                    <span className="word-ko">{item.meaning}</span>
-                  </div>
-                  <span className="wrong-count">{item.count}회</span>
-                </li>
-              ))
-            )}
-          </ul>
+          <div className="wrong-table-wrap">
+            <table className="wrong-table" role="table">
+              <thead>
+                <tr>
+                  <th scope="col">순위</th>
+                  <th scope="col">단어</th>
+                  <th scope="col" className="col-meaning">
+                    뜻
+                  </th>
+                  <th scope="col">틀린 횟수</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedWrongWords.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="empty-state-cell">
+                      <div className="empty-state">
+                        <CalendarCheck size={24} className="empty-icon" />
+                        틀린 단어가 없습니다!
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  sortedWrongWords.map((item, index) => (
+                    <tr key={item.wordId ?? index}>
+                      <td>
+                        <span
+                          className={`rank-badge ${index === 0 ? "top1" : ""}`}
+                          aria-label={`${index + 1}위`}
+                        >
+                          {index + 1}
+                        </span>
+                      </td>
+                      <td>
+                        {item.wordId ? (
+                          <Link to={`/words/${item.wordId}`} className="word-en word-link">
+                            {item.word}
+                          </Link>
+                        ) : (
+                          <span className="word-en">{item.word}</span>
+                        )}
+                      </td>
+                      <td className="col-meaning">
+                        <span className="word-ko">{item.meaning}</span>
+                      </td>
+                      <td>
+                        <span className="wrong-count">{item.count}회</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
     </div>
