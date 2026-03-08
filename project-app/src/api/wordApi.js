@@ -1,5 +1,6 @@
 // src/api/wordApi.js
 import httpClient from "./httpClient";
+import { WORD_DETAIL_MOCK_CASES, getWordDetailMockCase } from "../mocks/wordDetailMockCases";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -164,6 +165,12 @@ let mockWordList = [
     exampleSentenceKo: "이것은 당신의 커리어에 훌륭한 기회이다.",
   },
 ];
+
+for (const mockCase of WORD_DETAIL_MOCK_CASES) {
+  if (!mockWordList.some((w) => Number(w.wordId) === Number(mockCase.word.wordId))) {
+    mockWordList.push({ ...mockCase.word });
+  }
+}
 
 const mockDelay = (result, ms = 200) =>
   new Promise((resolve) => setTimeout(() => resolve(result), ms));
@@ -583,6 +590,11 @@ export const getCompletedStatus = async (wordId) => {
 // =====================================================
 export const getWordDetail = async (wordId) => {
   if (USE_MOCK) {
+    const caseData = getWordDetailMockCase(wordId);
+    if (caseData?.word) {
+      return mockDelay(mapWordFromApi(caseData.word));
+    }
+
     const target = mockWordList.find((w) => w.wordId === Number(wordId));
 
     if (!target) {
@@ -661,12 +673,22 @@ export const addWordFromCluster = async ({ text, level = 1 }) => {
 // =====================================================
 export const getStudyLog = async (wordId) => {
   if (USE_MOCK) {
-    return {
+    const caseData = getWordDetailMockCase(wordId);
+    if (caseData?.studyLog) {
+      return mockDelay({
+        wordId: Number(wordId),
+        totalCorrect: Number(caseData.studyLog.totalCorrect ?? 0),
+        totalWrong: Number(caseData.studyLog.totalWrong ?? 0),
+        lastStudyAt: caseData.studyLog.lastStudyAt ?? null,
+      });
+    }
+
+    return mockDelay({
       wordId: Number(wordId),
       totalCorrect: 0,
       totalWrong: 0,
       lastStudyAt: null,
-    };
+    });
   }
 
   const res = await httpClient.get(`/api/study/${wordId}`);

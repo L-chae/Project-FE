@@ -21,12 +21,17 @@ import {
 } from "../../api/wordApi";
 import { getStudyStatus } from "../../api/studyApi";
 import { getClustersByCenter, createCluster } from "@/api/wordClusterApi";
+import { WORD_DETAIL_MOCK_CASES } from "../../mocks/wordDetailMockCases";
 import Button from "@/components/common/Button";
 import Spinner from "@/components/common/Spinner";
 import Card from "@/components/common/Card";
 import "./WordDetailPage.css";
 
 const WORDS_QUERY_KEY = ["words", "list"];
+const SHOW_WORD_DETAIL_MOCK_PANEL =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_USE_MOCK === "true" &&
+  import.meta.env.VITE_WORD_DETAIL_MOCK_PANEL !== "false";
 
 // ================================
 // 표시용 라벨(품사/분야) 변환 유틸
@@ -110,9 +115,10 @@ const ClusterChip = React.memo(function ClusterChip({ item, onOpen }) {
   return (
     <button
       type="button"
-      className={`word-chip ${item.inMyList ? "word-chip--selected" : "word-chip--unselected"}`}
+      className="word-chip"
       onClick={() => onOpen(item)}
       title="단어 상세로 이동"
+      aria-label={`${item.text} 연관 단어`}
     >
       <div className="chip-main">
         <div className="chip-header-row">
@@ -448,6 +454,7 @@ function WordDetailPage() {
   const hasSimilar = (clusterData.similar?.length ?? 0) > 0;
   const hasOpposite = (clusterData.opposite?.length ?? 0) > 0;
   const hasAnyCluster = hasSimilar || hasOpposite;
+  const activeMockCaseId = Number(id);
 
   const availableTabs = useMemo(() => {
     const tabs = ["전체"];
@@ -553,6 +560,28 @@ function WordDetailPage() {
             <span className="back-label">목록으로</span>
           </button>
         </div>
+
+        {SHOW_WORD_DETAIL_MOCK_PANEL && (
+          <section className="mock-case-panel" aria-label="단어 상세 목업 케이스 선택">
+            <div className="mock-case-header">
+              <strong>Word Detail Mock Cases</strong>
+              <span>개발 모드에서만 표시됩니다.</span>
+            </div>
+            <div className="mock-case-buttons">
+              {WORD_DETAIL_MOCK_CASES.map((mockCase) => (
+                <Button
+                  key={mockCase.id}
+                  type="button"
+                  variant={activeMockCaseId === Number(mockCase.id) ? "primary" : "outline"}
+                  size="sm"
+                  onClick={() => navigate(`/words/${mockCase.id}`)}
+                >
+                  {mockCase.label}
+                </Button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <header className="detail-header">
           <div className="header-top-row">

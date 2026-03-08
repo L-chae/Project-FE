@@ -1,5 +1,6 @@
 // src/api/studyApi.js
 import httpClient from "./httpClient";
+import { getWordDetailMockCase } from "../mocks/wordDetailMockCases";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -38,7 +39,17 @@ const mockStudyMap = new Map();
 const ensureMock = (wordId) => {
   const id = Number(wordId);
   if (!mockStudyMap.has(id)) {
-    mockStudyMap.set(id, { wordId: id, status: "none", totalCorrect: 0, totalWrong: 0 });
+    const caseData = getWordDetailMockCase(id);
+    const presetStatus = caseData?.studyStatus ?? "none";
+    const presetLog = caseData?.studyLog ?? {};
+
+    mockStudyMap.set(id, {
+      wordId: id,
+      status: presetStatus,
+      totalCorrect: Number(presetLog.totalCorrect ?? 0),
+      totalWrong: Number(presetLog.totalWrong ?? 0),
+      lastStudyAt: presetLog.lastStudyAt ?? null,
+    });
   }
   return mockStudyMap.get(id);
 };
@@ -62,9 +73,8 @@ export const getStudyStatus = async (wordId) => {
   try {
     const res = await httpClient.get(`/api/study/${id}`);
     return normalizeStudyLogResponse(res.data, id);
-  } catch (e) {
+  } catch {
     // fallback: 기존 completed API가 살아있는 환경
-    const statusCode = e?.response?.status;
     try {
       const res2 = await httpClient.get(`/api/completed/${id}/status`);
       const isCompleted = !!res2.data;
@@ -98,7 +108,7 @@ export const recordStudyCorrect = async (wordId) => {
   try {
     const res = await httpClient.post(`/api/study/${id}/correct`);
     return normalizeStudyLogResponse(res.data, id);
-  } catch (e) {
+  } catch {
     // fallback: 기존 completed API
     try {
       await httpClient.post(`/api/completed/${id}`);

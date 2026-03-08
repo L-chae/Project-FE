@@ -1,5 +1,8 @@
 // src/api/wordClusterApi.js
 import httpClient from "./httpClient";
+import { getWordDetailMockCase } from "../mocks/wordDetailMockCases";
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 /**
  * Word Cluster API (연관 단어)
@@ -29,6 +32,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const isEmptyGrouped = (g) =>
   !g ||
   ((g.similar?.length ?? 0) === 0 && (g.opposite?.length ?? 0) === 0);
+
+const toGrouped = (input) => ({
+  similar: Array.isArray(input?.similar) ? input.similar : [],
+  opposite: Array.isArray(input?.opposite) ? input.opposite : [],
+});
 
 /**
  * (방어) grouped 표준 형태 보장
@@ -148,6 +156,21 @@ export const getClustersByCenter = async (wordId, options = {}) => {
 
   if (useCache && clusterCache.has(key)) return clusterCache.get(key);
 
+  if (USE_MOCK) {
+    await sleep(240);
+
+    const caseData = getWordDetailMockCase(key);
+    if (caseData?.clusterMode === "error") {
+      throw new Error("목업 케이스: 연관 단어 조회 실패");
+    }
+
+    const grouped =
+      caseData?.clusterMode === "empty" ? { similar: [], opposite: [] } : toGrouped(caseData?.clusters);
+
+    clusterCache.set(key, grouped);
+    return grouped;
+  }
+
   const res = await httpClient.get("/api/cluster", { params: { wordId: key } });
 
   // 에러 객체로 오는 케이스 방어(백엔드가 badRequest body에 success:false 넣음)
@@ -177,6 +200,30 @@ export const createCluster = async (wordId, options = {}) => {
   const key = String(wordId);
 
   if (createPromiseCache.has(key)) return createPromiseCache.get(key);
+
+  if (USE_MOCK) {
+    const promise = (async () => {
+      await sleep(300);
+
+      const caseData = getWordDetailMockCase(key);
+      if (caseData?.clusterMode === "error") {
+        throw new Error("목업 케이스: 연관 단어 생성 실패");
+      }
+
+      const grouped =
+        caseData?.clusterMode === "empty" ? { similar: [], opposite: [] } : toGrouped(caseData?.clusters);
+
+      clusterCache.set(key, grouped);
+      return grouped;
+    })();
+
+    createPromiseCache.set(key, promise);
+    try {
+      return await promise;
+    } finally {
+      createPromiseCache.delete(key);
+    }
+  }
 
   const promise = (async () => {
     const res = await httpClient.post("/api/cluster/create", null, {
