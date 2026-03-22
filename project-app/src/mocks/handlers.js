@@ -106,7 +106,9 @@ const RE = {
   STUDY_CORRECT: /\/api\/study\/\d+\/correct$/,
   STUDY_WRONG: /\/api\/study\/\d+\/wrong$/,
 
-  STORY_GENERATE: /\/api\/story\/generate$/,
+  CLUSTER_CREATE: /\/api\/cluster\/create$/,
+
+  AI_STORY: /\/api\/ai\/story$/,
 };
 
 const mockUser = {
@@ -270,61 +272,61 @@ let mockWordList = [
 const mockClusterMap = {
   1: {
     similar: [
-      { text: "Tenacity", meaning: "끈질김", type: "synonym", score: 0.91, inMyList: false },
-      { text: "Endurance", meaning: "인내력", type: "synonym", score: 0.87, inMyList: true },
+      { text: "Tenacity", meaning: "끈질김", type: "similar", score: 0.91, inMyList: false },
+      { text: "Endurance", meaning: "인내력", type: "similar", score: 0.87, inMyList: true },
     ],
     opposite: [
-      { text: "Fragility", meaning: "취약함", type: "antonym", score: 0.85, inMyList: false },
-      { text: "Weakness", meaning: "나약함", type: "antonym", score: 0.80, inMyList: false },
+      { text: "Fragility", meaning: "취약함", type: "opposite", score: 0.85, inMyList: false },
+      { text: "Weakness", meaning: "나약함", type: "opposite", score: 0.80, inMyList: false },
     ],
   },
   2: {
     similar: [
-      { text: "Vague", meaning: "불분명한", type: "synonym", score: 0.93, inMyList: false },
-      { text: "Unclear", meaning: "불명확한", type: "synonym", score: 0.88, inMyList: false },
+      { text: "Vague", meaning: "불분명한", type: "similar", score: 0.93, inMyList: false },
+      { text: "Unclear", meaning: "불명확한", type: "similar", score: 0.88, inMyList: false },
     ],
     opposite: [
-      { text: "Clear", meaning: "명확한", type: "antonym", score: 0.92, inMyList: true },
-      { text: "Definite", meaning: "확실한", type: "antonym", score: 0.84, inMyList: false },
+      { text: "Clear", meaning: "명확한", type: "opposite", score: 0.92, inMyList: true },
+      { text: "Definite", meaning: "확실한", type: "opposite", score: 0.84, inMyList: false },
     ],
   },
   3: {
     similar: [
-      { text: "Creative", meaning: "창의적인", type: "synonym", score: 0.89, inMyList: true },
-      { text: "Pioneering", meaning: "선구적인", type: "synonym", score: 0.83, inMyList: false },
+      { text: "Creative", meaning: "창의적인", type: "similar", score: 0.89, inMyList: true },
+      { text: "Pioneering", meaning: "선구적인", type: "similar", score: 0.83, inMyList: false },
     ],
     opposite: [
-      { text: "Conventional", meaning: "전통적인", type: "antonym", score: 0.86, inMyList: false },
-      { text: "Outdated", meaning: "구식의", type: "antonym", score: 0.78, inMyList: false },
+      { text: "Conventional", meaning: "전통적인", type: "opposite", score: 0.86, inMyList: false },
+      { text: "Outdated", meaning: "구식의", type: "opposite", score: 0.78, inMyList: false },
     ],
   },
   6: {
     similar: [
-      { text: "Articulate", meaning: "명확히 표현하는", type: "synonym", score: 0.90, inMyList: false },
-      { text: "Expressive", meaning: "표현력이 풍부한", type: "synonym", score: 0.85, inMyList: false },
+      { text: "Articulate", meaning: "명확히 표현하는", type: "similar", score: 0.90, inMyList: false },
+      { text: "Expressive", meaning: "표현력이 풍부한", type: "similar", score: 0.85, inMyList: false },
     ],
     opposite: [
-      { text: "Inarticulate", meaning: "말을 잘 못하는", type: "antonym", score: 0.88, inMyList: false },
+      { text: "Inarticulate", meaning: "말을 잘 못하는", type: "opposite", score: 0.88, inMyList: false },
     ],
   },
   9: {
     similar: [
-      { text: "Transient", meaning: "일시적인", type: "synonym", score: 0.94, inMyList: false },
-      { text: "Fleeting", meaning: "순간적인", type: "synonym", score: 0.90, inMyList: false },
+      { text: "Transient", meaning: "일시적인", type: "similar", score: 0.94, inMyList: false },
+      { text: "Fleeting", meaning: "순간적인", type: "similar", score: 0.90, inMyList: false },
     ],
     opposite: [
-      { text: "Permanent", meaning: "영구적인", type: "antonym", score: 0.91, inMyList: true },
-      { text: "Enduring", meaning: "지속적인", type: "antonym", score: 0.86, inMyList: false },
+      { text: "Permanent", meaning: "영구적인", type: "opposite", score: 0.91, inMyList: true },
+      { text: "Enduring", meaning: "지속적인", type: "opposite", score: 0.86, inMyList: false },
     ],
   },
 };
 
 const DEFAULT_CLUSTER = {
   similar: [
-    { text: "Similar Word", meaning: "유사 단어", type: "synonym", score: 0.80, inMyList: false },
+    { text: "Similar Word", meaning: "유사 단어", type: "similar", score: 0.80, inMyList: false },
   ],
   opposite: [
-    { text: "Opposite Word", meaning: "반대 단어", type: "antonym", score: 0.75, inMyList: false },
+    { text: "Opposite Word", meaning: "반대 단어", type: "opposite", score: 0.75, inMyList: false },
   ],
 };
 
@@ -732,6 +734,18 @@ export const handlers = [
     return json(cluster, { status: 200 });
   }),
 
+  http.post(RE.CLUSTER_CREATE, async ({ request }) => {
+    await delay(400);
+    const unauthorized = requireAuthOr401(request);
+    if (unauthorized) return unauthorized;
+
+    const url = new URL(request.url);
+    const wordId = Number(url.searchParams.get("wordId") ?? "0");
+    const cluster = mockClusterMap[wordId] ?? DEFAULT_CLUSTER;
+
+    return json(cluster, { status: 200 });
+  }),
+
   /** -----------------------------------
    * STUDY LOG
    * ----------------------------------- */
@@ -782,36 +796,28 @@ export const handlers = [
    * STORY
    * ----------------------------------- */
 
-  http.post(RE.STORY_GENERATE, async ({ request }) => {
+  http.post(RE.AI_STORY, async ({ request }) => {
     await delay(800);
     const unauthorized = requireAuthOr401(request);
     if (unauthorized) return unauthorized;
 
-    let body = {};
-    try {
-      body = (await request.json()) ?? {};
-    } catch {
-      body = {};
-    }
-
-    const words = Array.isArray(body?.words) ? body.words : ["resilience", "ambiguous"];
-    const wordList = words.join(", ");
-
-    const story = `In a bustling city filled with opportunity and challenge, Maya discovered the true meaning of resilience. Every morning, she faced situations that were often ambiguous — decisions that had no clear right or wrong answer.
-
-One day, her manager handed her a project with instructions so ambiguous that her entire team was confused. Rather than giving up, Maya drew upon her resilience and called a meeting to clarify the goals together.
-
-"Life is rarely straightforward," she told her colleagues. "But our resilience is what allows us to move forward even when the path seems ambiguous."
-
-By the end of the quarter, Maya's team had delivered outstanding results. Their success was a testament to the power of resilience in the face of ambiguity.
-
-[Words used: ${wordList}]`;
-
     return json(
       {
-        story,
-        usedWords: words,
-        generatedAt: new Date().toISOString(),
+        success: true,
+        message: "스토리 생성 완료",
+        title: "The Journey of Words",
+        storyEn:
+          "Maya had always struggled with resilience, but an ambiguous challenge at work forced her to grow. " +
+          "She gathered momentum from small victories, refusing to let setbacks define her. " +
+          "With each step forward, the path became clearer and her confidence stronger. " +
+          "In the end, she realized that growth is never a straight line — it is a journey shaped by every word you learn.",
+        storyKo:
+          "마야는 항상 회복탄력성에 어려움을 겪었지만, 직장에서의 모호한 도전이 그녀를 성장하게 만들었다. " +
+          "그녀는 작은 승리들로부터 추진력을 얻으며, 좌절이 자신을 정의하게 두지 않았다. " +
+          "한 걸음씩 나아갈수록 길은 더 선명해졌고 자신감도 커졌다. " +
+          "결국 그녀는 성장이란 결코 직선이 아니라, 배우는 모든 단어로 만들어지는 여정임을 깨달았다.",
+        usedWords: ["Resilience", "Ambiguous", "Momentum"],
+        storyId: 1,
       },
       { status: 200 }
     );
