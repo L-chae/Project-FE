@@ -18,12 +18,10 @@ import "./dev/refreshProof";
 const queryClient = new QueryClient();
 
 async function enableMswIfNeeded() {
-  const isDev = Boolean(import.meta?.env?.DEV);
   const enableMsw = String(import.meta?.env?.VITE_ENABLE_MSW ?? "") === "true";
   const enableProof = String(import.meta?.env?.VITE_MSW_PROOF ?? "") === "true";
 
-  // dev + enableMSW일 때만 start
-  if (!isDev || !enableMsw) return;
+  if (!enableMsw) return;
 
   try {
     const { worker } = await import("./mocks/browser");
@@ -71,7 +69,7 @@ bootstrap();
 
 /*
 요약(3줄)
-1) VITE_ENABLE_MSW=true(DEV에서만)면 렌더 전에 worker.start()로 MSW를 먼저 켭니다.
+1) VITE_ENABLE_MSW=true면 환경(dev/prod) 무관하게 렌더 전에 worker.start()로 MSW를 먼저 켭니다.
 2) serviceWorker.url을 "/mockServiceWorker.js"로 고정해 public 서빙 경로 문제를 방어합니다.
 3) proof 모드(VITE_MSW_PROOF=true)면 unhandled 요청을 warn으로 띄워 누락 핸들러를 빠르게 찾습니다.
 */
