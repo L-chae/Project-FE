@@ -47,11 +47,11 @@ const mockGetWeeklyStudy = (baseDate = new Date(), weekStartsOn = WEEK_STARTS_ON
 };
 
 const mockGetWrongTop5 = () => [
-  { wordId: 1, word: "Coffee", meaning: "커피", count: 5 },
-  { wordId: 2, word: "Resilience", meaning: "회복탄력성", count: 4 },
-  { wordId: 3, word: "Ambiguous", meaning: "모호한", count: 3 },
-  { wordId: 4, word: "Strategy", meaning: "전략", count: 3 },
-  { wordId: 5, word: "Implement", meaning: "실행하다", count: 3 },
+  { wordId: 4,  word: "Algorithm",    meaning: "알고리즘",        count: 5 },
+  { wordId: 9,  word: "Ephemeral",    meaning: "덧없는, 순간적인", count: 4 },
+  { wordId: 10, word: "Momentum",     meaning: "추진력, 가속도",   count: 3 },
+  { wordId: 2,  word: "Ambiguous",    meaning: "모호한",          count: 2 },
+  { wordId: 8,  word: "Collaborate",  meaning: "협력하다",         count: 2 },
 ];
 
 /* -----------------------

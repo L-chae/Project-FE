@@ -1,6 +1,7 @@
 // src/api/studyApi.js
 import httpClient from "./httpClient";
 import { getWordDetailMockCase } from "../mocks/wordDetailMockCases";
+import { mockStudyLog } from "../mocks/mockData";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -40,8 +41,15 @@ const ensureMock = (wordId) => {
   const id = Number(wordId);
   if (!mockStudyMap.has(id)) {
     const caseData = getWordDetailMockCase(id);
-    const presetStatus = caseData?.studyStatus ?? "none";
-    const presetLog = caseData?.studyLog ?? {};
+
+    const studyLogData = mockStudyLog.get(Number(id));
+
+    const presetStatus = caseData?.studyStatus
+      ?? studyLogData?.status
+      ?? "none";
+    const presetLog = caseData?.studyLog
+      ?? studyLogData
+      ?? {};
 
     mockStudyMap.set(id, {
       wordId: id,

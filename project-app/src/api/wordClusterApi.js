@@ -1,6 +1,7 @@
 // src/api/wordClusterApi.js
 import httpClient from "./httpClient";
 import { getWordDetailMockCase } from "../mocks/wordDetailMockCases";
+import { mockClusterMap } from "../mocks/mockData";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -163,12 +164,21 @@ export const getClustersByCenter = async (wordId, options = {}) => {
     if (caseData?.clusterMode === "error") {
       throw new Error("목업 케이스: 연관 단어 조회 실패");
     }
+    if (caseData?.clusterMode === "empty") {
+      return { similar: [], opposite: [] };
+    }
+    if (caseData?.clusters) {
+      const grouped = toGrouped(caseData.clusters);
+      clusterCache.set(key, grouped);
+      return grouped;
+    }
 
-    const grouped =
-      caseData?.clusterMode === "empty" ? { similar: [], opposite: [] } : toGrouped(caseData?.clusters);
-
-    clusterCache.set(key, grouped);
-    return grouped;
+    const fallback = mockClusterMap[Number(key)];
+    if (fallback) {
+      clusterCache.set(key, fallback);
+      return fallback;
+    }
+    return { similar: [], opposite: [] };
   }
 
   const res = await httpClient.get("/api/cluster", { params: { wordId: key } });

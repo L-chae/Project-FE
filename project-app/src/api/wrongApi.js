@@ -1,5 +1,6 @@
 // src/api/wrongApi.js
 import httpClient from "./httpClient";
+import { mockWordList as _mockWordList, mockStudyLog } from "../mocks/mockData";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
@@ -99,47 +100,23 @@ const initMockWrongList = () => {
   if (mockInitialized) return;
   mockInitialized = true;
 
-  const daysAgo = (n) => {
-    const d = new Date();
-    d.setDate(d.getDate() - n);
-    return d.toISOString();
-  };
-
-  const raw = [
-    {
-      wrongWordId: 1,
-      wordId: 101,
-      word: "ambiguous",
-      meaning: "애매모호한",
-      wordLevel: 1,
-      wrongAt: daysAgo(0),
-      totalCorrect: 1,
-      totalWrong: 3,
+  const raw = [];
+  for (const [wordId, log] of mockStudyLog.entries()) {
+    if (log.status !== "wrong" && log.status !== "review") continue;
+    const word = _mockWordList.find((w) => Number(w.wordId) === wordId);
+    if (!word) continue;
+    raw.push({
+      wrongWordId: wordId,
+      wordId,
+      word:          word.word,
+      meaning:       word.meaning,
+      wordLevel:     word.level ?? null,
+      wrongAt:       log.lastStudyAt ?? null,
+      totalCorrect:  log.totalCorrect ?? 0,
+      totalWrong:    log.totalWrong  ?? 0,
       isUsedInStory: "N",
-    },
-    {
-      wrongWordId: 2,
-      wordId: 102,
-      word: "mitigate",
-      meaning: "완화하다",
-      wordLevel: 2,
-      wrongAt: daysAgo(1),
-      totalCorrect: 0,
-      totalWrong: 4,
-      isUsedInStory: "Y",
-    },
-    {
-      wrongWordId: 3,
-      wordId: 103,
-      word: "scrutinize",
-      meaning: "세밀히 조사하다",
-      wordLevel: 3,
-      wrongAt: daysAgo(2),
-      totalCorrect: 2,
-      totalWrong: 5,
-      isUsedInStory: "N",
-    },
-  ];
+    });
+  }
 
   mockWrongList = raw.map(normalizeWrongItem).filter(Boolean);
 };

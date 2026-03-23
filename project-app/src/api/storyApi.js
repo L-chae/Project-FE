@@ -1,34 +1,13 @@
 // src/api/storyApi.js
 import httpClient from "./httpClient";
+import { mockStoryList as _mockStoryList, mockStoryWords } from "../mocks/mockData";
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 // =========================
 // MOCK 상태 (USE_MOCK === true)
 // =========================
-let mockStories = [
-  {
-    storyId: 1,
-    title: "First Snow in Seoul",
-    titleKo: "서울의 첫눈",
-    storyEn:
-      "On the first snowy morning, I finally used every word I had studied this week.",
-    storyKo:
-      "첫 눈이 내리던 아침, 나는 이번 주에 공부한 모든 단어를 사용해 보았다.",
-    createdAt: "2025-11-26T09:00:00",
-  },
-  {
-    storyId: 2,
-    title: "The Coffee Shop",
-    titleKo: "커피숍에서",
-
-    storyEn:
-      "The aroma of roasted beans filled the air as I waited for my order.",
-    storyKo:
-      "주문을 기다리는 동안, 볶은 커피콩의 향기가 공기를 가득 채웠다.",
-    createdAt: "2025-11-26T08:30:00",
-  },
-];
+let mockStories = [..._mockStoryList];
 
 // -------------------------
 // 공통: 스토리 응답 정규화
@@ -194,13 +173,8 @@ export const getStoryDetail = async (storyId) => {
 export const getStoryWords = async (storyId) => {
   if (USE_MOCK) {
     console.log("[Mock] 스토리 사용 단어 조회:", storyId);
-    return [
-      { text: "ambiguous", pos: "Adj", meaning: "애매모호한" },
-      { text: "mitigate", pos: "Verb", meaning: "완화하다" },
-      { text: "scrutinize", pos: "Verb", meaning: "세밀히 조사하다" },
-      { text: "fluctuate", pos: "Verb", meaning: "변동하다" },
-      { text: "coherent", pos: "Adj", meaning: "일관된" },
-    ].map(normalizeStoryWord).filter(Boolean);
+    const words = mockStoryWords[Number(storyId)] ?? [];
+    return words.map(normalizeStoryWord).filter(Boolean);
   }
 
   const res = await httpClient.get(`/api/story/${storyId}/words`);

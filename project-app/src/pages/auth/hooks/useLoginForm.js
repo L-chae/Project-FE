@@ -10,8 +10,8 @@ export function useLoginForm() {
   const { login } = useAuth(); // AuthContext.login 사용
 
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: "test@example.com",
+    password: "test1234",
     saveEmail: false,
   });
 
